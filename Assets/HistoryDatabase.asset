@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a76b1b9d8092664d8200dc8b45bd4c1, type: 3}
+  m_Name: HistoryDatabase
+  m_EditorClassIdentifier: 
+  categories:
+  - {fileID: 11400000, guid: 3391d653de9479543b2fde820277d97f, type: 2}
+  allQuestions:
+  - {fileID: 11400000, guid: 080099045f1ad79468c51105dd0c2390, type: 2}
