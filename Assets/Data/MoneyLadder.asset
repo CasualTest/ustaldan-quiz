@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09c1d75ac6fe4a74593dee47990416ec, type: 3}
+  m_Name: MoneyLadder
+  m_EditorClassIdentifier: 
+  levels:
+  - label: "100 \u0440\u0443\u0431."
+    amount: 100
+    isSafeZone: 0
+  - label: "200 \u0440\u0443\u0431."
+    amount: 200
+    isSafeZone: 0
+  - label: "300 \u0440\u0443\u0431."
+    amount: 300
+    isSafeZone: 0
+  - label: "500 \u0440\u0443\u0431."
+    amount: 500
+    isSafeZone: 0
+  - label: "1 000 \u0440\u0443\u0431."
+    amount: 1000
+    isSafeZone: 1
+  - label: "2 000 \u0440\u0443\u0431."
+    amount: 2000
+    isSafeZone: 0
+  - label: "4 000 \u0440\u0443\u0431."
+    amount: 4000
+    isSafeZone: 0
+  - label: "8 000 \u0440\u0443\u0431."
+    amount: 8000
+    isSafeZone: 0
+  - label: "16 000 \u0440\u0443\u0431."
+    amount: 16000
+    isSafeZone: 0
+  - label: "32 000 \u0440\u0443\u0431."
+    amount: 32000
+    isSafeZone: 1
+  - label: "64 000 \u0440\u0443\u0431."
+    amount: 64000
+    isSafeZone: 0
+  - label: "125 000 \u0440\u0443\u0431."
+    amount: 125000
+    isSafeZone: 0
+  - label: "250 000 \u0440\u0443\u0431."
+    amount: 250000
+    isSafeZone: 0
+  - label: "500 000 \u0440\u0443\u0431."
+    amount: 500000
+    isSafeZone: 0
+  - label: "1 000 000 \u0440\u0443\u0431."
+    amount: 1000000
+    isSafeZone: 0
