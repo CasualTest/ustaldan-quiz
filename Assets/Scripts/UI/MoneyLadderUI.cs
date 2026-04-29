@@ -7,8 +7,10 @@ using UstAldanQuiz.Managers;
 namespace UstAldanQuiz.UI
 {
     /// <summary>
-    /// Боковая панель с денежной лесенкой (15 уровней).
-    /// levelLabels[0] и levelBackgrounds[0] — первый вопрос (снизу).
+    /// Денежная лесенка (15 уровней).
+    /// compactMode=false — вертикальная панель с названиями призов.
+    /// compactMode=true  — горизонтальная полоска с номерами 1–15.
+    /// levelLabels[0] / levelBackgrounds[0] = вопрос 1.
     /// </summary>
     public class MoneyLadderUI : MonoBehaviour
     {
@@ -19,6 +21,9 @@ namespace UstAldanQuiz.UI
         [Header("Строки лесенки (15 штук, индекс 0 = вопрос 1)")]
         [SerializeField] private TMP_Text[] levelLabels = new TMP_Text[15];
         [SerializeField] private Image[] levelBackgrounds = new Image[15];
+
+        [Header("Режим")]
+        [SerializeField] private bool compactMode = false;
 
         [Header("Цвета строк")]
         [SerializeField] private Color defaultColor    = new Color(0.12f, 0.12f, 0.35f);
@@ -56,7 +61,7 @@ namespace UstAldanQuiz.UI
             for (int i = 0; i < count; i++)
             {
                 if (levelLabels[i] != null)
-                    levelLabels[i].text = moneyLadder.GetLabel(i);
+                    levelLabels[i].text = compactMode ? (i + 1).ToString() : moneyLadder.GetLabel(i);
 
                 // Пометить несгораемые уровни знаком
                 if (levelBackgrounds[i] != null && moneyLadder.levels[i].isSafeZone)

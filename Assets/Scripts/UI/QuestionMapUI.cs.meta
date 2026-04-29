@@ -1,0 +1,25 @@
+fileFormatVersion: 2
+guid: b4c13f6e1699d7842907c8ee51beb1ef
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - tilePrefab: {fileID: 4510275456984231065, guid: 6fd0167cddd95ab4186826d220dfdb22, type: 3}
+  - mapContent: {instanceID: 0}
+  - categoryNameText: {instanceID: 0}
+  - scoreText: {instanceID: 0}
+  - btnBack: {instanceID: 0}
+  - questionPanel: {instanceID: 0}
+  - questionCard: {instanceID: 0}
+  - questionCardGroup: {instanceID: 0}
+  - questionText: {instanceID: 0}
+  - questionImage: {instanceID: 0}
+  - questionImageContainer: {instanceID: 0}
+  - resultFeedback: {instanceID: 0}
+  - btnContinue: {instanceID: 0}
+  - btnFinish: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -1,0 +1,25 @@
+fileFormatVersion: 2
+guid: 19fcfed10dbbaeb48a0f0f8c6e0eaf60
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - questionDatabase: {fileID: 11400000, guid: 020dd58be4c5e3e49a16905dc8521216, type: 2}
+  - categoryHistory: {fileID: 11400000, guid: 3391d653de9479543b2fde820277d97f, type: 2}
+  - categoryCulture: {fileID: 11400000, guid: 6cb06c8a26a77c44384176150f88cef8, type: 2}
+  - categoryPeople: {fileID: 11400000, guid: ea9fd6109725dce4387c1e07a032516f, type: 2}
+  - btnHistory: {instanceID: 0}
+  - btnCulture: {instanceID: 0}
+  - btnPeople: {instanceID: 0}
+  - highlightHistory: {instanceID: 0}
+  - highlightCulture: {instanceID: 0}
+  - highlightPeople: {instanceID: 0}
+  - btnPlay: {instanceID: 0}
+  - btnRecords: {instanceID: 0}
+  - btnAbout: {instanceID: 0}
+  - statsText: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

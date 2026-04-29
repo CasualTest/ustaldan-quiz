@@ -9,6 +9,9 @@ namespace UstAldanQuiz.Managers
 
     public class QuizManager : MonoBehaviour
     {
+        [Header("Менеджеры")]
+        [SerializeField] private MenuManager _menuManager;
+
         [Header("База вопросов")]
         [SerializeField] private QuestionDatabase database;
 
@@ -60,6 +63,11 @@ namespace UstAldanQuiz.Managers
             moneyLadder != null && _lastCorrectIndex >= 0 ? moneyLadder.GetPrize(_lastCorrectIndex) : 0;
 
         // --- Управление ---
+
+        public void Awake()
+        {
+            bool test = true;
+        }
 
         public void StartQuiz(QuestionCategory category)
         {
@@ -149,6 +157,7 @@ namespace UstAldanQuiz.Managers
 
         public void WalkAway()
         {
+            _menuManager.BackToMenu();
             if (_gameEnded) return;
             FinishQuiz(EarnedPrize, QuizEndReason.WalkedAway);
         }

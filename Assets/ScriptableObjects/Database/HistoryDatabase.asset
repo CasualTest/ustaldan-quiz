@@ -9,11 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eea6272c2f7877242b0450a3ab072dce, type: 3}
-  m_Name: Culture
+  m_Script: {fileID: 11500000, guid: 5a76b1b9d8092664d8200dc8b45bd4c1, type: 3}
+  m_Name: HistoryDatabase
   m_EditorClassIdentifier: 
-  categoryId: culture
-  displayName: "\u041A\u0443\u043B\u044C\u0442\u0443\u0440\u0430"
-  description: 
-  icon: {fileID: 0}
-  themeColor: {r: 1, g: 1, b: 1, a: 1}
+  categories:
+  - {fileID: 11400000, guid: 3391d653de9479543b2fde820277d97f, type: 2}
+  allQuestions:
+  - {fileID: 11400000, guid: b025a5481b4e5bc43a5c51a451f43efc, type: 2}
