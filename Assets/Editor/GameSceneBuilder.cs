@@ -298,10 +298,10 @@ public static class GameSceneBuilder
         logoVLG.childControlWidth = logoVLG.childControlHeight = true;
         logoVLG.spacing = 8;
 
-        MakeTMP("BadgeText",  logo.transform, "Усть-Алданский улус",  28, C_TEXT2,  font, minH: 40);
-        MakeTMP("TitleMain",  logo.transform, "Викторина",            72, C_TEXT,   font, minH: 100, bold: true);
-        MakeTMP("TitleYear",  logo.transform, "100 лет",              64, C_SECONDARY, font, minH: 80, bold: true);
-        MakeTMP("SubTitle",   logo.transform, "1925 — 2025",          28, C_TEXT2,  font, minH: 40);
+        AddLocKey(MakeTMP("BadgeText", logo.transform, "Усть-Алданский улус", 28, C_TEXT2,    font, minH: 40).gameObject,   "app_badge");
+        AddLocKey(MakeTMP("TitleMain", logo.transform, "Викторина",          72, C_TEXT,     font, minH: 100, bold: true).gameObject, "app_title");
+        AddLocKey(MakeTMP("TitleYear", logo.transform, "100 лет",            64, C_SECONDARY, font, minH: 80,  bold: true).gameObject, "app_year");
+        AddLocKey(MakeTMP("SubTitle",  logo.transform, "1925 — 2025",        28, C_TEXT2,    font, minH: 40).gameObject,   "app_subtitle");
 
         // CategoryGrid — кнопки создаются динамически в MainMenuUI.Start()
         var gridGO = MakeGO("CategoryGrid", safeArea.transform);
@@ -325,10 +325,14 @@ public static class GameSceneBuilder
         btnsVLG.childControlWidth = btnsVLG.childControlHeight = true;
         btnsVLG.spacing = 20;
 
-        var btnPlayGO     = MakePrimaryButton("BtnPlay",      btnsBlock.transform, "Начать игру",   font);
-        var btnSettingsGO = MakeSecondaryButton("BtnSettings", btnsBlock.transform, "Настройки",     font);
-        var btnRecordsGO  = MakeSecondaryButton("BtnRecords",  btnsBlock.transform, "Рекорды",       font);
-        var btnAboutGO    = MakeSecondaryButton("BtnAbout",    btnsBlock.transform, "О приложении",  font);
+        var btnPlayGO     = MakePrimaryButton("BtnPlay",       btnsBlock.transform, "Начать игру",  font);
+        var btnSettingsGO = MakeSecondaryButton("BtnSettings", btnsBlock.transform, "Настройки",    font);
+        var btnRecordsGO  = MakeSecondaryButton("BtnRecords",  btnsBlock.transform, "Рекорды",      font);
+        var btnAboutGO    = MakeSecondaryButton("BtnAbout",    btnsBlock.transform, "О приложении", font);
+        AddLocKey(btnPlayGO,     "btn_play");
+        AddLocKey(btnSettingsGO, "btn_settings");
+        AddLocKey(btnRecordsGO,  "btn_records");
+        AddLocKey(btnAboutGO,    "btn_about");
 
         // StatsBar
         var statsGO  = MakeGO("StatsBar", safeArea.transform);
@@ -362,9 +366,11 @@ public static class GameSceneBuilder
 
         var popupIcon = MakeTMP("PopupIcon", card.transform, "!", 96, C_SECONDARY, font, minH: 110, bold: true);
         popupIcon.alignment = TextAlignmentOptions.Center;
+        AddLocKey(popupIcon.gameObject, "no_questions_icon");
 
         var popupTitle = MakeTMP("PopupTitle", card.transform, "Нет вопросов", 44, C_TEXT, font, minH: 60, bold: true);
         popupTitle.alignment = TextAlignmentOptions.Center;
+        AddLocKey(popupTitle.gameObject, "no_questions_title");
 
         var popupMsg = MakeTMP("PopupMessage", card.transform,
                                "В этой категории пока нет вопросов", 34, C_TEXT2, font, minH: 80);
@@ -372,6 +378,7 @@ public static class GameSceneBuilder
         popupMsg.enableWordWrapping = true;
 
         var btnCloseGO = MakePrimaryButton("BtnClosePopup", card.transform, "Понятно", font, minH: 110);
+        AddLocKey(btnCloseGO, "btn_close");
 
         // --- Панель настроек ---
         var settingsPanel = MakeGO("SettingsPanel", canvasGO.transform);
@@ -405,6 +412,7 @@ public static class GameSceneBuilder
 
         var sTitleTMP = MakeTMP("SettingsTitle", sHeader.transform, "Настройки", 40, Color.white, font, bold: true);
         SetLE(sTitleTMP.gameObject, flexW: 1f);
+        AddLocKey(sTitleTMP.gameObject, "settings_title");
 
         var sBtnCloseGO = MakeGO("BtnSettingsClose", sHeader.transform);
         SetLE(sBtnCloseGO, minW: 100, minH: 100);
@@ -426,13 +434,15 @@ public static class GameSceneBuilder
         rowsVLG.childControlWidth     = rowsVLG.childControlHeight = true;
         rowsVLG.padding = new RectOffset(0, 0, 16, 32);
 
-        var toggleMusic  = MakeSettingRow("Музыка",       rowsGO.transform, font);
-        var sliderMusic  = MakeVolumeSliderRow("MusicVol",  rowsGO.transform, font);
+        var toggleMusic  = MakeSettingRow("Музыка",      rowsGO.transform, font, "settings_music");
+        var sliderMusic  = MakeVolumeSliderRow("MusicVol", rowsGO.transform, font);
         MakeRowSeparator(rowsGO.transform);
-        var toggleSound  = MakeSettingRow("Звуки",        rowsGO.transform, font);
-        var sliderSound  = MakeVolumeSliderRow("SoundVol",  rowsGO.transform, font);
+        var toggleSound  = MakeSettingRow("Звуки",       rowsGO.transform, font, "settings_sound");
+        var sliderSound  = MakeVolumeSliderRow("SoundVol", rowsGO.transform, font);
         MakeRowSeparator(rowsGO.transform);
-        var toggleVibro  = MakeSettingRow("Виброотклик",  rowsGO.transform, font);
+        var toggleVibro  = MakeSettingRow("Виброотклик", rowsGO.transform, font, "settings_vibration");
+        MakeRowSeparator(rowsGO.transform);
+        var (btnLangRu, btnLangSah) = MakeLangRow(rowsGO.transform, font);
 
         // SettingsUI компонент
         var settingsMgrGO = new GameObject("SettingsManager");
@@ -445,6 +455,8 @@ public static class GameSceneBuilder
         Prop(soSet, "toggleVibration",  toggleVibro);
         Prop(soSet, "sliderMusic",      sliderMusic);
         Prop(soSet, "sliderSound",      sliderSound);
+        Prop(soSet, "btnLangRu",        btnLangRu);
+        Prop(soSet, "btnLangSah",       btnLangSah);
         soSet.ApplyModifiedProperties();
 
         // AudioManager
@@ -569,6 +581,7 @@ public static class GameSceneBuilder
         var btnBackGO = MakeSecondaryButton("BtnBack", header.transform, "← Назад", font, minH: 70, minW: 160);
         btnBackGO.GetComponent<Image>().color = new Color(1,1,1,0.2f);
         SetLE(btnBackGO, minH: 70, minW: 160);
+        AddLocKey(btnBackGO, "btn_back");
 
         var catNameTMP = MakeTMP("CategoryName", header.transform, "История", 36, Color.white, font);
         SetLE(catNameTMP.gameObject, flexW: 1);
@@ -673,7 +686,8 @@ public static class GameSceneBuilder
         feedbackTMP.gameObject.SetActive(false);
 
         // BtnContinue (внизу оверлея, вне карточки)
-        var btnContinueGO = MakePrimaryButton("BtnContinue", qPanel.transform, "Продолжить →", font);
+        var btnContinueGO = MakePrimaryButton("BtnContinue", qPanel.transform, "Продолжить", font);
+        AddLocKey(btnContinueGO, "btn_continue");
         var bcRT = btnContinueGO.GetComponent<RectTransform>();
         bcRT.anchorMin = new Vector2(0.5f, 0); bcRT.anchorMax = new Vector2(0.5f, 0);
         bcRT.pivot     = new Vector2(0.5f, 0);
@@ -682,7 +696,8 @@ public static class GameSceneBuilder
         btnContinueGO.gameObject.SetActive(false);
 
         // BtnFinish
-        var btnFinishGO = MakePrimaryButton("BtnFinish", safeArea.transform, "Завершить →", font);
+        var btnFinishGO = MakePrimaryButton("BtnFinish", safeArea.transform, "Завершить", font);
+        AddLocKey(btnFinishGO, "btn_finish");
         SetLE(btnFinishGO, minH: 100, prefH: 100);
         btnFinishGO.GetComponent<Image>().color = C_SECONDARY;
         btnFinishGO.gameObject.SetActive(false);
@@ -802,12 +817,15 @@ public static class GameSceneBuilder
         badgeGO.SetActive(false);
 
         // Кнопки
-        var btnPlayAgain = MakePrimaryButton("BtnPlayAgain", safeArea.transform, "Играть снова",   font);
-        var btnMainMenu  = MakeSecondaryButton("BtnMainMenu", safeArea.transform, "Главное меню",  font);
-        var btnShare     = MakeSecondaryButton("BtnShare",    safeArea.transform, "Поделиться",    font);
+        var btnPlayAgain = MakePrimaryButton("BtnPlayAgain",   safeArea.transform, "Играть снова",  font);
+        var btnMainMenu  = MakeSecondaryButton("BtnMainMenu",  safeArea.transform, "Главное меню",  font);
+        var btnShare     = MakeSecondaryButton("BtnShare",     safeArea.transform, "Поделиться",    font);
         SetLE(btnPlayAgain, minH: 110, prefH: 110);
         SetLE(btnMainMenu,  minH: 100, prefH: 100);
         SetLE(btnShare,     minH: 90,  prefH: 90);
+        AddLocKey(btnPlayAgain, "btn_play_again");
+        AddLocKey(btnMainMenu,  "btn_main_menu");
+        AddLocKey(btnShare,     "btn_share");
 
         // ResultsUI
         var resManagerGO = MakeRootGO("ResultsManager");
@@ -1118,7 +1136,7 @@ public static class GameSceneBuilder
     }
 
     // Строка настройки: Label слева + Toggle-пилюля справа
-    static Toggle MakeSettingRow(string label, Transform parent, TMP_FontAsset font)
+    static Toggle MakeSettingRow(string label, Transform parent, TMP_FontAsset font, string locKey = null)
     {
         var row = MakeGO(label.Replace(" ", "") + "Row", parent);
         SetLE(row, minH: 96, prefH: 96);
@@ -1132,6 +1150,7 @@ public static class GameSceneBuilder
 
         var nameTMP = MakeTMP("Label", row.transform, label, 34, C_TEXT, font);
         SetLE(nameTMP.gameObject, flexW: 1f);
+        if (locKey != null) AddLocKey(nameTMP.gameObject, locKey);
 
         // Пилюля-переключатель
         var pill = MakeGO("Toggle", row.transform);
@@ -1161,6 +1180,65 @@ public static class GameSceneBuilder
         var sep = MakeGO("Separator", parent);
         SetLE(sep, minH: 1, prefH: 1);
         sep.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.08f);
+    }
+
+    // Строка выбора языка: Label слева + две кнопки справа
+    static (Button btnRu, Button btnSah) MakeLangRow(Transform parent, TMP_FontAsset font)
+    {
+        var row = MakeGO("LangRow", parent);
+        SetLE(row, minH: 96, prefH: 96);
+        row.AddComponent<Image>().color = Color.clear;
+        var hlg = row.AddComponent<HorizontalLayoutGroup>();
+        hlg.childAlignment         = TextAnchor.MiddleLeft;
+        hlg.childForceExpandHeight = true;
+        hlg.childControlWidth      = hlg.childControlHeight = true;
+        hlg.padding = new RectOffset(48, 48, 0, 0);
+        hlg.spacing = 24;
+
+        var labelTMP = MakeTMP("Label", row.transform, "Язык", 34, C_TEXT, font);
+        SetLE(labelTMP.gameObject, flexW: 1f);
+        AddLocKey(labelTMP.gameObject, "settings_language");
+
+        // Группа кнопок языков
+        var btnGroup = MakeGO("LangButtons", row.transform);
+        btnGroup.AddComponent<Image>().color = Color.clear;
+        var bHLG = btnGroup.AddComponent<HorizontalLayoutGroup>();
+        bHLG.childAlignment        = TextAnchor.MiddleCenter;
+        bHLG.childForceExpandWidth = false;
+        bHLG.childControlWidth     = bHLG.childControlHeight = true;
+        bHLG.spacing = 12;
+
+        var btnRuGO  = MakeLangButton("BtnLangRu",  btnGroup.transform, "Русский",   font, active: true);
+        var btnSahGO = MakeLangButton("BtnLangSah", btnGroup.transform, "Саха тыла", font, active: false);
+        AddLocKey(btnRuGO,  "lang_ru");
+        AddLocKey(btnSahGO, "lang_sah");
+
+        return (btnRuGO.GetComponent<Button>(), btnSahGO.GetComponent<Button>());
+    }
+
+    static GameObject MakeLangButton(string name, Transform parent, string text,
+                                      TMP_FontAsset font, bool active)
+    {
+        var go  = MakeGO(name, parent);
+        SetLE(go, minW: 200, minH: 60);
+        var img = go.AddComponent<Image>();
+        img.color  = active ? C_PRIMARY : new Color(0.85f, 0.85f, 0.85f);
+        img.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        img.type   = Image.Type.Sliced;
+        var btn = go.AddComponent<Button>();
+        btn.targetGraphic = img;
+
+        var txtGO = MakeGO("Text", go.transform);
+        var tRT   = txtGO.GetComponent<RectTransform>();
+        tRT.anchorMin = Vector2.zero; tRT.anchorMax = Vector2.one;
+        tRT.offsetMin = new Vector2(8, 0); tRT.offsetMax = new Vector2(-8, 0);
+        var tmp = txtGO.AddComponent<TextMeshProUGUI>();
+        tmp.text      = text;
+        tmp.fontSize  = 28;
+        tmp.color     = active ? Color.white : C_TEXT;
+        tmp.alignment = TextAlignmentOptions.Center;
+        if (font != null) tmp.font = font;
+        return go;
     }
 
     // Строка с ползунком громкости (label слева + Slider справа)
@@ -1286,6 +1364,29 @@ public static class GameSceneBuilder
         tmp.enableWordWrapping = false;
         if (font != null) tmp.font = font;
         return (go, tmp);
+    }
+
+    // =====================================================================
+    // ЛОКАЛИЗАЦИЯ — добавить LocaleText на TMP_Text внутри GO
+    // =====================================================================
+
+    /// <summary>
+    /// Ищет первый TMP_Text (в т.ч. в дочерних объектах) и добавляет на него
+    /// компонент LocaleText с заданным ключом.
+    /// </summary>
+    static void AddLocKey(GameObject go, string key)
+    {
+        if (go == null) return;
+        var tmp = go.GetComponentInChildren<TMP_Text>(true);
+        if (tmp == null)
+        {
+            Debug.LogWarning($"[GameSceneBuilder] TMP_Text не найден для ключа '{key}' в {go.name}");
+            return;
+        }
+        var lt = tmp.gameObject.AddComponent<LocaleText>();
+        var so = new SerializedObject(lt);
+        var kp = so.FindProperty("key");
+        if (kp != null) { kp.stringValue = key; so.ApplyModifiedProperties(); }
     }
 
     // =====================================================================

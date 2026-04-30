@@ -171,7 +171,7 @@ namespace UstAldanQuiz.UI
             if (resultFeedback != null)
             {
                 resultFeedback.gameObject.SetActive(true);
-                resultFeedback.text  = isCorrect ? "Правильно!" : "Неверно";
+                resultFeedback.text  = LocaleManager.Get(isCorrect ? "question_correct" : "question_wrong");
                 resultFeedback.color = isCorrect ? colorCorrect : colorWrong;
             }
 
@@ -239,7 +239,7 @@ namespace UstAldanQuiz.UI
         private void UpdateScore()
         {
             if (scoreText != null)
-                scoreText.text = $"Правильных: {_correctCount} / {_tiles.Count}";
+                scoreText.text = LocaleManager.Get("score_format", _correctCount, _tiles.Count);
         }
 
         // -------------------------------------------------------------------------

@@ -121,7 +121,7 @@ namespace UstAldanQuiz.UI
         private void ShowNoQuestionsPopup(string categoryName)
         {
             if (noQuestionsPopupText != null)
-                noQuestionsPopupText.text = $"В категории «{categoryName}»\nпока нет вопросов";
+                noQuestionsPopupText.text = LocaleManager.Get("no_questions_message", categoryName);
             if (noQuestionsPopup != null)
                 noQuestionsPopup.SetActive(true);
         }
@@ -141,7 +141,7 @@ namespace UstAldanQuiz.UI
             int total  = questionDatabase != null && _selectedCategory != null
                 ? questionDatabase.GetQuestionsByCategory(_selectedCategory).Count
                 : 0;
-            statsText.text = $"Сыграно игр: {played}    Лучший результат: {best}/{total}";
+            statsText.text = LocaleManager.Get("stats_format", played, best, total);
         }
     }
 }
