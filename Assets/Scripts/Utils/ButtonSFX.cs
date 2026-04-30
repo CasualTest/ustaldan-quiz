@@ -26,6 +26,7 @@ namespace UstAldanQuiz.Utils
 
         private void Play()
         {
+            HapticManager.LightTap();
             if (customClip != null)
                 AudioManager.Instance?.PlaySFX(customClip);
             else

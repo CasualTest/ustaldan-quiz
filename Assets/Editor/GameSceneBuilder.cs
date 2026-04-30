@@ -427,8 +427,10 @@ public static class GameSceneBuilder
         rowsVLG.padding = new RectOffset(0, 0, 16, 32);
 
         var toggleMusic  = MakeSettingRow("Музыка",       rowsGO.transform, font);
+        var sliderMusic  = MakeVolumeSliderRow("MusicVol",  rowsGO.transform, font);
         MakeRowSeparator(rowsGO.transform);
         var toggleSound  = MakeSettingRow("Звуки",        rowsGO.transform, font);
+        var sliderSound  = MakeVolumeSliderRow("SoundVol",  rowsGO.transform, font);
         MakeRowSeparator(rowsGO.transform);
         var toggleVibro  = MakeSettingRow("Виброотклик",  rowsGO.transform, font);
 
@@ -441,6 +443,8 @@ public static class GameSceneBuilder
         Prop(soSet, "toggleMusic",      toggleMusic);
         Prop(soSet, "toggleSound",      toggleSound);
         Prop(soSet, "toggleVibration",  toggleVibro);
+        Prop(soSet, "sliderMusic",      sliderMusic);
+        Prop(soSet, "sliderSound",      sliderSound);
         soSet.ApplyModifiedProperties();
 
         // AudioManager
@@ -1157,6 +1161,80 @@ public static class GameSceneBuilder
         var sep = MakeGO("Separator", parent);
         SetLE(sep, minH: 1, prefH: 1);
         sep.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.08f);
+    }
+
+    // Строка с ползунком громкости (label слева + Slider справа)
+    static Slider MakeVolumeSliderRow(string rowName, Transform parent, TMP_FontAsset font)
+    {
+        var row = MakeGO(rowName + "Row", parent);
+        SetLE(row, minH: 72, prefH: 72);
+        row.AddComponent<Image>().color = Color.clear;
+        var hlg = row.AddComponent<HorizontalLayoutGroup>();
+        hlg.childAlignment         = TextAnchor.MiddleLeft;
+        hlg.childForceExpandHeight = false;
+        hlg.childControlWidth      = hlg.childControlHeight = true;
+        hlg.padding = new RectOffset(48, 48, 0, 0);
+        hlg.spacing = 20;
+
+        var lbl = MakeTMP("Label", row.transform, "Громкость", 26, C_TEXT2, font);
+        SetLE(lbl.gameObject, minW: 170);
+
+        // Контейнер слайдера
+        var sliderGO = MakeGO("Slider", row.transform);
+        SetLE(sliderGO, minH: 44, prefH: 44, flexW: 1f);
+
+        // Background
+        var bgGO = MakeGO("Background", sliderGO.transform);
+        var bgRT = bgGO.GetComponent<RectTransform>();
+        bgRT.anchorMin = new Vector2(0f, 0.25f);
+        bgRT.anchorMax = new Vector2(1f, 0.75f);
+        bgRT.offsetMin = bgRT.offsetMax = Vector2.zero;
+        bgGO.AddComponent<Image>().color = new Color(0.80f, 0.80f, 0.80f);
+
+        // Fill Area
+        var fillAreaGO = MakeGO("Fill Area", sliderGO.transform);
+        var faRT = fillAreaGO.GetComponent<RectTransform>();
+        faRT.anchorMin = new Vector2(0f, 0.25f);
+        faRT.anchorMax = new Vector2(1f, 0.75f);
+        faRT.offsetMin = new Vector2(5f, 0f);
+        faRT.offsetMax = new Vector2(-15f, 0f);
+
+        var fillGO = MakeGO("Fill", fillAreaGO.transform);
+        var fillRT = fillGO.GetComponent<RectTransform>();
+        fillRT.anchorMin = Vector2.zero;
+        fillRT.anchorMax = new Vector2(1f, 1f);
+        fillRT.offsetMin = fillRT.offsetMax = Vector2.zero;
+        var fillImg = fillGO.AddComponent<Image>();
+        fillImg.color = C_PRIMARY;
+
+        // Handle Slide Area
+        var handleAreaGO = MakeGO("Handle Slide Area", sliderGO.transform);
+        var haRT = handleAreaGO.GetComponent<RectTransform>();
+        haRT.anchorMin = Vector2.zero;
+        haRT.anchorMax = Vector2.one;
+        haRT.offsetMin = new Vector2(10f, 0f);
+        haRT.offsetMax = new Vector2(-10f, 0f);
+
+        var handleGO = MakeGO("Handle", handleAreaGO.transform);
+        var handleRT = handleGO.GetComponent<RectTransform>();
+        handleRT.anchorMin = handleRT.anchorMax = new Vector2(0f, 0.5f);
+        handleRT.pivot     = new Vector2(0.5f, 0.5f);
+        handleRT.sizeDelta = new Vector2(44f, 44f);
+        var handleImg = handleGO.AddComponent<Image>();
+        handleImg.color  = C_PRIMARY;
+        handleImg.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        handleImg.type   = Image.Type.Sliced;
+
+        var slider = sliderGO.AddComponent<Slider>();
+        slider.fillRect      = fillRT;
+        slider.handleRect    = handleRT;
+        slider.targetGraphic = handleImg;
+        slider.direction     = Slider.Direction.LeftToRight;
+        slider.minValue      = 0f;
+        slider.maxValue      = 1f;
+        slider.value         = 1f;
+
+        return slider;
     }
 
     // Кнопка вторичного стиля (белый фон, зелёный текст)

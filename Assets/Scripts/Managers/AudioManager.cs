@@ -46,15 +46,24 @@ namespace UstAldanQuiz.Managers
                 musicSource.Play();
             }
             ApplyMusicSettings();
+            ApplySoundSettings();
         }
 
         // ── Музыка ────────────────────────────────────────────────────────
 
-        /// <summary>Применяет текущее состояние SettingsManager.MusicEnabled.</summary>
+        /// <summary>Применяет состояние вкл/выкл и уровень громкости музыки.</summary>
         public void ApplyMusicSettings()
         {
             if (musicSource == null) return;
-            musicSource.mute = !SettingsManager.MusicEnabled;
+            musicSource.mute   = !SettingsManager.MusicEnabled;
+            musicSource.volume = SettingsManager.MusicVolume;
+        }
+
+        /// <summary>Применяет уровень громкости SFX.</summary>
+        public void ApplySoundSettings()
+        {
+            if (sfxSource == null) return;
+            sfxSource.volume = SettingsManager.SoundVolume;
         }
 
         public void PlayMusic(AudioClip clip)

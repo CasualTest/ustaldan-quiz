@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using UstAldanQuiz.Data;
 using UstAldanQuiz.Managers;
+using UstAldanQuiz.Utils;
 
 namespace UstAldanQuiz.UI
 {
@@ -179,10 +180,12 @@ namespace UstAldanQuiz.UI
                 _correctCount++;
                 if (GameManager.Instance != null) GameManager.Instance.CorrectAnswers = _correctCount;
                 AudioManager.Instance?.PlayCorrect();
+                HapticManager.Correct();
             }
             else
             {
                 AudioManager.Instance?.PlayWrong();
+                HapticManager.Wrong();
             }
 
             _answeredCount++;

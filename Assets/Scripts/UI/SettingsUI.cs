@@ -17,6 +17,10 @@ namespace UstAldanQuiz.UI
         [SerializeField] private Toggle toggleSound;
         [SerializeField] private Toggle toggleVibration;
 
+        [Header("Ползунки громкости")]
+        [SerializeField] private Slider sliderMusic;
+        [SerializeField] private Slider sliderSound;
+
         private static readonly Color ColorOn  = new Color(0.18f, 0.38f, 0.25f);
         private static readonly Color ColorOff = new Color(0.62f, 0.62f, 0.62f);
 
@@ -26,11 +30,16 @@ namespace UstAldanQuiz.UI
             btnClose?.onClick.AddListener(Close);
 
             Bind(toggleMusic,     () => SettingsManager.MusicEnabled,
-                                  v  => { SettingsManager.MusicEnabled     = v; AudioManager.Instance?.ApplyMusicSettings(); });
+                                  v  => { SettingsManager.MusicEnabled = v; AudioManager.Instance?.ApplyMusicSettings(); });
             Bind(toggleSound,     () => SettingsManager.SoundEnabled,
-                                  v  => SettingsManager.SoundEnabled     = v);
+                                  v  => { SettingsManager.SoundEnabled = v; AudioManager.Instance?.ApplySoundSettings(); });
             Bind(toggleVibration, () => SettingsManager.VibrationEnabled,
                                   v  => SettingsManager.VibrationEnabled = v);
+
+            BindSlider(sliderMusic, () => SettingsManager.MusicVolume,
+                                    v  => { SettingsManager.MusicVolume = v; AudioManager.Instance?.ApplyMusicSettings(); });
+            BindSlider(sliderSound, () => SettingsManager.SoundVolume,
+                                    v  => { SettingsManager.SoundVolume = v; AudioManager.Instance?.ApplySoundSettings(); });
         }
 
         private void OnDestroy()
@@ -58,6 +67,13 @@ namespace UstAldanQuiz.UI
 
             var lbl = toggle.GetComponentInChildren<TMP_Text>();
             if (lbl != null) lbl.text = isOn ? "Вкл" : "Выкл";
+        }
+
+        private static void BindSlider(Slider slider, Func<float> getter, Action<float> setter)
+        {
+            if (slider == null) return;
+            slider.value = getter();
+            slider.onValueChanged.AddListener(setter.Invoke);
         }
     }
 }
