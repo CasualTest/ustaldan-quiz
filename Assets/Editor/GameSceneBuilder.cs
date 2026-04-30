@@ -412,7 +412,7 @@ public static class GameSceneBuilder
         sBtnCloseImg.color = Color.clear;
         var sBtnClose = sBtnCloseGO.AddComponent<Button>();
         sBtnClose.targetGraphic = sBtnCloseImg;
-        var sCloseTMP = MakeTMP("CloseLabel", sBtnCloseGO.transform, "✕", 40, Color.white, font);
+        var sCloseTMP = MakeTMP("CloseLabel", sBtnCloseGO.transform, "X", 40, Color.white, font);
         var sCloseRT  = sCloseTMP.GetComponent<RectTransform>();
         sCloseRT.anchorMin = Vector2.zero; sCloseRT.anchorMax = Vector2.one;
         sCloseRT.offsetMin = sCloseRT.offsetMax = Vector2.zero;
@@ -667,7 +667,7 @@ public static class GameSceneBuilder
         }
 
         // ResultFeedback
-        var feedbackTMP = MakeTMP("ResultFeedback", qCard.transform, "Правильно! ✓", 36, C_CORRECT, font);
+        var feedbackTMP = MakeTMP("ResultFeedback", qCard.transform, "Правильно!", 36, C_CORRECT, font);
         SetLE(feedbackTMP.gameObject, minH: 60);
         feedbackTMP.alignment = TextAlignmentOptions.Center;
         feedbackTMP.gameObject.SetActive(false);
@@ -794,7 +794,7 @@ public static class GameSceneBuilder
         var badgeGO = MakeGO("NewBestBadge", safeArea.transform);
         SetLE(badgeGO, minH: 80, prefH: 80);
         badgeGO.AddComponent<Image>().color = C_SECONDARY;
-        var badgeTMP = MakeTMP("BadgeText", badgeGO.transform, "Новый рекорд! 🏆", 34, Color.white, font);
+        var badgeTMP = MakeTMP("BadgeText", badgeGO.transform, "Новый рекорд!", 34, Color.white, font);
         var badgeTMPRT = badgeTMP.GetComponent<RectTransform>();
         badgeTMPRT.anchorMin = Vector2.zero; badgeTMPRT.anchorMax = Vector2.one;
         badgeTMPRT.offsetMin = badgeTMPRT.offsetMax = Vector2.zero;
@@ -1021,7 +1021,7 @@ public static class GameSceneBuilder
         scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1080, 1920);
         scaler.screenMatchMode     = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight  = 1f;
+        scaler.matchWidthOrHeight  = 0f;
 
         go.AddComponent<GraphicRaycaster>();
         return go;

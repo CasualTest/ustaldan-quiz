@@ -171,7 +171,7 @@ namespace UstAldanQuiz.UI
             if (resultFeedback != null)
             {
                 resultFeedback.gameObject.SetActive(true);
-                resultFeedback.text  = isCorrect ? "Правильно! ✓" : "Неверно ✗";
+                resultFeedback.text  = isCorrect ? "Правильно!" : "Неверно";
                 resultFeedback.color = isCorrect ? colorCorrect : colorWrong;
             }
 

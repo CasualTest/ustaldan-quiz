@@ -35,6 +35,10 @@ sysinfo.txt
 *.unitypackage
 *.app
 
+# Burst compiler debug info
+*BurstDebugInformation_DoNotShip/
+*_BurstDebugInformation*
+
 # Crashlytics
 crashlytics-build.properties
 
