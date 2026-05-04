@@ -59,5 +59,20 @@ about_contact_site=Сайт
 about_contact_email=Email
 about_partner_1=МЦБС Усть-Алданского улуса
 
+# ── Предложить вопрос ───────────────────────────────────────────────────────
+btn_suggest=Предложить вопрос
+suggest_title=Предложить вопрос
+suggest_question_ru=Вопрос (русский) *
+suggest_question_sah=Вопрос (саха) *
+suggest_answer_correct=Правильный ответ *
+suggest_answer_2=Вариант 2 *
+suggest_answer_3=Вариант 3 *
+suggest_answer_4=Вариант 4 *
+suggest_fact_ru=Факт, если ответ неверный (русский)
+suggest_fact_sah=Факт, если ответ неверный (саха)
+suggest_send=Отправить
+suggest_error=Необходимо заполнить все поля
+suggest_email_subject=Предложение вопроса — викторина «100 лет Усть-Алданскому улусу»
+
 # ── Google Sheets ──────────────────────────────────────────────────────────
 test=Тест

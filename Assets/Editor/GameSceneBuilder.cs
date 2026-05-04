@@ -558,6 +558,20 @@ public static class GameSceneBuilder
         aboutBodyTMP.alignment  = TextAlignmentOptions.TopLeft;
         aboutBodyTMP.enableWordWrapping = true;
 
+        // Кнопка "Предложить вопрос" в листе "О приложении"
+        var suggestBtnRow = MakeGO("SuggestBtnRow", aboutSheet.transform);
+        SetLE(suggestBtnRow, minH: 124, prefH: 124);
+        var sbrHLG = suggestBtnRow.AddComponent<HorizontalLayoutGroup>();
+        sbrHLG.padding = new RectOffset(48, 48, 12, 32);
+        sbrHLG.childForceExpandWidth = true;
+        sbrHLG.childControlWidth = sbrHLG.childControlHeight = true;
+        var btnSuggestGO   = MakePrimaryButton("BtnSuggest", suggestBtnRow.transform, "Предложить вопрос", font);
+        AddLocKey(btnSuggestGO, "btn_suggest");
+        var btnSuggestComp = btnSuggestGO.GetComponent<Button>();
+
+        // Панель "Предложить вопрос"
+        var suggestUIComp = BuildSuggestPanel(canvasGO.transform, font);
+
         // AboutUI компонент
         var aboutMgrGO = new GameObject("AboutManager");
         var aboutUI    = aboutMgrGO.AddComponent<UstAldanQuiz.UI.AboutUI>();
@@ -569,6 +583,8 @@ public static class GameSceneBuilder
         Prop(soAbout, "sheetRect",    aboutSheetRT);
         Prop(soAbout, "sheetGroup",   aboutSheetCG);
         Prop(soAbout, "overlayGroup", aboutOverlayCG);
+        Prop(soAbout, "btnSuggest",   btnSuggestComp);
+        Prop(soAbout, "suggestUI",    suggestUIComp);
         soAbout.ApplyModifiedProperties();
 
         // AudioManager
@@ -1527,6 +1543,277 @@ public static class GameSceneBuilder
         tmp.enableWordWrapping = false;
         if (font != null) tmp.font = font;
         return (go, tmp);
+    }
+
+    // =====================================================================
+    // ПАНЕЛЬ "ПРЕДЛОЖИТЬ ВОПРОС"
+    // =====================================================================
+
+    static SuggestQuestionUI BuildSuggestPanel(Transform canvasTransform, TMP_FontAsset font)
+    {
+        // Overlay (полный экран)
+        var overlay = MakeGO("SuggestPanel", canvasTransform);
+        Stretch(overlay);
+        overlay.AddComponent<Image>().color = C_OVERLAY;
+        var overlayCG = overlay.AddComponent<CanvasGroup>();
+        overlay.SetActive(false);
+
+        // Sheet — якорное позиционирование: заполняет экран с отступами
+        var sheet   = MakeGO("SuggestSheet", overlay.transform);
+        var sheetRT = sheet.GetComponent<RectTransform>();
+        sheetRT.anchorMin = Vector2.zero;
+        sheetRT.anchorMax = Vector2.one;
+        sheetRT.offsetMin = new Vector2(40, 80);   // отступ слева/снизу
+        sheetRT.offsetMax = new Vector2(-40, -80); // отступ справа/сверху
+        sheet.AddComponent<Image>().color = C_CARD;
+        var sheetCG = sheet.AddComponent<CanvasGroup>();
+
+        // Header — прикреплён к верху sheet
+        var header   = MakeGO("SuggestHeader", sheet.transform);
+        var headerRT = header.GetComponent<RectTransform>();
+        headerRT.anchorMin = new Vector2(0, 1);
+        headerRT.anchorMax = new Vector2(1, 1);
+        headerRT.pivot     = new Vector2(0.5f, 1f);
+        headerRT.anchoredPosition = Vector2.zero;
+        headerRT.sizeDelta = new Vector2(0, 100);
+        header.AddComponent<Image>().color = C_PRIMARY;
+        var hHLG = header.AddComponent<HorizontalLayoutGroup>();
+        hHLG.childAlignment        = TextAnchor.MiddleLeft;
+        hHLG.childForceExpandHeight = true;
+        hHLG.childControlWidth = hHLG.childControlHeight = true;
+        hHLG.padding = new RectOffset(40, 112, 0, 0); // правый отступ = ширина кнопки закрытия
+
+        var titleTMP = MakeTMP("SuggestTitle", header.transform, "Предложить вопрос", 40, Color.white, font, bold: true);
+        SetLE(titleTMP.gameObject, flexW: 1f);
+        AddLocKey(titleTMP.gameObject, "suggest_title");
+
+        // Кнопка закрытия — абсолютно позиционированная поверх правого верхнего угла sheet
+        var closeBtnGO = MakeGO("BtnClose", sheet.transform);
+        var closeBtnRT = closeBtnGO.GetComponent<RectTransform>();
+        closeBtnRT.anchorMin = new Vector2(1f, 1f);
+        closeBtnRT.anchorMax = new Vector2(1f, 1f);
+        closeBtnRT.pivot     = new Vector2(1f, 1f);
+        closeBtnRT.anchoredPosition = Vector2.zero;
+        closeBtnRT.sizeDelta        = new Vector2(100, 100);
+        var closeImg   = closeBtnGO.AddComponent<Image>();
+        closeImg.color = new Color(0f, 0f, 0f, 0.30f);
+        var closeBtn   = closeBtnGO.AddComponent<Button>();
+        closeBtn.targetGraphic = closeImg;
+        var closeTMP   = MakeTMP("X", closeBtnGO.transform, "×", 48, Color.white, font, bold: true);
+        var closeRT    = closeTMP.GetComponent<RectTransform>();
+        closeRT.anchorMin = Vector2.zero; closeRT.anchorMax = Vector2.one;
+        closeRT.offsetMin = closeRT.offsetMax = Vector2.zero;
+        closeTMP.alignment = TextAlignmentOptions.Center;
+
+        // Кнопка «Отправить» — прикреплена к низу sheet
+        var sendRow   = MakeGO("SendBtnRow", sheet.transform);
+        var sendRowRT = sendRow.GetComponent<RectTransform>();
+        sendRowRT.anchorMin = new Vector2(0, 0);
+        sendRowRT.anchorMax = new Vector2(1, 0);
+        sendRowRT.pivot     = new Vector2(0.5f, 0f);
+        sendRowRT.anchoredPosition = Vector2.zero;
+        sendRowRT.sizeDelta = new Vector2(0, 88);
+        sendRow.AddComponent<Image>().color = C_CARD;
+        var srHLG = sendRow.AddComponent<HorizontalLayoutGroup>();
+        srHLG.padding = new RectOffset(48, 48, 8, 16);
+        srHLG.childForceExpandWidth = true;
+        srHLG.childControlWidth = srHLG.childControlHeight = true;
+        var btnSendGO = MakePrimaryButton("BtnSend", sendRow.transform, "Отправить", font);
+        AddLocKey(btnSendGO, "suggest_send");
+
+        // ScrollView — заполняет пространство между header и send row
+        var scrollGO   = MakeGO("ScrollView", sheet.transform);
+        var scrollRT   = scrollGO.GetComponent<RectTransform>();
+        scrollRT.anchorMin = Vector2.zero;
+        scrollRT.anchorMax = Vector2.one;
+        scrollRT.offsetMin = new Vector2(0, 88);   // над send row
+        scrollRT.offsetMax = new Vector2(0, -100); // под header
+        var scroll = scrollGO.AddComponent<ScrollRect>();
+        scroll.horizontal        = false;
+        scroll.vertical          = true;
+        scroll.scrollSensitivity = 50f;
+        scroll.movementType      = ScrollRect.MovementType.Clamped;
+
+        // Viewport
+        var viewport = MakeGO("Viewport", scrollGO.transform);
+        var vpRT     = viewport.GetComponent<RectTransform>();
+        vpRT.anchorMin = Vector2.zero;
+        vpRT.anchorMax = new Vector2(1f, 1f);
+        vpRT.offsetMin = Vector2.zero;
+        vpRT.offsetMax = new Vector2(-24, 0); // место для скроллбара
+        viewport.AddComponent<RectMask2D>();
+        scroll.viewport = vpRT;
+
+        // Content
+        var content   = MakeGO("Content", viewport.transform);
+        var contentRT = content.GetComponent<RectTransform>();
+        contentRT.anchorMin = new Vector2(0, 1);
+        contentRT.anchorMax = new Vector2(1, 1);
+        contentRT.pivot     = new Vector2(0.5f, 1f);
+        contentRT.offsetMin = contentRT.offsetMax = Vector2.zero;
+        content.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        var contentVLG = content.AddComponent<VerticalLayoutGroup>();
+        contentVLG.childAlignment        = TextAnchor.UpperCenter;
+        contentVLG.childForceExpandWidth = true;
+        contentVLG.childControlWidth = contentVLG.childControlHeight = true;
+        contentVLG.padding = new RectOffset(0, 0, 8, 16);
+        contentVLG.spacing = 4;
+        scroll.content = contentRT;
+
+        // Вертикальный скроллбар
+        var sbGO  = MakeGO("Scrollbar", scrollGO.transform);
+        var sbRT  = sbGO.GetComponent<RectTransform>();
+        sbRT.anchorMin = new Vector2(1, 0);
+        sbRT.anchorMax = new Vector2(1, 1);
+        sbRT.pivot     = new Vector2(1, 0.5f);
+        sbRT.anchoredPosition = Vector2.zero;
+        sbRT.sizeDelta = new Vector2(20, 0);
+        sbGO.AddComponent<Image>().color = new Color(0.85f, 0.85f, 0.85f);
+        var sb = sbGO.AddComponent<Scrollbar>();
+        sb.direction = Scrollbar.Direction.BottomToTop;
+
+        var sbHandleArea   = MakeGO("SlidingArea", sbGO.transform);
+        var sbHandleAreaRT = sbHandleArea.GetComponent<RectTransform>();
+        sbHandleAreaRT.anchorMin = Vector2.zero; sbHandleAreaRT.anchorMax = Vector2.one;
+        sbHandleAreaRT.offsetMin = sbHandleAreaRT.offsetMax = Vector2.zero;
+
+        var sbHandle   = MakeGO("Handle", sbHandleArea.transform);
+        var sbHandleRT = sbHandle.GetComponent<RectTransform>();
+        sbHandleRT.anchorMin = Vector2.zero; sbHandleRT.anchorMax = Vector2.one;
+        sbHandleRT.offsetMin = sbHandleRT.offsetMax = Vector2.zero;
+        var sbHandleImg = sbHandle.AddComponent<Image>();
+        sbHandleImg.color = new Color(0.5f, 0.5f, 0.5f, 0.7f);
+        sb.handleRect          = sbHandleRT;
+        sb.targetGraphic       = sbHandleImg;
+        scroll.verticalScrollbar = sb;
+        scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+
+        // Поля ввода
+        var qRuField     = MakeFieldRow("QuestionRU",  "suggest_question_ru",    content.transform, font, multiline: true);
+        var qSahField    = MakeFieldRow("QuestionSAH", "suggest_question_sah",   content.transform, font, multiline: true);
+        MakeFormSpacer(content.transform);
+        var ans1Field    = MakeFieldRow("Answer1",     "suggest_answer_correct", content.transform, font);
+        var ans2Field    = MakeFieldRow("Answer2",     "suggest_answer_2",       content.transform, font);
+        var ans3Field    = MakeFieldRow("Answer3",     "suggest_answer_3",       content.transform, font);
+        var ans4Field    = MakeFieldRow("Answer4",     "suggest_answer_4",       content.transform, font);
+        MakeFormSpacer(content.transform);
+        var factRuField  = MakeFieldRow("FactRU",      "suggest_fact_ru",        content.transform, font, multiline: true);
+        var factSahField = MakeFieldRow("FactSAH",     "suggest_fact_sah",       content.transform, font, multiline: true);
+
+        // Сообщение об ошибке валидации (скрыто по умолчанию)
+        var errGO  = MakeGO("ValidationError", content.transform);
+        SetLE(errGO, minH: 56, prefH: 56);
+        var errTMP = errGO.AddComponent<TextMeshProUGUI>();
+        errTMP.text      = "Необходимо заполнить все поля";
+        errTMP.fontSize  = 26;
+        errTMP.color     = new Color(0.85f, 0.15f, 0.15f);
+        errTMP.alignment = TextAlignmentOptions.Center;
+        errTMP.fontStyle = FontStyles.Bold;
+        if (font != null) errTMP.font = font;
+        errGO.SetActive(false);
+
+        // SuggestQuestionUI компонент
+        var mgrGO = new GameObject("SuggestManager");
+        var comp  = mgrGO.AddComponent<SuggestQuestionUI>();
+        var so    = new SerializedObject(comp);
+        Prop(so, "panel",            overlay);
+        Prop(so, "btnClose",         closeBtn);
+        Prop(so, "sheetRect",        sheetRT);
+        Prop(so, "sheetGroup",       sheetCG);
+        Prop(so, "overlayGroup",     overlayCG);
+        Prop(so, "questionRuField",  qRuField);
+        Prop(so, "questionSahField", qSahField);
+        Prop(so, "answer1Field",     ans1Field);
+        Prop(so, "answer2Field",     ans2Field);
+        Prop(so, "answer3Field",     ans3Field);
+        Prop(so, "answer4Field",     ans4Field);
+        Prop(so, "factRuField",      factRuField);
+        Prop(so, "factSahField",     factSahField);
+        Prop(so, "btnSend",          btnSendGO.GetComponent<Button>());
+        Prop(so, "scrollContent",    contentRT);
+        Prop(so, "errorText",        errTMP);
+        so.ApplyModifiedProperties();
+
+        return comp;
+    }
+
+    // Строка «метка + поле ввода» для формы предложения
+    static TMP_InputField MakeFieldRow(string rowName, string locKey, Transform parent,
+                                       TMP_FontAsset font, bool multiline = false)
+    {
+        var row = MakeGO(rowName + "Row", parent);
+        SetLE(row, minH: multiline ? 200 : 128, prefH: multiline ? 200 : 128);
+        var vlg = row.AddComponent<VerticalLayoutGroup>();
+        vlg.childAlignment        = TextAnchor.UpperLeft;
+        vlg.childForceExpandWidth = true;
+        vlg.childControlWidth = vlg.childControlHeight = true;
+        vlg.padding = new RectOffset(40, 40, 8, 8);
+        vlg.spacing = 6;
+
+        var lbl = MakeTMP("Label", row.transform, locKey, 26, C_TEXT2, font, minH: 36);
+        AddLocKey(lbl.gameObject, locKey);
+
+        return MakeInputField(rowName + "Field", row.transform, font, multiline);
+    }
+
+    // TMP_InputField с правильной иерархией (viewport / placeholder / text)
+    static TMP_InputField MakeInputField(string name, Transform parent,
+                                         TMP_FontAsset font, bool multiline = false)
+    {
+        var go  = MakeGO(name, parent);
+        SetLE(go, minH: multiline ? 144 : 76, prefH: multiline ? 144 : 76);
+        var img = go.AddComponent<Image>();
+        img.color  = new Color(0.93f, 0.93f, 0.93f);
+        img.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        img.type   = Image.Type.Sliced;
+
+        // Text Area (viewport)
+        var taGO = MakeGO("Text Area", go.transform);
+        var taRT = taGO.GetComponent<RectTransform>();
+        taRT.anchorMin = Vector2.zero; taRT.anchorMax = Vector2.one;
+        taRT.offsetMin = new Vector2(12, 6); taRT.offsetMax = new Vector2(-12, -6);
+        taGO.AddComponent<RectMask2D>();
+
+        // Placeholder
+        var phGO  = MakeGO("Placeholder", taGO.transform);
+        var phRT  = phGO.GetComponent<RectTransform>();
+        phRT.anchorMin = Vector2.zero; phRT.anchorMax = Vector2.one;
+        phRT.offsetMin = phRT.offsetMax = Vector2.zero;
+        var phTMP = phGO.AddComponent<TextMeshProUGUI>();
+        phTMP.text      = "—";
+        phTMP.fontSize  = 28;
+        phTMP.color     = new Color(0.65f, 0.65f, 0.65f);
+        phTMP.fontStyle = FontStyles.Italic;
+        if (font != null) phTMP.font = font;
+        if (multiline) phTMP.enableWordWrapping = true;
+
+        // Text
+        var txtGO  = MakeGO("Text", taGO.transform);
+        var txtRT  = txtGO.GetComponent<RectTransform>();
+        txtRT.anchorMin = Vector2.zero; txtRT.anchorMax = Vector2.one;
+        txtRT.offsetMin = txtRT.offsetMax = Vector2.zero;
+        var txtTMP = txtGO.AddComponent<TextMeshProUGUI>();
+        txtTMP.fontSize = 28;
+        txtTMP.color    = C_TEXT;
+        if (font != null) txtTMP.font = font;
+        if (multiline) txtTMP.enableWordWrapping = true;
+
+        var field = go.AddComponent<TMP_InputField>();
+        field.textViewport    = taRT;
+        field.textComponent   = txtTMP;
+        field.placeholder     = phTMP;
+        field.characterLimit  = multiline ? 500 : 200;
+        if (multiline) field.lineType = TMP_InputField.LineType.MultiLineNewline;
+
+        return field;
+    }
+
+    // Прозрачный разделитель внутри формы
+    static void MakeFormSpacer(Transform parent)
+    {
+        var sp = MakeGO("FormSpacer", parent);
+        SetLE(sp, minH: 20, prefH: 20);
+        sp.AddComponent<Image>().color = Color.clear;
     }
 
     // =====================================================================

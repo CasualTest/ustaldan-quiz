@@ -3,6 +3,7 @@ using TMPro;
 using UstAldanQuiz.Data;
 using UstAldanQuiz.Managers;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace UstAldanQuiz.UI
 {
@@ -12,17 +13,23 @@ namespace UstAldanQuiz.UI
         [SerializeField] private TMP_Text titleText;
         [SerializeField] private TMP_Text bodyText;
 
+        [Header("Предложить вопрос")]
+        [SerializeField] private Button             btnSuggest;
+        [SerializeField] private SuggestQuestionUI  suggestUI;
+
         private AboutData _data;
 
         protected override void OnWindowStart()
         {
             _data = AboutData.Load();
             LocaleManager.OnLanguageChanged += Refresh;
+            btnSuggest?.onClick.AddListener(() => suggestUI?.Open());
         }
 
         protected override void OnWindowDestroy()
         {
             LocaleManager.OnLanguageChanged -= Refresh;
+            btnSuggest?.onClick.RemoveAllListeners();
         }
 
         public override void Open()

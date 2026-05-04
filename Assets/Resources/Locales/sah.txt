@@ -59,5 +59,20 @@ about_contact_site=Сайт
 about_contact_email=Email
 about_partner_1=Уус-Алдан улууhун библиотеката
 
+# ── Предложить вопрос ───────────────────────────────────────────────────────
+btn_suggest=Ыйытыыта ыйан биэр
+suggest_title=Ыйытыыта ыйан биэр
+suggest_question_ru=Ыйытыы (нууччалыы)
+suggest_question_sah=Ыйытыы (сахалыы)
+suggest_answer_correct=Сөп эппиэт *
+suggest_answer_2=2-с вариант *
+suggest_answer_3=3-с вариант *
+suggest_answer_4=4-с вариант *
+suggest_fact_ru=Факт (нуучча тылынан)
+suggest_fact_sah=Факт (саха тылынан)
+suggest_send=Ыытыы
+suggest_error=Бары иһитиннэриилэри толоруохха наада
+suggest_email_subject=«Уус-Алдан улууһа төрүттэммитэ 100 сылыгар анаммыт биктэриинэҕэ ыйытыыта киллэрии»
+
 # ── Google Sheets ──────────────────────────────────────────────────────────
 test=Тиэст
