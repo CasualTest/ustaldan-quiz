@@ -46,10 +46,18 @@ namespace UstAldanQuiz.Managers
             _busy = true;
             _fade.blocksRaycasts = true;
 
+            // Загрузка идёт параллельно с fade-out, но сцена не активируется пока экран не чёрный
+            var op = SceneManager.LoadSceneAsync(sceneName);
+            op.allowSceneActivation = false;
+
             yield return Fade(0f, 1f);
 
-            var op = SceneManager.LoadSceneAsync(sceneName);
-            yield return op;
+            // Ждём окончания загрузки (при allowSceneActivation=false прогресс останавливается на 0.9)
+            while (op.progress < 0.9f) yield return null;
+
+            // Активируем сцену, пока экран чёрный — никакого мерцания
+            op.allowSceneActivation = true;
+            yield return null; // один кадр на инициализацию новой сцены
 
             yield return Fade(1f, 0f);
 
