@@ -493,6 +493,72 @@ public static class GameSceneBuilder
         Prop(soSet, "btnLangSah",       btnLangSah);
         soSet.ApplyModifiedProperties();
 
+        // --- Панель "О приложении" ---
+        var aboutPanel = MakeGO("AboutPanel", canvasGO.transform);
+        Stretch(aboutPanel);
+        aboutPanel.AddComponent<Image>().color = C_OVERLAY;
+        aboutPanel.SetActive(false);
+
+        var aboutSheet = MakeGO("AboutSheet", aboutPanel.transform);
+        var aboutSheetRT = aboutSheet.GetComponent<RectTransform>();
+        aboutSheetRT.anchorMin = new Vector2(0.5f, 0.5f);
+        aboutSheetRT.anchorMax = new Vector2(0.5f, 0.5f);
+        aboutSheetRT.pivot     = new Vector2(0.5f, 0.5f);
+        aboutSheetRT.sizeDelta = new Vector2(960, 0);
+        aboutSheet.AddComponent<Image>().color = C_CARD;
+        aboutSheet.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        var aboutVLG = aboutSheet.AddComponent<VerticalLayoutGroup>();
+        aboutVLG.childAlignment        = TextAnchor.UpperCenter;
+        aboutVLG.childForceExpandWidth = true;
+        aboutVLG.childControlWidth     = aboutVLG.childControlHeight = true;
+
+        // Header
+        var aboutHeader = MakeGO("AboutHeader", aboutSheet.transform);
+        SetLE(aboutHeader, minH: 100, prefH: 100);
+        aboutHeader.AddComponent<Image>().color = C_PRIMARY;
+        var aboutHLG = aboutHeader.AddComponent<HorizontalLayoutGroup>();
+        aboutHLG.childAlignment        = TextAnchor.MiddleLeft;
+        aboutHLG.childForceExpandHeight = true;
+        aboutHLG.childControlWidth      = aboutHLG.childControlHeight = true;
+        aboutHLG.padding = new RectOffset(40, 16, 0, 0);
+
+        var aboutTitleTMP = MakeTMP("AboutTitle", aboutHeader.transform, "О приложении", 40, Color.white, font, bold: true);
+        SetLE(aboutTitleTMP.gameObject, flexW: 1f);
+        AddLocKey(aboutTitleTMP.gameObject, "btn_about");
+
+        var aboutCloseBtnGO = MakeGO("BtnAboutClose", aboutHeader.transform);
+        SetLE(aboutCloseBtnGO, minW: 100, minH: 100);
+        var aboutCloseImg = aboutCloseBtnGO.AddComponent<Image>();
+        aboutCloseImg.color = Color.clear;
+        var aboutCloseBtn = aboutCloseBtnGO.AddComponent<Button>();
+        aboutCloseBtn.targetGraphic = aboutCloseImg;
+        var aboutCloseTMP = MakeTMP("CloseLabel", aboutCloseBtnGO.transform, "X", 40, Color.white, font);
+        var aboutCloseRT  = aboutCloseTMP.GetComponent<RectTransform>();
+        aboutCloseRT.anchorMin = Vector2.zero; aboutCloseRT.anchorMax = Vector2.one;
+        aboutCloseRT.offsetMin = aboutCloseRT.offsetMax = Vector2.zero;
+        aboutCloseTMP.alignment = TextAlignmentOptions.Center;
+
+        // Body текст
+        var aboutBodyGO = MakeGO("AboutBody", aboutSheet.transform);
+        var aboutBodyPad = aboutBodyGO.AddComponent<HorizontalLayoutGroup>();
+        aboutBodyPad.padding = new RectOffset(48, 48, 32, 48);
+        aboutBodyPad.childForceExpandWidth = true;
+        aboutBodyPad.childControlWidth     = aboutBodyPad.childControlHeight = true;
+        SetLE(aboutBodyGO);
+        var aboutBodyTMP = MakeTMP("AboutBodyText", aboutBodyGO.transform, "", 32, C_TEXT, font);
+        aboutBodyTMP.alignment  = TextAlignmentOptions.TopLeft;
+        aboutBodyTMP.enableWordWrapping = true;
+
+        // AboutUI компонент
+        var aboutMgrGO = new GameObject("AboutManager");
+        var aboutUI    = aboutMgrGO.AddComponent<UstAldanQuiz.UI.AboutUI>();
+        var soAbout    = new SerializedObject(aboutUI);
+        Prop(soAbout, "panel",     aboutPanel);
+        Prop(soAbout, "btnClose",  aboutCloseBtn);
+        Prop(soAbout, "titleText", aboutTitleTMP);
+        Prop(soAbout, "bodyText",  aboutBodyTMP);
+        soAbout.ApplyModifiedProperties();
+
         // AudioManager
         var audioGO  = new GameObject("AudioManager");
         var audioMgr = audioGO.AddComponent<AudioManager>();
@@ -569,6 +635,7 @@ public static class GameSceneBuilder
         Prop(soUI, "noQuestionsPopupText", popupMsg);
         Prop(soUI, "btnClosePopup",        btnCloseGO.GetComponent<Button>());
         Prop(soUI, "settingsUI",           settingsUI);
+        Prop(soUI, "aboutUI",              aboutUI);
         soUI.ApplyModifiedProperties();
 
         SaveScene("Assets/Scenes/MainMenu.unity");

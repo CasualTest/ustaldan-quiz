@@ -25,6 +25,9 @@ namespace UstAldanQuiz.UI
         [Header("Настройки")]
         [SerializeField] private SettingsUI settingsUI;
 
+        [Header("О приложении")]
+        [SerializeField] private AboutUI aboutUI;
+
         [Header("Статистика")]
         [SerializeField] private TMP_Text statsText;
 
@@ -41,6 +44,7 @@ namespace UstAldanQuiz.UI
         {
             btnPlay?.onClick.AddListener(HandlePlay);
             btnSettings?.onClick.AddListener(() => settingsUI?.Open());
+            btnAbout?.onClick.AddListener(() => aboutUI?.Open());
             btnClosePopup?.onClick.AddListener(CloseNoQuestionsPopup);
             if (noQuestionsPopup != null) noQuestionsPopup.SetActive(false);
 
@@ -58,6 +62,7 @@ namespace UstAldanQuiz.UI
         {
             btnPlay?.onClick.RemoveAllListeners();
             btnSettings?.onClick.RemoveAllListeners();
+            btnAbout?.onClick.RemoveAllListeners();
             btnClosePopup?.onClick.RemoveAllListeners();
             foreach (var btn in _spawnedButtons)
                 if (btn != null) btn.OnClicked -= HandleCategoryButtonClick;
