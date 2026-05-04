@@ -13,8 +13,8 @@ namespace UstAldanQuiz.UI
         [SerializeField] private QuestionDatabase questionDatabase;
 
         [Header("Грид категорий")]
-        [SerializeField] private Transform          categoryGrid;
-        [SerializeField] private CategoryButtonUI   categoryButtonPrefab;
+        [SerializeField] private Transform        categoryGrid;
+        [SerializeField] private CategoryButtonUI categoryButtonPrefab;
 
         [Header("Кнопки навигации")]
         [SerializeField] private Button btnPlay;
@@ -22,40 +22,33 @@ namespace UstAldanQuiz.UI
         [SerializeField] private Button btnRecords;
         [SerializeField] private Button btnAbout;
 
-        [Header("Настройки")]
-        [SerializeField] private SettingsUI settingsUI;
-
-        [Header("О приложении")]
-        [SerializeField] private AboutUI aboutUI;
-
         [Header("Статистика")]
         [SerializeField] private TMP_Text statsText;
 
-        [Header("Попап — нет вопросов")]
-        [SerializeField] private GameObject noQuestionsPopup;
-        [SerializeField] private TMP_Text   noQuestionsPopupText;
-        [SerializeField] private Button     btnClosePopup;
+        [Header("Окна")]
+        [SerializeField] private SettingsUI      settingsUI;
+        [SerializeField] private AboutUI         aboutUI;
+        [SerializeField] private NoQuestionsPopup noQuestionsPopup;
 
         private readonly List<CategoryButtonUI> _spawnedButtons = new List<CategoryButtonUI>();
-        private CategoryButtonUI  _selectedButton;
-        private QuestionCategory  _selectedCategory;
+        private CategoryButtonUI _selectedButton;
+        private QuestionCategory _selectedCategory;
 
         private void Start()
         {
             btnPlay?.onClick.AddListener(HandlePlay);
             btnSettings?.onClick.AddListener(() => settingsUI?.Open());
             btnAbout?.onClick.AddListener(() => aboutUI?.Open());
-            btnClosePopup?.onClick.AddListener(CloseNoQuestionsPopup);
-            if (noQuestionsPopup != null) noQuestionsPopup.SetActive(false);
 
             SpawnCategoryButtons();
 
-            // Восстановить последнюю выбранную категорию
             string lastId = SaveManager.LastCategory;
             CategoryButtonUI toSelect = _spawnedButtons.Count > 0 ? _spawnedButtons[0] : null;
             foreach (var btn in _spawnedButtons)
                 if (btn.Category?.categoryId == lastId) { toSelect = btn; break; }
             if (toSelect != null) HandleCategoryButtonClick(toSelect);
+
+            LocaleManager.OnLanguageChanged += RefreshStats;
         }
 
         private void OnDestroy()
@@ -63,9 +56,10 @@ namespace UstAldanQuiz.UI
             btnPlay?.onClick.RemoveAllListeners();
             btnSettings?.onClick.RemoveAllListeners();
             btnAbout?.onClick.RemoveAllListeners();
-            btnClosePopup?.onClick.RemoveAllListeners();
             foreach (var btn in _spawnedButtons)
                 if (btn != null) btn.OnClicked -= HandleCategoryButtonClick;
+
+            LocaleManager.OnLanguageChanged -= RefreshStats;
         }
 
         private void SpawnCategoryButtons()
@@ -96,45 +90,17 @@ namespace UstAldanQuiz.UI
 
         private void HandlePlay()
         {
-            if (_selectedCategory == null)
-            {
-                Debug.LogWarning("[MainMenuUI] Категория не выбрана.");
-                return;
-            }
-            if (questionDatabase == null)
-            {
-                Debug.LogWarning("[MainMenuUI] QuestionDatabase не назначена.");
-                return;
-            }
-            if (GameManager.Instance == null)
-            {
-                Debug.LogWarning("[MainMenuUI] GameManager не найден в сцене.");
-                return;
-            }
+            if (_selectedCategory == null || questionDatabase == null || GameManager.Instance == null) return;
 
             var questions = questionDatabase.GetQuestionsByCategory(_selectedCategory);
             if (questions.Count == 0)
             {
-                ShowNoQuestionsPopup(_selectedCategory.displayName);
+                noQuestionsPopup?.Show(_selectedCategory.displayName);
                 return;
             }
 
             GameManager.Instance.PrepareSession(_selectedCategory, questionDatabase);
             GameManager.Instance.LoadScene("QuestionMap");
-        }
-
-        private void ShowNoQuestionsPopup(string categoryName)
-        {
-            if (noQuestionsPopupText != null)
-                noQuestionsPopupText.text = LocaleManager.Get("no_questions_message", categoryName);
-            if (noQuestionsPopup != null)
-                noQuestionsPopup.SetActive(true);
-        }
-
-        private void CloseNoQuestionsPopup()
-        {
-            if (noQuestionsPopup != null)
-                noQuestionsPopup.SetActive(false);
         }
 
         private void RefreshStats()
@@ -144,8 +110,7 @@ namespace UstAldanQuiz.UI
             int best   = SaveManager.GetBestScore(catId);
             int played = SaveManager.TotalPlayed;
             int total  = questionDatabase != null && _selectedCategory != null
-                ? questionDatabase.GetQuestionsByCategory(_selectedCategory).Count
-                : 0;
+                ? questionDatabase.GetQuestionsByCategory(_selectedCategory).Count : 0;
             statsText.text = LocaleManager.Get("stats_format", played, best, total);
         }
     }

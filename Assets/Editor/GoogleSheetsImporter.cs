@@ -142,13 +142,15 @@ namespace UstAldanQuiz.Editor
             int iCatId= ColAny(hdr, "category_id", "category", "Category");
             int iCatN = ColAny(hdr, "category_name", "category", "Category");
             int iQ    = ColAny(hdr, "question", "question_ru", "Question_RU");
+            int iQSah = ColAny(hdr, "question_sah", "Question_SAH");
             int iA1   = ColAny(hdr, "answer1", "answer_1", "Answer_1");
             int iA2   = ColAny(hdr, "answer2", "answer_2", "Answer_2");
             int iA3   = ColAny(hdr, "answer3", "answer_3", "Answer_3");
             int iA4   = ColAny(hdr, "answer4", "answer_4", "Answer_4");
-            int iCorr = ColAny(hdr, "correct_index", "Correct_Index");
-            int iDiff = ColAny(hdr, "difficulty", "Difficulty");
-            // Question_SAH и Fact_After сейчас не используются QuestionData
+            int iCorr    = ColAny(hdr, "correct_index", "Correct_Index");
+            int iDiff    = ColAny(hdr, "difficulty", "Difficulty");
+            int iFactRu  = ColAny(hdr, "fact_after_ru", "Fact_After_RU", "fact_after", "Fact_After");
+            int iFactSah = ColAny(hdr, "fact_after_sah", "Fact_After_SAH");
 
             if (iQ < 0 || iA1 < 0)
             {
@@ -209,10 +211,13 @@ namespace UstAldanQuiz.Editor
                 }
                 else updated++;
 
-                asset.category     = cat;
-                asset.questionText = q;
-                asset.answers      = answers;
-                asset.difficulty   = diff;
+                asset.category        = cat;
+                asset.questionText    = q;
+                asset.questionTextSah = iQSah    >= 0 ? V(row, iQSah)    : "";
+                asset.answers         = answers;
+                asset.difficulty      = diff;
+                asset.factAfterRu     = iFactRu  >= 0 ? V(row, iFactRu)  : "";
+                asset.factAfterSah    = iFactSah >= 0 ? V(row, iFactSah) : "";
                 EditorUtility.SetDirty(asset);
                 touchedPaths.Add(assetPath);
 

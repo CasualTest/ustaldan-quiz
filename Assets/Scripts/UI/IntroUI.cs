@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Video;
 using UnityEngine.SceneManagement;
+using UstAldanQuiz.Managers;
 
 namespace UstAldanQuiz.UI
 {
@@ -42,7 +43,10 @@ namespace UstAldanQuiz.UI
             if (_loading) return;
             _loading = true;
             videoPlayer.Stop();
-            SceneManager.LoadScene(nextSceneName);
+            if (SceneTransition.Instance != null)
+                SceneTransition.Instance.LoadScene(nextSceneName);
+            else
+                SceneManager.LoadScene(nextSceneName);
         }
 
         void OnDestroy()

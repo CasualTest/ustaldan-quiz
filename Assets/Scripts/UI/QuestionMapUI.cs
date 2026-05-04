@@ -45,6 +45,9 @@ namespace UstAldanQuiz.UI
         [Header("Завершение")]
         [SerializeField] private Button btnFinish;
 
+        [Header("Попап факта")]
+        [SerializeField] private FactPopup factPopup;
+
         [Header("Цвета ответов")]
         [SerializeField] private Color colorDefault = Color.white;
         [SerializeField] private Color colorCorrect = new Color(0.30f, 0.69f, 0.31f);
@@ -119,13 +122,21 @@ namespace UstAldanQuiz.UI
             ShowQuestion(tile.Question);
         }
 
+        private static string GetLocalizedQuestion(QuestionData q)
+        {
+            bool useSah = LocaleManager.CurrentLanguage == LocaleManager.LangSah;
+            if (useSah && !string.IsNullOrWhiteSpace(q.questionTextSah))
+                return q.questionTextSah;
+            return q.questionText;
+        }
+
         private void ShowQuestion(QuestionData q)
         {
             // Перемешать индексы ответов
             _shuffledIndices = new[] { 0, 1, 2, 3 };
             ShuffleArray(_shuffledIndices);
 
-            if (questionText != null) questionText.text = q.questionText;
+            if (questionText != null) questionText.text = GetLocalizedQuestion(q);
 
             bool hasImage = q.questionImage != null;
             if (questionImageContainer != null) questionImageContainer.SetActive(hasImage);
@@ -192,13 +203,30 @@ namespace UstAldanQuiz.UI
             _activeTile?.SetState(isCorrect ? TileState.Correct : TileState.Wrong);
             UpdateScore();
 
-            StartCoroutine(ShowContinueAfterDelay(1.5f));
+            var    qd   = _activeTile?.Question;
+            bool   sah  = LocaleManager.CurrentLanguage == LocaleManager.LangSah;
+            string fact = sah && !string.IsNullOrWhiteSpace(qd?.factAfterSah)
+                ? qd.factAfterSah
+                : qd?.factAfterRu;
+            if (!isCorrect && !string.IsNullOrWhiteSpace(fact) && factPopup != null)
+                StartCoroutine(ShowFactAfterDelay(fact, 0.8f));
+            else
+                StartCoroutine(ShowContinueAfterDelay(1.5f));
         }
 
         private IEnumerator ShowContinueAfterDelay(float delay)
         {
             yield return new WaitForSeconds(delay);
             if (btnContinue != null) btnContinue.gameObject.SetActive(true);
+        }
+
+        private IEnumerator ShowFactAfterDelay(string fact, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            factPopup.Show(fact, onClosed: () =>
+            {
+                if (btnContinue != null) btnContinue.gameObject.SetActive(true);
+            });
         }
 
         private void CloseQuestionPanel()
@@ -221,7 +249,7 @@ namespace UstAldanQuiz.UI
         {
             var gm = GameManager.Instance;
             if (gm != null) gm.LoadScene("MainMenu");
-            else SceneManager.LoadScene("MainMenu");
+            else SceneTransition.Instance?.LoadScene("MainMenu");
         }
 
         private void GoToResults()
@@ -233,7 +261,7 @@ namespace UstAldanQuiz.UI
                 SaveManager.AddGameResult(_correctCount, _tiles.Count);
                 gm.LoadScene("Results");
             }
-            else SceneManager.LoadScene("MainMenu");
+            else SceneTransition.Instance?.LoadScene("MainMenu");
         }
 
         private void UpdateScore()

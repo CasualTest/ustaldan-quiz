@@ -62,7 +62,13 @@ namespace UstAldanQuiz.Managers
         /// <summary>
         /// Загрузить сцену по имени.
         /// </summary>
-        public void LoadScene(string sceneName) => SceneManager.LoadScene(sceneName);
+        public void LoadScene(string sceneName)
+        {
+            if (SceneTransition.Instance != null)
+                SceneTransition.Instance.LoadScene(sceneName);
+            else
+                SceneManager.LoadScene(sceneName);
+        }
 
         private static void Shuffle<T>(List<T> list)
         {

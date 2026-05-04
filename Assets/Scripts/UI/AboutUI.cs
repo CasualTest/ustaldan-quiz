@@ -1,52 +1,41 @@
-using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
 using System.Text;
+using TMPro;
 using UstAldanQuiz.Data;
 using UstAldanQuiz.Managers;
+using UnityEngine;
 
 namespace UstAldanQuiz.UI
 {
-    public class AboutUI : MonoBehaviour
+    public class AboutUI : BaseWindow
     {
-        [SerializeField] private GameObject panel;
-        [SerializeField] private Button     btnClose;
-        [SerializeField] private TMP_Text   titleText;
-        [SerializeField] private TMP_Text   bodyText;
+        [Header("Контент")]
+        [SerializeField] private TMP_Text titleText;
+        [SerializeField] private TMP_Text bodyText;
 
         private AboutData _data;
 
-        private void Start()
+        protected override void OnWindowStart()
         {
             _data = AboutData.Load();
-            if (panel != null) panel.SetActive(false);
-            btnClose?.onClick.AddListener(Close);
             LocaleManager.OnLanguageChanged += Refresh;
         }
 
-        private void OnDestroy()
+        protected override void OnWindowDestroy()
         {
-            btnClose?.onClick.RemoveAllListeners();
             LocaleManager.OnLanguageChanged -= Refresh;
         }
 
-        public void Open()
+        public override void Open()
         {
             Refresh();
-            panel?.SetActive(true);
+            base.Open();
         }
-
-        public void Close() => panel?.SetActive(false);
 
         private void Refresh()
         {
             if (_data == null) return;
-
-            if (titleText != null)
-                titleText.text = L(_data.title);
-
-            if (bodyText != null)
-                bodyText.text = BuildBody();
+            if (titleText != null) titleText.text = L(_data.title);
+            if (bodyText  != null) bodyText.text  = BuildBody();
         }
 
         private string BuildBody()

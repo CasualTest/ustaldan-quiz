@@ -6,12 +6,8 @@ using UstAldanQuiz.Managers;
 
 namespace UstAldanQuiz.UI
 {
-    public class SettingsUI : MonoBehaviour
+    public class SettingsUI : BaseWindow
     {
-        [Header("Панель")]
-        [SerializeField] private GameObject settingsPanel;
-        [SerializeField] private Button     btnClose;
-
         [Header("Переключатели")]
         [SerializeField] private Toggle toggleMusic;
         [SerializeField] private Toggle toggleSound;
@@ -31,11 +27,8 @@ namespace UstAldanQuiz.UI
         private static readonly Color ColorLangOff  = new Color(0.85f, 0.85f, 0.85f);
         private static readonly Color ColorLangText = new Color(0.10f, 0.16f, 0.10f);
 
-        private void Start()
+        protected override void OnWindowStart()
         {
-            if (settingsPanel != null) settingsPanel.SetActive(false);
-            btnClose?.onClick.AddListener(Close);
-
             Bind(toggleMusic,     () => SettingsManager.MusicEnabled,
                                   v  => { SettingsManager.MusicEnabled = v; AudioManager.Instance?.ApplyMusicSettings(); });
             Bind(toggleSound,     () => SettingsManager.SoundEnabled,
@@ -52,30 +45,32 @@ namespace UstAldanQuiz.UI
             btnLangSah?.onClick.AddListener(() => SetLanguage(LocaleManager.LangSah));
             RefreshLangButtons();
 
-            LocaleManager.OnLanguageChanged += RefreshLangButtons;
+            LocaleManager.OnLanguageChanged += OnLanguageChanged;
         }
 
-        private void OnDestroy()
+        protected override void OnWindowDestroy()
         {
-            btnClose?.onClick.RemoveAllListeners();
             btnLangRu?.onClick.RemoveAllListeners();
             btnLangSah?.onClick.RemoveAllListeners();
-            LocaleManager.OnLanguageChanged -= RefreshLangButtons;
+            LocaleManager.OnLanguageChanged -= OnLanguageChanged;
         }
 
-        public void Open()
+        public override void Open()
         {
             RefreshLangButtons();
-            settingsPanel?.SetActive(true);
+            base.Open();
         }
-
-        public void Close() => settingsPanel?.SetActive(false);
 
         // ── Язык ──────────────────────────────────────────────────────────
 
-        private void SetLanguage(string lang)
+        private void SetLanguage(string lang) => LocaleManager.CurrentLanguage = lang;
+
+        private void OnLanguageChanged()
         {
-            LocaleManager.CurrentLanguage = lang; // вызывает OnLanguageChanged → RefreshLangButtons
+            RefreshLangButtons();
+            Refresh(toggleMusic,     toggleMusic     != null && toggleMusic.isOn);
+            Refresh(toggleSound,     toggleSound     != null && toggleSound.isOn);
+            Refresh(toggleVibration, toggleVibration != null && toggleVibration.isOn);
         }
 
         private void RefreshLangButtons()

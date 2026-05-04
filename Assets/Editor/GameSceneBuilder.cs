@@ -382,6 +382,7 @@ public static class GameSceneBuilder
         var popup = MakeGO("NoQuestionsPopup", canvasGO.transform);
         Stretch(popup);
         popup.AddComponent<Image>().color = C_OVERLAY;
+        var popupOverlayCG = popup.AddComponent<CanvasGroup>();
         popup.SetActive(false);
 
         var card = MakeGO("PopupCard", popup.transform);
@@ -390,6 +391,7 @@ public static class GameSceneBuilder
         cardRT.pivot     = new Vector2(0.5f, 0.5f);
         cardRT.sizeDelta = new Vector2(900, 640);
         card.AddComponent<Image>().color = C_CARD;
+        var popupCardCG = card.AddComponent<CanvasGroup>();
 
         var cardVLG = card.AddComponent<VerticalLayoutGroup>();
         cardVLG.childAlignment        = TextAnchor.MiddleCenter;
@@ -418,6 +420,7 @@ public static class GameSceneBuilder
         var settingsPanel = MakeGO("SettingsPanel", canvasGO.transform);
         Stretch(settingsPanel);
         settingsPanel.AddComponent<Image>().color = C_OVERLAY;
+        var settingsOverlayCG = settingsPanel.AddComponent<CanvasGroup>();
         settingsPanel.SetActive(false);
 
         var sheet = MakeGO("SettingsSheet", settingsPanel.transform);
@@ -427,6 +430,7 @@ public static class GameSceneBuilder
         sheetRT.pivot     = new Vector2(0.5f, 0.5f);
         sheetRT.sizeDelta = new Vector2(960, 0);
         sheet.AddComponent<Image>().color = C_CARD;
+        var settingsSheetCG = sheet.AddComponent<CanvasGroup>();
         sheet.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         var sheetVLG = sheet.AddComponent<VerticalLayoutGroup>();
         sheetVLG.childAlignment        = TextAnchor.UpperCenter;
@@ -482,8 +486,11 @@ public static class GameSceneBuilder
         var settingsMgrGO = new GameObject("SettingsManager");
         var settingsUI    = settingsMgrGO.AddComponent<SettingsUI>();
         var soSet         = new SerializedObject(settingsUI);
-        Prop(soSet, "settingsPanel",    settingsPanel);
-        Prop(soSet, "btnClose",         sBtnClose);
+        Prop(soSet, "panel",          settingsPanel);
+        Prop(soSet, "btnClose",       sBtnClose);
+        Prop(soSet, "sheetRect",      sheetRT);
+        Prop(soSet, "sheetGroup",     settingsSheetCG);
+        Prop(soSet, "overlayGroup",   settingsOverlayCG);
         Prop(soSet, "toggleMusic",      toggleMusic);
         Prop(soSet, "toggleSound",      toggleSound);
         Prop(soSet, "toggleVibration",  toggleVibro);
@@ -497,6 +504,7 @@ public static class GameSceneBuilder
         var aboutPanel = MakeGO("AboutPanel", canvasGO.transform);
         Stretch(aboutPanel);
         aboutPanel.AddComponent<Image>().color = C_OVERLAY;
+        var aboutOverlayCG = aboutPanel.AddComponent<CanvasGroup>();
         aboutPanel.SetActive(false);
 
         var aboutSheet = MakeGO("AboutSheet", aboutPanel.transform);
@@ -506,6 +514,7 @@ public static class GameSceneBuilder
         aboutSheetRT.pivot     = new Vector2(0.5f, 0.5f);
         aboutSheetRT.sizeDelta = new Vector2(960, 0);
         aboutSheet.AddComponent<Image>().color = C_CARD;
+        var aboutSheetCG = aboutSheet.AddComponent<CanvasGroup>();
         aboutSheet.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         var aboutVLG = aboutSheet.AddComponent<VerticalLayoutGroup>();
         aboutVLG.childAlignment        = TextAnchor.UpperCenter;
@@ -553,10 +562,13 @@ public static class GameSceneBuilder
         var aboutMgrGO = new GameObject("AboutManager");
         var aboutUI    = aboutMgrGO.AddComponent<UstAldanQuiz.UI.AboutUI>();
         var soAbout    = new SerializedObject(aboutUI);
-        Prop(soAbout, "panel",     aboutPanel);
-        Prop(soAbout, "btnClose",  aboutCloseBtn);
-        Prop(soAbout, "titleText", aboutTitleTMP);
-        Prop(soAbout, "bodyText",  aboutBodyTMP);
+        Prop(soAbout, "panel",        aboutPanel);
+        Prop(soAbout, "btnClose",     aboutCloseBtn);
+        Prop(soAbout, "titleText",    aboutTitleTMP);
+        Prop(soAbout, "bodyText",     aboutBodyTMP);
+        Prop(soAbout, "sheetRect",    aboutSheetRT);
+        Prop(soAbout, "sheetGroup",   aboutSheetCG);
+        Prop(soAbout, "overlayGroup", aboutOverlayCG);
         soAbout.ApplyModifiedProperties();
 
         // AudioManager
@@ -631,11 +643,20 @@ public static class GameSceneBuilder
         Prop(soUI, "btnRecords",           btnRecordsGO.GetComponent<Button>());
         Prop(soUI, "btnAbout",             btnAboutGO.GetComponent<Button>());
         Prop(soUI, "statsText",            statsTMP);
-        Prop(soUI, "noQuestionsPopup",     popup);
-        Prop(soUI, "noQuestionsPopupText", popupMsg);
-        Prop(soUI, "btnClosePopup",        btnCloseGO.GetComponent<Button>());
-        Prop(soUI, "settingsUI",           settingsUI);
-        Prop(soUI, "aboutUI",              aboutUI);
+        Prop(soUI, "settingsUI",       settingsUI);
+        Prop(soUI, "aboutUI",          aboutUI);
+
+        var noQPopupComp = popup.AddComponent<NoQuestionsPopup>();
+        var soNQ = new SerializedObject(noQPopupComp);
+        Prop(soNQ, "panel",        popup);
+        Prop(soNQ, "btnClose",     btnCloseGO.GetComponent<Button>());
+        Prop(soNQ, "sheetRect",    cardRT);
+        Prop(soNQ, "sheetGroup",   popupCardCG);
+        Prop(soNQ, "overlayGroup", popupOverlayCG);
+        Prop(soNQ, "messageText",  popupMsg);
+        soNQ.ApplyModifiedProperties();
+
+        Prop(soUI, "noQuestionsPopup", noQPopupComp);
         soUI.ApplyModifiedProperties();
 
         SaveScene("Assets/Scenes/MainMenu.unity");
@@ -806,6 +827,46 @@ public static class GameSceneBuilder
         // --- QuestionTile Prefab ---
         var tilePrefab = CreateTilePrefab(font);
 
+        // --- FactPopup ---
+        var factOverlay = MakeGO("FactPopup", canvasGO.transform);
+        Stretch(factOverlay);
+        factOverlay.AddComponent<Image>().color = C_OVERLAY;
+        var factOverlayCG = factOverlay.AddComponent<CanvasGroup>();
+        factOverlay.SetActive(false);
+
+        var factCard = MakeGO("FactCard", factOverlay.transform);
+        var factCardRT = factCard.GetComponent<RectTransform>();
+        factCardRT.anchorMin = factCardRT.anchorMax = new Vector2(0.5f, 0.5f);
+        factCardRT.pivot     = new Vector2(0.5f, 0.5f);
+        factCardRT.sizeDelta = new Vector2(900, 0);
+        factCard.AddComponent<Image>().color = C_CARD;
+        var factCardCG  = factCard.AddComponent<CanvasGroup>();
+        factCard.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        var factCardVLG = factCard.AddComponent<VerticalLayoutGroup>();
+        factCardVLG.childAlignment        = TextAnchor.UpperCenter;
+        factCardVLG.childForceExpandWidth = true;
+        factCardVLG.childControlWidth     = factCardVLG.childControlHeight = true;
+        factCardVLG.padding = new RectOffset(48, 48, 48, 48);
+        factCardVLG.spacing = 32;
+
+        var factTextTMP = MakeTMP("FactText", factCard.transform, "", 34, C_TEXT, font);
+        factTextTMP.alignment       = TextAlignmentOptions.Center;
+        factTextTMP.enableWordWrapping = true;
+        SetLE(factTextTMP.gameObject);
+
+        var factBtnGO = MakePrimaryButton("BtnOk", factCard.transform, "Понятно", font, minH: 110);
+        AddLocKey(factBtnGO, "btn_close");
+
+        var factPopupComp = factOverlay.AddComponent<FactPopup>();
+        var soFact = new SerializedObject(factPopupComp);
+        Prop(soFact, "panel",        factOverlay);
+        Prop(soFact, "btnClose",     factBtnGO.GetComponent<Button>());
+        Prop(soFact, "sheetRect",    factCardRT);
+        Prop(soFact, "sheetGroup",   factCardCG);
+        Prop(soFact, "overlayGroup", factOverlayCG);
+        Prop(soFact, "factText",     factTextTMP);
+        soFact.ApplyModifiedProperties();
+
         // --- QuestionMapUI ---
         var mapManagerGO = MakeRootGO("QuestionMapManager");
         var mapUI        = mapManagerGO.AddComponent<QuestionMapUI>();
@@ -827,6 +888,7 @@ public static class GameSceneBuilder
         Prop(soMap, "btnFinish",              btnFinishGO.GetComponent<Button>());
         SetArr(soMap, "answerButtons", answerBtns);
         SetArr(soMap, "answerLabels",  answerLabels);
+        Prop(soMap, "factPopup", factPopupComp);
         soMap.ApplyModifiedProperties();
 
         SaveScene("Assets/Scenes/QuestionMap.unity");

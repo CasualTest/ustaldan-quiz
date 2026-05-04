@@ -16,9 +16,13 @@ namespace UstAldanQuiz.Data
         [Tooltip("Категория, к которой относится вопрос")]
         public QuestionCategory category;
 
-        [Tooltip("Текст вопроса")]
+        [Tooltip("Текст вопроса (русский)")]
         [TextArea(2, 5)]
         public string questionText;
+
+        [Tooltip("Текст вопроса (саха)")]
+        [TextArea(2, 5)]
+        public string questionTextSah;
 
         [Tooltip("Изображение к вопросу (опционально)")]
         public Sprite questionImage;
@@ -31,6 +35,15 @@ namespace UstAldanQuiz.Data
         [Range(1, 3)]
         [Tooltip("1 = лёгкий, 2 = средний, 3 = сложный")]
         public int difficulty = 1;
+
+        [Header("Факт")]
+        [Tooltip("Показывается если игрок ответил неправильно (русский)")]
+        [TextArea(2, 4)]
+        public string factAfterRu;
+
+        [Tooltip("Показывается если игрок ответил неправильно (саха)")]
+        [TextArea(2, 4)]
+        public string factAfterSah;
 
         /// <summary>
         /// Текст правильного ответа (первый в массиве).
