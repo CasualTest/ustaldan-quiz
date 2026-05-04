@@ -12,9 +12,12 @@ namespace UstAldanQuiz.Editor
     // ─────────────────────────────────────────────────────────────────────────
     // GoogleSheetsImporter
     //
-    // Импортирует данные из Google Sheets:
-    //   • Лист «Вопросы» → ScriptableObject QuestionData + QuestionDatabase
-    //   • Лист «Локализация» → Assets/Resources/Locales/ru.txt и sah.txt
+    // Импортирует данные из Google Sheets (опубликованных листов).
+    //
+    // Как получить URL:
+    //   Файл → Поделиться → Опубликовать в интернете →
+    //   выберите нужный лист → "Значения CSV" → Опубликовать →
+    //   скопируйте полученную ссылку.
     //
     // Формат листа «Вопросы» (первая строка — заголовки, регистр не важен):
     //   id | category_id | category_name | question | answer1 | answer2 |
@@ -28,15 +31,13 @@ namespace UstAldanQuiz.Editor
 
     public static class GoogleSheetsImporter
     {
-        private const string PrefId           = "GS_SpreadsheetId";
-        private const string PrefQuestionsGid = "GS_QuestionsGid";
-        private const string PrefLocaleGid    = "GS_LocaleGid";
+        private const string PrefQUrl = "GS_QuestionsUrl";
+        private const string PrefLUrl = "GS_LocaleUrl";
 
-        private static string SheetId       => EditorPrefs.GetString(PrefId,           "");
-        private static string QuestionsGid  => EditorPrefs.GetString(PrefQuestionsGid, "0");
-        private static string LocaleGid     => EditorPrefs.GetString(PrefLocaleGid,    "");
+        private static string QuestionsUrl => EditorPrefs.GetString(PrefQUrl, "");
+        private static string LocaleUrl    => EditorPrefs.GetString(PrefLUrl, "");
 
-        private const string QuestionsDir = "Assets/ScriptableObjects/Questions";
+        private const string QuestionsDir  = "Assets/ScriptableObjects/Questions";
         private const string CategoriesDir = "Assets/ScriptableObjects/Categories";
         private const string DatabaseDir   = "Assets/ScriptableObjects/Database";
         private const string LocaleDir     = "Assets/Resources/Locales";
@@ -50,13 +51,12 @@ namespace UstAldanQuiz.Editor
         public static void ImportAll()
         {
             if (!EnsureConfig()) return;
-            bool ok = true;
-            ok &= RunImportQuestions();
-            if (!string.IsNullOrEmpty(LocaleGid))
-                ok &= RunImportLocale();
+            RunImportQuestions();
+            if (!string.IsNullOrEmpty(LocaleUrl))
+                RunImportLocale();
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            if (ok) Debug.Log("[GoogleSheets] Импорт завершён успешно.");
+            Debug.Log("[GoogleSheets] Импорт завершён.");
         }
 
         [MenuItem("UstAldan Quiz/Google Sheets/↓ Вопросы", priority = 201)]
@@ -71,10 +71,10 @@ namespace UstAldanQuiz.Editor
         [MenuItem("UstAldan Quiz/Google Sheets/↓ Локализация", priority = 202)]
         public static void ImportLocaleMenu()
         {
-            if (!EnsureConfig()) return;
-            if (string.IsNullOrEmpty(LocaleGid))
+            if (string.IsNullOrEmpty(LocaleUrl))
             {
-                Debug.LogWarning("[GoogleSheets] GID листа «Локализация» не задан в настройках.");
+                Debug.LogWarning("[GoogleSheets] URL листа «Локализация» не задан. Откройте: UstAldan Quiz → Google Sheets → ⚙ Настройки");
+                GoogleSheetsSettingsWindow.Open();
                 return;
             }
             RunImportLocale();
@@ -83,46 +83,45 @@ namespace UstAldanQuiz.Editor
 
         // ── Core ──────────────────────────────────────────────────────────────
 
-        static bool RunImportQuestions()
+        static void RunImportQuestions()
         {
-            string csv = Download(CsvUrl(SheetId, QuestionsGid));
-            if (csv == null) return false;
-            ProcessQuestions(csv);
-            return true;
+            string csv = Download(QuestionsUrl);
+            if (csv != null) ProcessQuestions(csv);
         }
 
-        static bool RunImportLocale()
+        static void RunImportLocale()
         {
-            string csv = Download(CsvUrl(SheetId, LocaleGid));
-            if (csv == null) return false;
-            ProcessLocale(csv);
-            return true;
+            string csv = Download(LocaleUrl);
+            if (csv != null) ProcessLocale(csv);
         }
 
         // ── Download ──────────────────────────────────────────────────────────
 
-        static string CsvUrl(string id, string gid)
-        {
-            string g = string.IsNullOrEmpty(gid) ? "" : $"&gid={gid}";
-            return $"https://docs.google.com/spreadsheets/d/{id}/export?format=csv{g}";
-        }
-
         static string Download(string url)
         {
+            Debug.Log($"[GoogleSheets] Загружаю: {url}");
             try
             {
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
                 using var client = new WebClient { Encoding = Encoding.UTF8 };
                 string text = client.DownloadString(url);
-                // Если Google вернул HTML (редирект на логин) — сообщаем об ошибке
                 if (text.TrimStart().StartsWith("<"))
                 {
-                    Debug.LogError("[GoogleSheets] Получен HTML вместо CSV. Убедитесь, что таблица опубликована: " +
-                                   "Файл → Поделиться → Опубликовать в интернете → Значения CSV.");
+                    Debug.LogError(
+                        "[GoogleSheets] Получен HTML вместо CSV.\n" +
+                        "Убедитесь что таблица опубликована:\n" +
+                        "Файл → Поделиться → Опубликовать в интернете → выберите лист → CSV → Опубликовать.");
                     return null;
                 }
                 Debug.Log($"[GoogleSheets] Загружено {text.Length} символов.");
                 return text;
+            }
+            catch (WebException we) when (we.Response is HttpWebResponse r)
+            {
+                Debug.LogError(
+                    $"[GoogleSheets] HTTP {(int)r.StatusCode} {r.StatusDescription}\n" +
+                    $"URL: {url}");
+                return null;
             }
             catch (Exception e)
             {
@@ -138,21 +137,23 @@ namespace UstAldanQuiz.Editor
             var rows = ParseCsv(csv);
             if (rows.Count < 2) { Debug.LogWarning("[GoogleSheets] Лист вопросов пустой."); return; }
 
-            var hdr = rows[0];
-            int iId   = Col(hdr, "id");
-            int iCatId= Col(hdr, "category_id");
-            int iCatN = Col(hdr, "category_name");
-            int iQ    = Col(hdr, "question");
-            int iA1   = Col(hdr, "answer1");
-            int iA2   = Col(hdr, "answer2");
-            int iA3   = Col(hdr, "answer3");
-            int iA4   = Col(hdr, "answer4");
-            int iCorr = Col(hdr, "correct_index");
-            int iDiff = Col(hdr, "difficulty");
+            var hdr   = rows[0];
+            int iId   = ColAny(hdr, "id", "ID");
+            int iCatId= ColAny(hdr, "category_id", "category", "Category");
+            int iCatN = ColAny(hdr, "category_name", "category", "Category");
+            int iQ    = ColAny(hdr, "question", "question_ru", "Question_RU");
+            int iA1   = ColAny(hdr, "answer1", "answer_1", "Answer_1");
+            int iA2   = ColAny(hdr, "answer2", "answer_2", "Answer_2");
+            int iA3   = ColAny(hdr, "answer3", "answer_3", "Answer_3");
+            int iA4   = ColAny(hdr, "answer4", "answer_4", "Answer_4");
+            int iCorr = ColAny(hdr, "correct_index", "Correct_Index");
+            int iDiff = ColAny(hdr, "difficulty", "Difficulty");
+            // Question_SAH и Fact_After сейчас не используются QuestionData
 
             if (iQ < 0 || iA1 < 0)
             {
-                Debug.LogError("[GoogleSheets] Не найдены столбцы question / answer1. Проверьте заголовки.");
+                Debug.LogError("[GoogleSheets] Не найдены столбцы question / answer1.\n" +
+                               "Заголовки в таблице: " + string.Join(", ", hdr));
                 return;
             }
 
@@ -160,29 +161,34 @@ namespace UstAldanQuiz.Editor
             Directory.CreateDirectory(CategoriesDir);
             Directory.CreateDirectory(DatabaseDir);
 
-            var catCache  = new Dictionary<string, QuestionCategory>(StringComparer.OrdinalIgnoreCase);
-            var catAssets = new Dictionary<string, List<QuestionData>>(StringComparer.OrdinalIgnoreCase);
+            // Собираем все существующие QuestionData assets до импорта
+            var existingGuids = AssetDatabase.FindAssets("t:QuestionData", new[] { QuestionsDir });
+            var existingPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var g in existingGuids)
+                existingPaths.Add(AssetDatabase.GUIDToAssetPath(g));
+
+            var catCache   = new Dictionary<string, QuestionCategory>(StringComparer.OrdinalIgnoreCase);
+            var catAssets  = new Dictionary<string, List<QuestionData>>(StringComparer.OrdinalIgnoreCase);
+            var touchedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             int created = 0, updated = 0, skipped = 0;
 
             for (int r = 1; r < rows.Count; r++)
             {
-                var row = rows[r];
-                string qText = V(row, iQ);
-                if (string.IsNullOrWhiteSpace(qText)) { skipped++; continue; }
+                var row  = rows[r];
+                string q = V(row, iQ);
+                if (string.IsNullOrWhiteSpace(q)) { skipped++; continue; }
 
                 string rowId   = iId >= 0 ? V(row, iId) : r.ToString();
-                string catId   = iCatId >= 0 ? V(row, iCatId).ToLower() : "general";
+                string catId   = (iCatId >= 0 ? V(row, iCatId) : "general").ToLower();
                 string catName = iCatN >= 0 ? V(row, iCatN) : catId;
                 if (string.IsNullOrWhiteSpace(catId)) catId = "general";
 
-                string a1 = V(row, iA1), a2 = V(row, iA2), a3 = V(row, iA3), a4 = V(row, iA4);
-                int correctIdx = iCorr >= 0 && int.TryParse(V(row, iCorr), out int ci) ? Mathf.Clamp(ci, 0, 3) : 0;
-                int difficulty = iDiff >= 0 && int.TryParse(V(row, iDiff), out int d) ? Mathf.Clamp(d, 1, 3) : 1;
+                var answers = new[] { V(row, iA1), V(row, iA2), V(row, iA3), V(row, iA4) };
+                int corr = iCorr >= 0 && int.TryParse(V(row, iCorr), out int ci) ? Mathf.Clamp(ci, 0, 3) : 0;
+                int diff = iDiff >= 0 && int.TryParse(V(row, iDiff), out int d)  ? Mathf.Clamp(d,  1, 3) : 1;
 
-                // Перемещаем правильный ответ на индекс 0
-                var answers = new[] { a1, a2, a3, a4 };
-                if (correctIdx != 0)
-                    (answers[0], answers[correctIdx]) = (answers[correctIdx], answers[0]);
+                // Правильный ответ всегда на индексе 0
+                if (corr != 0) (answers[0], answers[corr]) = (answers[corr], answers[0]);
 
                 if (!catCache.TryGetValue(catId, out var cat))
                 {
@@ -190,10 +196,9 @@ namespace UstAldanQuiz.Editor
                     catCache[catId] = cat;
                 }
 
-                string catFolder = $"{QuestionsDir}/{Capitalize(catId)}";
-                Directory.CreateDirectory(catFolder);
-                string assetName = $"Q{rowId.Trim().PadLeft(3, '0')}";
-                string assetPath = $"{catFolder}/{assetName}.asset";
+                string folder    = $"{QuestionsDir}/{Cap(catId)}";
+                Directory.CreateDirectory(folder);
+                string assetPath = $"{folder}/Q{rowId.Trim().PadLeft(3, '0')}.asset";
 
                 var asset = AssetDatabase.LoadAssetAtPath<QuestionData>(assetPath);
                 if (asset == null)
@@ -205,24 +210,41 @@ namespace UstAldanQuiz.Editor
                 else updated++;
 
                 asset.category     = cat;
-                asset.questionText = qText;
+                asset.questionText = q;
                 asset.answers      = answers;
-                asset.difficulty   = difficulty;
+                asset.difficulty   = diff;
                 EditorUtility.SetDirty(asset);
+                touchedPaths.Add(assetPath);
 
                 if (!catAssets.ContainsKey(catId)) catAssets[catId] = new List<QuestionData>();
                 catAssets[catId].Add(asset);
             }
 
-            foreach (var kv in catAssets)
-                UpdateDatabase(kv.Key, catCache[kv.Key], kv.Value);
+            // Удаляем ассеты которых нет в таблице
+            int deleted = 0;
+            foreach (var path in existingPaths)
+            {
+                if (!touchedPaths.Contains(path))
+                {
+                    AssetDatabase.DeleteAsset(path);
+                    deleted++;
+                }
+            }
 
-            Debug.Log($"[GoogleSheets] Вопросы — создано: {created}, обновлено: {updated}, пропущено: {skipped}.");
+            // Собираем полный список всех импортированных категорий и вопросов
+            var allCats      = new List<QuestionCategory>(catCache.Values);
+            var allQuestions = new List<QuestionData>();
+            foreach (var kv in catAssets) allQuestions.AddRange(kv.Value);
+
+            // Обновляем все существующие QuestionDatabase — каждая получает полный список
+            UpdateAllDatabases(allCats, allQuestions);
+
+            Debug.Log($"[GoogleSheets] Вопросы — создано: {created}, обновлено: {updated}, удалено: {deleted}, пропущено: {skipped}.");
         }
 
         static QuestionCategory GetOrCreateCategory(string catId, string displayName)
         {
-            string path = $"{CategoriesDir}/{Capitalize(catId)}.asset";
+            string path = $"{CategoriesDir}/{Cap(catId)}.asset";
             var cat = AssetDatabase.LoadAssetAtPath<QuestionCategory>(path);
             if (cat != null) return cat;
 
@@ -235,25 +257,31 @@ namespace UstAldanQuiz.Editor
             return cat;
         }
 
-        static void UpdateDatabase(string catId, QuestionCategory cat, List<QuestionData> questions)
+        static void UpdateAllDatabases(List<QuestionCategory> allCats, List<QuestionData> allQuestions)
         {
-            string path = $"{DatabaseDir}/{Capitalize(catId)}Database.asset";
-            var db = AssetDatabase.LoadAssetAtPath<QuestionDatabase>(path);
-            if (db == null)
+            var guids = AssetDatabase.FindAssets("t:QuestionDatabase");
+
+            // Если баз нет вообще — создаём одну мастер-базу
+            if (guids.Length == 0)
             {
-                db = ScriptableObject.CreateInstance<QuestionDatabase>();
-                AssetDatabase.CreateAsset(db, path);
+                var master = ScriptableObject.CreateInstance<QuestionDatabase>();
+                string mp  = $"{DatabaseDir}/QuestionDatabase.asset";
+                AssetDatabase.CreateAsset(master, mp);
+                guids = new[] { AssetDatabase.AssetPathToGUID(mp) };
+                Debug.Log("[GoogleSheets] Создана мастер-база QuestionDatabase.asset");
             }
 
-            // Добавляем категорию в список если её ещё нет
-            if (cat != null && !db.categories.Contains(cat))
-                db.categories.Add(cat);
+            // Каждую найденную базу наполняем полным списком категорий и вопросов
+            foreach (var guid in guids)
+            {
+                var db = AssetDatabase.LoadAssetAtPath<QuestionDatabase>(AssetDatabase.GUIDToAssetPath(guid));
+                if (db == null) continue;
+                db.categories   = new List<QuestionCategory>(allCats);
+                db.allQuestions = new List<QuestionData>(allQuestions);
+                EditorUtility.SetDirty(db);
+            }
 
-            // Сливаем вопросы без дублей
-            foreach (var q in questions)
-                if (!db.allQuestions.Contains(q)) db.allQuestions.Add(q);
-
-            EditorUtility.SetDirty(db);
+            Debug.Log($"[GoogleSheets] Обновлено баз данных: {guids.Length} — категорий: {allCats.Count}, вопросов: {allQuestions.Count}.");
         }
 
         // ── Locale ────────────────────────────────────────────────────────────
@@ -263,12 +291,12 @@ namespace UstAldanQuiz.Editor
             var rows = ParseCsv(csv);
             if (rows.Count < 2) { Debug.LogWarning("[GoogleSheets] Лист локализации пустой."); return; }
 
-            var hdr = rows[0];
+            var hdr  = rows[0];
             int iKey = Col(hdr, "key");
             int iRu  = Col(hdr, "ru");
             int iSah = Col(hdr, "sah");
 
-            if (iKey < 0) { Debug.LogError("[GoogleSheets] Столбец key не найден в листе Локализация."); return; }
+            if (iKey < 0) { Debug.LogError("[GoogleSheets] Столбец key не найден."); return; }
 
             var ru  = new Dictionary<string, string>();
             var sah = new Dictionary<string, string>();
@@ -276,18 +304,17 @@ namespace UstAldanQuiz.Editor
             for (int r = 1; r < rows.Count; r++)
             {
                 var row = rows[r];
-                string key = V(row, iKey).Trim();
+                string key = V(row, iKey);
                 if (string.IsNullOrEmpty(key) || key.StartsWith("#")) continue;
-                if (iRu  >= 0) { string v = V(row, iRu);  if (!string.IsNullOrEmpty(v)) ru[key]  = v; }
-                if (iSah >= 0) { string v = V(row, iSah); if (!string.IsNullOrEmpty(v)) sah[key] = v; }
+                if (iRu  >= 0) { string v = V(row, iRu);  if (v.Length > 0) ru[key]  = v; }
+                if (iSah >= 0) { string v = V(row, iSah); if (v.Length > 0) sah[key] = v; }
             }
 
             Directory.CreateDirectory(LocaleDir);
-
             if (ru.Count  > 0) MergeLocale(Path.Combine(LocaleDir, "ru.txt"),  ru);
             if (sah.Count > 0) MergeLocale(Path.Combine(LocaleDir, "sah.txt"), sah);
 
-            Debug.Log($"[GoogleSheets] Локализация — ru: {ru.Count} ключей, sah: {sah.Count} ключей.");
+            Debug.Log($"[GoogleSheets] Локализация — ru: {ru.Count}, sah: {sah.Count} ключей.");
         }
 
         static void MergeLocale(string filePath, Dictionary<string, string> updates)
@@ -297,31 +324,22 @@ namespace UstAldanQuiz.Editor
                 : new List<string>();
             var touched = new HashSet<string>();
 
-            // Обновляем существующие ключи на месте
             for (int i = 0; i < lines.Count; i++)
             {
                 string line = lines[i].Trim();
                 if (line.StartsWith("#") || !line.Contains("=")) continue;
-                int eq = line.IndexOf('=');
+                int eq     = line.IndexOf('=');
                 string key = line.Substring(0, eq).Trim();
-                if (updates.TryGetValue(key, out string val))
-                {
-                    lines[i] = $"{key}={val}";
-                    touched.Add(key);
-                }
+                if (updates.TryGetValue(key, out string val)) { lines[i] = $"{key}={val}"; touched.Add(key); }
             }
 
-            // Дописываем новые ключи в конец
             var newKeys = new List<string>();
-            foreach (var kv in updates)
-                if (!touched.Contains(kv.Key)) newKeys.Add(kv.Key);
-
+            foreach (var kv in updates) if (!touched.Contains(kv.Key)) newKeys.Add(kv.Key);
             if (newKeys.Count > 0)
             {
                 lines.Add("");
                 lines.Add("# ── Google Sheets ──────────────────────────────────────────────────────────");
-                foreach (var k in newKeys)
-                    lines.Add($"{k}={updates[k]}");
+                foreach (var k in newKeys) lines.Add($"{k}={updates[k]}");
             }
 
             File.WriteAllLines(filePath, lines, Encoding.UTF8);
@@ -351,18 +369,12 @@ namespace UstAldanQuiz.Editor
                     }
                     else cell.Append(c);
                 }
-                else
+                else switch (c)
                 {
-                    switch (c)
-                    {
-                        case '"':  inQ = true; break;
-                        case ',':  row.Add(cell.ToString()); cell.Clear(); break;
-                        case '\n':
-                            row.Add(cell.ToString()); cell.Clear();
-                            result.Add(row); row = new List<string>();
-                            break;
-                        default: cell.Append(c); break;
-                    }
+                    case '"':  inQ = true; break;
+                    case ',':  row.Add(cell.ToString()); cell.Clear(); break;
+                    case '\n': row.Add(cell.ToString()); cell.Clear(); result.Add(row); row = new List<string>(); break;
+                    default:   cell.Append(c); break;
                 }
             }
             if (cell.Length > 0 || row.Count > 0) { row.Add(cell.ToString()); result.Add(row); }
@@ -371,24 +383,15 @@ namespace UstAldanQuiz.Editor
 
         // ── Helpers ───────────────────────────────────────────────────────────
 
-        static int Col(List<string> hdr, string name)
-        {
-            for (int i = 0; i < hdr.Count; i++)
-                if (string.Equals(hdr[i].Trim(), name, StringComparison.OrdinalIgnoreCase)) return i;
-            return -1;
-        }
-
-        static string V(List<string> row, int idx) =>
-            idx >= 0 && idx < row.Count ? row[idx].Trim() : "";
-
-        static string Capitalize(string s) =>
-            string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s.Substring(1).ToLower();
+        static int    Col(List<string> h, string n) { for (int i = 0; i < h.Count; i++) if (string.Equals(h[i].Trim(), n, StringComparison.OrdinalIgnoreCase)) return i; return -1; }
+        static int    ColAny(List<string> h, params string[] names) { foreach (var n in names) { int i = Col(h, n); if (i >= 0) return i; } return -1; }
+        static string V(List<string> row, int idx)  => idx >= 0 && idx < row.Count ? row[idx].Trim() : "";
+        static string Cap(string s)                 => string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s.Substring(1).ToLower();
 
         static bool EnsureConfig()
         {
-            if (!string.IsNullOrEmpty(SheetId)) return true;
-            Debug.LogError("[GoogleSheets] ID таблицы не задан. " +
-                           "Откройте: UstAldan Quiz → Google Sheets → ⚙ Настройки");
+            if (!string.IsNullOrEmpty(QuestionsUrl)) return true;
+            Debug.LogError("[GoogleSheets] URL не задан. Откройте: UstAldan Quiz → Google Sheets → ⚙ Настройки");
             GoogleSheetsSettingsWindow.Open();
             return false;
         }
@@ -400,15 +403,14 @@ namespace UstAldanQuiz.Editor
 
     public class GoogleSheetsSettingsWindow : EditorWindow
     {
-        string _id, _qGid, _lGid;
+        string _qUrl, _lUrl;
 
         public static void Open()
         {
             var w = GetWindow<GoogleSheetsSettingsWindow>("Google Sheets — Настройки");
-            w.minSize = new Vector2(540, 320);
-            w._id   = EditorPrefs.GetString("GS_SpreadsheetId",  "");
-            w._qGid = EditorPrefs.GetString("GS_QuestionsGid",   "0");
-            w._lGid = EditorPrefs.GetString("GS_LocaleGid",      "");
+            w.minSize = new Vector2(600, 340);
+            w._qUrl = EditorPrefs.GetString("GS_QuestionsUrl", "");
+            w._lUrl = EditorPrefs.GetString("GS_LocaleUrl",    "");
         }
 
         void OnGUI()
@@ -418,30 +420,27 @@ namespace UstAldanQuiz.Editor
             EditorGUILayout.Space(4);
 
             EditorGUILayout.HelpBox(
-                "1. Откройте таблицу в браузере.\n" +
-                "2. Файл → Поделиться → Опубликовать в интернете → Значения CSV → Опубликовать.\n" +
-                "3. Скопируйте ID из адресной строки:\n" +
-                "   https://docs.google.com/spreadsheets/d/ [ВОТ ID] /edit",
+                "Как получить URL для каждого листа:\n" +
+                "1. Откройте таблицу → перейдите на нужный лист (вкладку)\n" +
+                "2. Файл → Поделиться → Опубликовать в интернете\n" +
+                "3. В первом выпадающем выберите название листа\n" +
+                "4. Во втором выберите «Значения, разделённые запятыми (CSV)»\n" +
+                "5. Нажмите «Опубликовать» → скопируйте ссылку",
                 MessageType.Info);
 
-            EditorGUILayout.Space(6);
-            _id   = EditorGUILayout.TextField("ID таблицы",                   _id);
-            _qGid = EditorGUILayout.TextField("GID листа «Вопросы»",          _qGid);
-            _lGid = EditorGUILayout.TextField("GID листа «Локализация»",      _lGid);
+            EditorGUILayout.Space(8);
+            EditorGUILayout.LabelField("URL листа «Вопросы» (обязательно):", EditorStyles.boldLabel);
+            _qUrl = EditorGUILayout.TextField(_qUrl);
 
-            EditorGUILayout.Space(4);
-            EditorGUILayout.HelpBox(
-                "GID листа виден в URL при переходе на вкладку:\n" +
-                "...spreadsheets/d/ID/edit#gid=[ВОТ GID]\n" +
-                "Первый лист обычно имеет gid=0.",
-                MessageType.None);
+            EditorGUILayout.Space(6);
+            EditorGUILayout.LabelField("URL листа «Локализация» (необязательно):", EditorStyles.boldLabel);
+            _lUrl = EditorGUILayout.TextField(_lUrl);
 
             EditorGUILayout.Space(10);
             if (GUILayout.Button("Сохранить", GUILayout.Height(32)))
             {
-                EditorPrefs.SetString("GS_SpreadsheetId", _id.Trim());
-                EditorPrefs.SetString("GS_QuestionsGid",  _qGid.Trim());
-                EditorPrefs.SetString("GS_LocaleGid",     _lGid.Trim());
+                EditorPrefs.SetString("GS_QuestionsUrl", _qUrl.Trim());
+                EditorPrefs.SetString("GS_LocaleUrl",    _lUrl.Trim());
                 Debug.Log("[GoogleSheets] Настройки сохранены.");
                 Close();
             }

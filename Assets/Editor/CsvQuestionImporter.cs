@@ -28,7 +28,6 @@ public static class CsvQuestionImporter
             { "Geography", new CategoryMeta("geography", "География", "Geography") },
         };
 
-    [MenuItem("UstAldan Quiz/Import Questions from CSV")]
     public static void ImportQuestions()
     {
         string fullPath = Path.GetFullPath(CsvPath);

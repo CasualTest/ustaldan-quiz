@@ -13,25 +13,10 @@ MonoBehaviour:
   m_Name: CultureDatabase
   m_EditorClassIdentifier: 
   categories:
-  - {fileID: 11400000, guid: 6cb06c8a26a77c44384176150f88cef8, type: 2}
-  - {fileID: 11400000, guid: ede89710f77f6df4f807db79dba16c5c, type: 2}
   - {fileID: 11400000, guid: 3391d653de9479543b2fde820277d97f, type: 2}
-  - {fileID: 11400000, guid: ea9fd6109725dce4387c1e07a032516f, type: 2}
+  - {fileID: 11400000, guid: ede89710f77f6df4f807db79dba16c5c, type: 2}
+  - {fileID: 11400000, guid: 6cb06c8a26a77c44384176150f88cef8, type: 2}
   allQuestions:
-  - {fileID: 11400000, guid: 26798417baf86dd4ba432bb7f29e03c6, type: 2}
-  - {fileID: 11400000, guid: 7f5367e7a65d78f45853c3dd00574620, type: 2}
-  - {fileID: 11400000, guid: b025a5481b4e5bc43a5c51a451f43efc, type: 2}
-  - {fileID: 11400000, guid: e371b58e6cd01dc4aa0e2fff8afd3c76, type: 2}
-  - {fileID: 11400000, guid: 9c6ce63aa312cc04ba168c188a16313d, type: 2}
-  - {fileID: 11400000, guid: b110d2f5076c90a4b8d2efca10a24c67, type: 2}
-  - {fileID: 11400000, guid: 37fe8d25ae769aa458663ab59f3ec8e8, type: 2}
-  - {fileID: 11400000, guid: 295f56d12e00fc0459e903c18c3f3247, type: 2}
-  - {fileID: 11400000, guid: adea5b0f940767540b067ee64b30de8f, type: 2}
-  - {fileID: 11400000, guid: bfe65e71751bd634e8c1b7b00163790e, type: 2}
-  - {fileID: 11400000, guid: b34182bcb471f2645a4bca79a1a59eaa, type: 2}
-  - {fileID: 11400000, guid: 3b6630d8700cf07439321676980ab519, type: 2}
-  - {fileID: 11400000, guid: 3cd634cca83ffbd4485352574bea1205, type: 2}
-  - {fileID: 11400000, guid: 76a7627a92c150945a45238e77e20914, type: 2}
-  - {fileID: 11400000, guid: 997a7d794830f7b41b5c686d91707aff, type: 2}
-  - {fileID: 11400000, guid: 8cea8c1ffccccbd499b3a4fd3a376b3a, type: 2}
-  - {fileID: 11400000, guid: dc10752e621c8fb44b6d01adab40896e, type: 2}
+  - {fileID: 11400000, guid: 797707afd02bbf94eab2184423e36353, type: 2}
+  - {fileID: 11400000, guid: f8077026b25bbf0429a4382a18092f47, type: 2}
+  - {fileID: 11400000, guid: 0411c555e189264448d939b0fa70d178, type: 2}

@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6fc2304c59180a740bc3ec9d2eb9dda7, type: 3}
-  m_Name: Q03
+  m_Name: Q003
   m_EditorClassIdentifier: 
   category: {fileID: 11400000, guid: 6cb06c8a26a77c44384176150f88cef8, type: 2}
   questionText: "\u041A\u0442\u043E \u0438\u0437 \u0433\u0435\u0440\u043E\u0435\u0432
