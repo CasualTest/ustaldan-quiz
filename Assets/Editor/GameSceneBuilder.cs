@@ -185,105 +185,38 @@ public static class GameSceneBuilder
 
     static void DoCreateQuestions()
     {
-        const string dir = "Assets/ScriptableObjects/Questions/History";
-        Directory.CreateDirectory(dir);
-
-        var historyCategory = FindCategory("history");
-        if (historyCategory == null)
-        {
-            Debug.LogWarning("[GameSceneBuilder] Категория 'history' не найдена. " +
-                             "Убедись что History.asset существует и имеет categoryId = history.");
-        }
-
-        var questions = new (string q, string[] a)[]
-        {
-            ("В каком году был образован Усть-Алданский улус?",
-             new[]{"1925","1930","1920","1935"}),
-            ("Как называется река, на берегах которой расположен Усть-Алданский улус?",
-             new[]{"Алдан","Лена","Вилюй","Амга"}),
-            ("Административный центр Усть-Алданского улуса?",
-             new[]{"Борогонцы","Якутск","Намцы","Покровск"}),
-            ("В каком регионе России находится Усть-Алданский улус?",
-             new[]{"Республика Саха (Якутия)","Иркутская область","Магаданская область","Хабаровский край"}),
-            ("Как называется якутский героический эпос?",
-             new[]{"Олонхо","Манас","Калевала","Джангар"}),
-            ("В каком году Олонхо было включено в список UNESCO?",
-             new[]{"2005","2010","2000","2015"}),
-            ("Как называется традиционный якутский праздник встречи лета?",
-             new[]{"Ысыах","Сабантуй","Навруз","Масленица"}),
-            ("Что означает слово «Саха» в названии республики?",
-             new[]{"Название народа якутов","Название реки","Слово «земля»","Слово «север»"}),
-            ("Какое традиционное жилище у якутов?",
-             new[]{"Балаган (юрта)","Чум","Иглу","Яранга"}),
-            ("Как называется традиционный якутский напиток из кобыльего молока?",
-             new[]{"Кумыс","Чай","Квас","Айран"}),
-            ("Какое дерево является символом Якутии?",
-             new[]{"Лиственница","Берёза","Кедр","Сосна"}),
-            ("Как называется традиционный якутский нож?",
-             new[]{"Бытык","Тесак","Засапожник","Кинжал"}),
-            ("Чем занимаются жители Усть-Алданского улуса?",
-             new[]{"Скотоводством","Добычей нефти","Добычей золота","Добычей угля"}),
-            ("Как называется якутская порода лошадей?",
-             new[]{"Якутская порода","Монгольская","Степная","Тундровая"}),
-            ("Что означает «Усть-» в названии улуса?",
-             new[]{"Устье реки","Северный","Большой","Старый"}),
-        };
-
-        int created = 0;
-        for (int i = 0; i < questions.Length; i++)
-        {
-            string path = $"{dir}/Q{i + 1:D2}.asset";
-            if (File.Exists(path)) continue;
-
-            var asset = ScriptableObject.CreateInstance<QuestionData>();
-            asset.category     = historyCategory;
-            asset.questionText = questions[i].q;
-            asset.answers      = questions[i].a;
-            asset.difficulty   = i < 5 ? 1 : i < 10 ? 2 : 3;
-            AssetDatabase.CreateAsset(asset, path);
-            created++;
-        }
-
-        AssetDatabase.SaveAssets();
+        // Вопросы загружаются из Google Sheets — эта функция только
+        // обновляет ссылки в QuestionDatabase на уже существующие ассеты.
         AssetDatabase.Refresh();
 
-        // Добавить вопросы в базу данных (если есть)
-        AddQuestionsToDatabase(dir, historyCategory);
-
-        Debug.Log($"[GameSceneBuilder] Создано вопросов: {created} (из 15).");
-    }
-
-    static void AddQuestionsToDatabase(string questionDir, QuestionCategory category)
-    {
         var dbGuids = AssetDatabase.FindAssets("t:QuestionDatabase");
-        if (dbGuids.Length == 0) return;
+        if (dbGuids.Length == 0) { Debug.LogWarning("[GameSceneBuilder] QuestionDatabase не найдена."); return; }
 
         var db = AssetDatabase.LoadAssetAtPath<QuestionDatabase>(
-            AssetDatabase.GUIDToAssetPath(dbGuids[0]));
+                     AssetDatabase.GUIDToAssetPath(dbGuids[0]));
         if (db == null) return;
 
-        var so = new SerializedObject(db);
+        var so       = new SerializedObject(db);
         var listProp = so.FindProperty("allQuestions");
 
-        var questionGuids = AssetDatabase.FindAssets("t:QuestionData", new[] { questionDir });
-        foreach (var guid in questionGuids)
+        var qGuids = AssetDatabase.FindAssets("t:QuestionData");
+        int added  = 0;
+        foreach (var guid in qGuids)
         {
             var q = AssetDatabase.LoadAssetAtPath<QuestionData>(AssetDatabase.GUIDToAssetPath(guid));
             if (q == null) continue;
-
             bool alreadyIn = false;
             for (int i = 0; i < listProp.arraySize; i++)
-            {
-                if (listProp.GetArrayElementAtIndex(i).objectReferenceValue == q)
-                { alreadyIn = true; break; }
-            }
+                if (listProp.GetArrayElementAtIndex(i).objectReferenceValue == q) { alreadyIn = true; break; }
             if (alreadyIn) continue;
-
             listProp.arraySize++;
             listProp.GetArrayElementAtIndex(listProp.arraySize - 1).objectReferenceValue = q;
+            added++;
         }
+
         so.ApplyModifiedProperties();
         AssetDatabase.SaveAssets();
+        Debug.Log($"[GameSceneBuilder] QuestionDatabase обновлена: добавлено {added} вопросов из {qGuids.Length} найденных.");
     }
 
     // =====================================================================
