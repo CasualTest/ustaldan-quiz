@@ -56,7 +56,10 @@ namespace UstAldanQuiz.Managers
         public void PrepareNewSession()
         {
             if (_database != null && SelectedCategory != null)
+            {
+                SaveManager.ClearQuestionProgress(SelectedCategory.categoryId);
                 PrepareSession(SelectedCategory, _database);
+            }
         }
 
         /// <summary>

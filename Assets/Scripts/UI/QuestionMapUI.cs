@@ -55,9 +55,12 @@ namespace UstAldanQuiz.UI
 
         private readonly List<QuestionTileUI> _tiles = new List<QuestionTileUI>();
         private QuestionTileUI _activeTile;
-        private int _answeredCount;
-        private int _correctCount;
+        private int _answeredCount; // отвечено в этой сессии
+        private int _correctCount;  // правильно в этой сессии
+        private int _lockedCount;   // заблокировано из предыдущих сессий
         private int[] _shuffledIndices;
+
+        private int NewQuestionsTotal => _tiles.Count - _lockedCount;
 
         private static readonly string[] Prefixes = { "A", "B", "C", "D" };
 
@@ -83,6 +86,9 @@ namespace UstAldanQuiz.UI
 
             SpawnTiles(gm.SessionQuestions);
             UpdateScore();
+
+            if (NewQuestionsTotal == 0)
+                StartCoroutine(FinishAfterDelay(0.5f));
         }
 
         private void OnDestroy()
@@ -101,6 +107,9 @@ namespace UstAldanQuiz.UI
         {
             foreach (Transform child in mapContent) Destroy(child.gameObject);
             _tiles.Clear();
+            _lockedCount = 0;
+
+            string catId = GameManager.Instance?.SelectedCategory?.categoryId ?? "";
 
             for (int i = 0; i < questions.Count; i++)
             {
@@ -108,6 +117,13 @@ namespace UstAldanQuiz.UI
                 tile.Setup(questions[i], i + 1);
                 tile.OnTileClicked += HandleTileClick;
                 _tiles.Add(tile);
+
+                bool? prev = SaveManager.GetQuestionResult(catId, questions[i].name);
+                if (prev.HasValue)
+                {
+                    tile.SetState(prev.Value ? TileState.Correct : TileState.Wrong);
+                    _lockedCount++;
+                }
             }
         }
 
@@ -201,6 +217,11 @@ namespace UstAldanQuiz.UI
 
             _answeredCount++;
             _activeTile?.SetState(isCorrect ? TileState.Correct : TileState.Wrong);
+
+            string catId = GameManager.Instance?.SelectedCategory?.categoryId ?? "";
+            if (_activeTile != null)
+                SaveManager.MarkQuestionAnswered(catId, _activeTile.Question.name, isCorrect);
+
             UpdateScore();
 
             var    qd   = _activeTile?.Question;
@@ -234,7 +255,7 @@ namespace UstAldanQuiz.UI
             if (questionPanel != null) questionPanel.SetActive(false);
             _activeTile = null;
 
-            if (_answeredCount >= _tiles.Count)
+            if (_answeredCount >= NewQuestionsTotal)
                 StartCoroutine(FinishAfterDelay(0.8f));
         }
 

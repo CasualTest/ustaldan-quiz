@@ -292,311 +292,358 @@ public static class GameSceneBuilder
 
     static void DoBuildMainMenu()
     {
-        var scene = OpenOrCreateScene("Assets/Scenes/MainMenu.unity");
-
-        var font = FindFont();
+        var scene    = OpenOrCreateScene("Assets/Scenes/MainMenu.unity");
+        var font     = FindFont();
         var canvasGO = SetupCanvas(scene.name);
         SetupCamera();
         SetupEventSystem();
 
-        // Фон (вне SafeArea)
+        // ── Фон ──────────────────────────────────────────────────────────────
         var bg = MakeGO("Background", canvasGO.transform);
         Stretch(bg);
         bg.AddComponent<Image>().color = C_BG;
 
-        // SafeArea
+        // ── SafeArea (VLG: ContentArea + BottomNavBar) ────────────────────
         var safeArea = MakeGO("SafeArea", canvasGO.transform);
         Stretch(safeArea);
         safeArea.AddComponent<SafeArea>();
+        var saVLG = safeArea.AddComponent<VerticalLayoutGroup>();
+        saVLG.childAlignment         = TextAnchor.UpperCenter;
+        saVLG.childForceExpandWidth  = true;
+        saVLG.childForceExpandHeight = false;
+        saVLG.childControlWidth = saVLG.childControlHeight = true;
+        saVLG.padding = new RectOffset(0, 0, 0, 80); // нижний отступ = высота navBar
+        saVLG.spacing = 0;
 
-        var vlg = safeArea.AddComponent<VerticalLayoutGroup>();
-        vlg.childAlignment         = TextAnchor.UpperCenter;
-        vlg.childForceExpandWidth  = true;
-        vlg.childForceExpandHeight = false;
-        vlg.childControlWidth      = true;
-        vlg.childControlHeight     = true;
-        vlg.padding = new RectOffset(40, 40, 50, 40);
-        vlg.spacing = 28;
+        // ── ContentArea (содержит все 4 страницы, показывается только одна)
+        var contentArea = MakeGO("ContentArea", safeArea.transform);
+        SetLE(contentArea, flexH: 1f, minH: 300);
+        contentArea.AddComponent<RectMask2D>(); // клипинг для анимации слайда
 
-        // TopOrnament
-        var ornament = MakeGO("TopOrnament", safeArea.transform);
-        SetLE(ornament, minH: 80, prefH: 80);
-        ornament.AddComponent<Image>().color = C_PRIMARY;
+        // ── Страница 0: Главная ───────────────────────────────────────────
+        var catBtnPrefab = CreateCategoryButtonPrefab(font);
+
+        var homePage = MakeGO("HomePage", contentArea.transform);
+        Stretch(homePage);
+        homePage.AddComponent<Image>().color = C_BG;
+        var homeVLG = homePage.AddComponent<VerticalLayoutGroup>();
+        homeVLG.childAlignment         = TextAnchor.UpperCenter;
+        homeVLG.childForceExpandWidth  = true;
+        homeVLG.childForceExpandHeight = false;
+        homeVLG.childControlWidth = homeVLG.childControlHeight = true;
+        homeVLG.padding = new RectOffset(40, 40, 40, 24);
+        homeVLG.spacing = 16;
 
         // LogoBlock
-        var logo = MakeGO("LogoBlock", safeArea.transform);
-        SetLE(logo, minH: 220, prefH: 300, flexH: 0.5f);
+        var logo = MakeGO("LogoBlock", homePage.transform);
+        SetLE(logo, minH: 180, prefH: 200);
         var logoVLG = logo.AddComponent<VerticalLayoutGroup>();
         logoVLG.childAlignment = TextAnchor.MiddleCenter;
         logoVLG.childForceExpandWidth = true;
         logoVLG.childControlWidth = logoVLG.childControlHeight = true;
-        logoVLG.spacing = 8;
+        logoVLG.spacing = 4;
+        AddLocKey(MakeTMP("BadgeText", logo.transform, "Усть-Алданский улус", 24, C_TEXT2,    font, minH: 36).gameObject, "app_badge");
+        AddLocKey(MakeTMP("TitleMain", logo.transform, "Викторина",           64, C_TEXT,     font, minH: 80, bold: true).gameObject, "app_title");
+        AddLocKey(MakeTMP("TitleYear", logo.transform, "100 лет",             48, C_SECONDARY, font, minH: 60, bold: true).gameObject, "app_year");
 
-        AddLocKey(MakeTMP("BadgeText", logo.transform, "Усть-Алданский улус", 28, C_TEXT2,    font, minH: 40).gameObject,   "app_badge");
-        AddLocKey(MakeTMP("TitleMain", logo.transform, "Викторина",          72, C_TEXT,     font, minH: 100, bold: true).gameObject, "app_title");
-        AddLocKey(MakeTMP("TitleYear", logo.transform, "100 лет",            64, C_SECONDARY, font, minH: 80,  bold: true).gameObject, "app_year");
-        AddLocKey(MakeTMP("SubTitle",  logo.transform, "1925 — 2025",        28, C_TEXT2,    font, minH: 40).gameObject,   "app_subtitle");
+        // Кнопка «Играть» — по центру, между логотипом и сеткой категорий
+        var btnPlayGO = MakePrimaryButton("BtnPlay", homePage.transform, "Начать игру", font, minH: 104);
+        AddLocKey(btnPlayGO, "btn_play");
 
-        // CategoryGrid — кнопки создаются динамически в MainMenuUI.Start()
-        var gridGO = MakeGO("CategoryGrid", safeArea.transform);
-        SetLE(gridGO, minH: 400, prefH: 420);
+        // CategoryGrid
+        var gridGO = MakeGO("CategoryGrid", homePage.transform);
+        SetLE(gridGO, minH: 160, prefH: 260, flexH: 1f);
         var grid = gridGO.AddComponent<GridLayoutGroup>();
-        grid.cellSize        = new Vector2(460, 180);
-        grid.spacing         = new Vector2(20, 16);
+        grid.cellSize        = new Vector2(440, 150);
+        grid.spacing         = new Vector2(16, 12);
         grid.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
         grid.constraintCount = 2;
         grid.childAlignment  = TextAnchor.UpperCenter;
 
-        // CategoryButton префаб
-        var catBtnPrefab = CreateCategoryButtonPrefab(font);
-
-        // ButtonsBlock
-        var btnsBlock = MakeGO("ButtonsBlock", safeArea.transform);
-        SetLE(btnsBlock, minH: 280, prefH: 360, flexH: 1f);
-        var btnsVLG = btnsBlock.AddComponent<VerticalLayoutGroup>();
-        btnsVLG.childAlignment = TextAnchor.MiddleCenter;
-        btnsVLG.childForceExpandWidth = true;
-        btnsVLG.childControlWidth = btnsVLG.childControlHeight = true;
-        btnsVLG.spacing = 20;
-
-        var btnPlayGO     = MakePrimaryButton("BtnPlay",       btnsBlock.transform, "Начать игру",  font);
-        var btnSettingsGO = MakeSecondaryButton("BtnSettings", btnsBlock.transform, "Настройки",    font);
-        var btnRecordsGO  = MakeSecondaryButton("BtnRecords",  btnsBlock.transform, "Рекорды",      font);
-        var btnAboutGO    = MakeSecondaryButton("BtnAbout",    btnsBlock.transform, "О приложении", font);
-        AddLocKey(btnPlayGO,     "btn_play");
-        AddLocKey(btnSettingsGO, "btn_settings");
-        AddLocKey(btnRecordsGO,  "btn_records");
-        AddLocKey(btnAboutGO,    "btn_about");
-
         // StatsBar
-        var statsGO  = MakeGO("StatsBar", safeArea.transform);
-        SetLE(statsGO, minH: 60, prefH: 70);
-        var statsTMP = MakeTMP("StatsText", statsGO.transform, "Сыграно игр: 0    Лучший результат: 0/15",
-                               26, C_TEXT2, font);
-        var statsRT = statsTMP.GetComponent<RectTransform>();
+        var statsGO  = MakeGO("StatsBar", homePage.transform);
+        SetLE(statsGO, minH: 44, prefH: 44);
+        var statsTMP = MakeTMP("StatsText", statsGO.transform, "", 22, C_TEXT2, font);
+        var statsRT  = statsTMP.GetComponent<RectTransform>();
         statsRT.anchorMin = Vector2.zero; statsRT.anchorMax = Vector2.one;
         statsRT.offsetMin = statsRT.offsetMax = Vector2.zero;
         statsTMP.alignment = TextAlignmentOptions.Center;
 
-        // --- Попап «нет вопросов» (поверх всего на Canvas) ---
+        // ── Страница 1: Рекорды ───────────────────────────────────────────
+        var recordsPage = MakeGO("RecordsPage", contentArea.transform);
+        Stretch(recordsPage);
+        recordsPage.AddComponent<Image>().color = C_BG;
+        var recVLG = recordsPage.AddComponent<VerticalLayoutGroup>();
+        recVLG.childAlignment = TextAnchor.UpperCenter;
+        recVLG.childForceExpandWidth = true;
+        recVLG.childForceExpandHeight = false;
+        recVLG.childControlWidth = recVLG.childControlHeight = true;
+
+        var recHeader = MakeGO("RecordsHeader", recordsPage.transform);
+        SetLE(recHeader, minH: 100, prefH: 100);
+        recHeader.AddComponent<Image>().color = C_PRIMARY;
+        var recTitleTMP = MakeTMP("RecordsTitle", recHeader.transform, "Рекорды", 40, Color.white, font, bold: true);
+        var recTitleRT  = recTitleTMP.GetComponent<RectTransform>();
+        recTitleRT.anchorMin = Vector2.zero; recTitleRT.anchorMax = Vector2.one;
+        recTitleRT.offsetMin = new Vector2(40, 0); recTitleRT.offsetMax = Vector2.zero;
+        recTitleTMP.alignment = TextAlignmentOptions.MidlineLeft;
+        AddLocKey(recTitleTMP.gameObject, "btn_records");
+
+        var recScrollGO = MakeGO("RecordsScroll", recordsPage.transform);
+        SetLE(recScrollGO, flexH: 1f);
+        var recScroll = recScrollGO.AddComponent<ScrollRect>();
+        recScroll.horizontal = false; recScroll.vertical = true;
+        var recViewport = MakeGO("Viewport", recScrollGO.transform);
+        Stretch(recViewport);
+        recViewport.AddComponent<RectMask2D>();
+        recScroll.viewport = recViewport.GetComponent<RectTransform>();
+        var recContent = MakeGO("RecordsContent", recViewport.transform);
+        var recContentRT = recContent.GetComponent<RectTransform>();
+        recContentRT.anchorMin = new Vector2(0, 1); recContentRT.anchorMax = new Vector2(1, 1);
+        recContentRT.pivot     = new Vector2(0.5f, 1);
+        recContentRT.offsetMin = recContentRT.offsetMax = Vector2.zero;
+        recContent.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        var recContentVLG = recContent.AddComponent<VerticalLayoutGroup>();
+        recContentVLG.childAlignment = TextAnchor.UpperCenter;
+        recContentVLG.childForceExpandWidth = true;
+        recContentVLG.childControlWidth = recContentVLG.childControlHeight = true;
+        recContentVLG.spacing = 1;
+        recScroll.content = recContentRT;
+        recordsPage.SetActive(false);
+
+        // ── Страница 2: Настройки ─────────────────────────────────────────
+        var settingsPage = MakeGO("SettingsPage", contentArea.transform);
+        Stretch(settingsPage);
+        settingsPage.AddComponent<Image>().color = C_BG;
+        var setVLG = settingsPage.AddComponent<VerticalLayoutGroup>();
+        setVLG.childAlignment = TextAnchor.UpperCenter;
+        setVLG.childForceExpandWidth = true;
+        setVLG.childForceExpandHeight = false;
+        setVLG.childControlWidth = setVLG.childControlHeight = true;
+
+        var setHeader = MakeGO("SettingsHeader", settingsPage.transform);
+        SetLE(setHeader, minH: 100, prefH: 100);
+        setHeader.AddComponent<Image>().color = C_PRIMARY;
+        var setTitleTMP = MakeTMP("SettingsTitle", setHeader.transform, "Настройки", 40, Color.white, font, bold: true);
+        var setTitleRT  = setTitleTMP.GetComponent<RectTransform>();
+        setTitleRT.anchorMin = Vector2.zero; setTitleRT.anchorMax = Vector2.one;
+        setTitleRT.offsetMin = new Vector2(40, 0); setTitleRT.offsetMax = Vector2.zero;
+        setTitleTMP.alignment = TextAlignmentOptions.MidlineLeft;
+        AddLocKey(setTitleTMP.gameObject, "settings_title");
+
+        var setRowsGO = MakeGO("SettingsRows", settingsPage.transform);
+        SetLE(setRowsGO, flexH: 1f);
+        var setRowsVLG = setRowsGO.AddComponent<VerticalLayoutGroup>();
+        setRowsVLG.childAlignment = TextAnchor.UpperCenter;
+        setRowsVLG.childForceExpandWidth = true;
+        setRowsVLG.childControlWidth = setRowsVLG.childControlHeight = true;
+        setRowsVLG.padding = new RectOffset(0, 0, 16, 32);
+
+        var toggleMusic = MakeSettingRow("Музыка",      setRowsGO.transform, font, "settings_music");
+        var sliderMusic = MakeVolumeSliderRow("MusicVol", setRowsGO.transform, font);
+        MakeRowSeparator(setRowsGO.transform);
+        var toggleSound = MakeSettingRow("Звуки",       setRowsGO.transform, font, "settings_sound");
+        var sliderSound = MakeVolumeSliderRow("SoundVol", setRowsGO.transform, font);
+        MakeRowSeparator(setRowsGO.transform);
+        var toggleVibro = MakeSettingRow("Виброотклик", setRowsGO.transform, font, "settings_vibration");
+        MakeRowSeparator(setRowsGO.transform);
+        var (btnLangRu, btnLangSah) = MakeLangRow(setRowsGO.transform, font);
+
+        var settingsPageUI = settingsPage.AddComponent<SettingsPageUI>();
+        var soSetPage      = new SerializedObject(settingsPageUI);
+        Prop(soSetPage, "toggleMusic",     toggleMusic);
+        Prop(soSetPage, "toggleSound",     toggleSound);
+        Prop(soSetPage, "toggleVibration", toggleVibro);
+        Prop(soSetPage, "sliderMusic",     sliderMusic);
+        Prop(soSetPage, "sliderSound",     sliderSound);
+        Prop(soSetPage, "btnLangRu",       btnLangRu);
+        Prop(soSetPage, "btnLangSah",      btnLangSah);
+        soSetPage.ApplyModifiedProperties();
+        settingsPage.SetActive(false);
+
+        // ── Страница 3: О приложении ──────────────────────────────────────
+        var aboutPage = MakeGO("AboutPage", contentArea.transform);
+        Stretch(aboutPage);
+        aboutPage.AddComponent<Image>().color = C_BG;
+        var aboutPageVLG = aboutPage.AddComponent<VerticalLayoutGroup>();
+        aboutPageVLG.childAlignment = TextAnchor.UpperCenter;
+        aboutPageVLG.childForceExpandWidth = true;
+        aboutPageVLG.childForceExpandHeight = false;
+        aboutPageVLG.childControlWidth = aboutPageVLG.childControlHeight = true;
+
+        var aboutHeader = MakeGO("AboutHeader", aboutPage.transform);
+        SetLE(aboutHeader, minH: 100, prefH: 100);
+        aboutHeader.AddComponent<Image>().color = C_PRIMARY;
+        var aboutTitleTMP = MakeTMP("AboutTitle", aboutHeader.transform, "О приложении", 40, Color.white, font, bold: true);
+        var aboutTitleRT  = aboutTitleTMP.GetComponent<RectTransform>();
+        aboutTitleRT.anchorMin = Vector2.zero; aboutTitleRT.anchorMax = Vector2.one;
+        aboutTitleRT.offsetMin = new Vector2(40, 0); aboutTitleRT.offsetMax = Vector2.zero;
+        aboutTitleTMP.alignment = TextAlignmentOptions.MidlineLeft;
+        AddLocKey(aboutTitleTMP.gameObject, "btn_about");
+
+        var aboutScrollGO = MakeGO("AboutScroll", aboutPage.transform);
+        SetLE(aboutScrollGO, flexH: 1f);
+        var aboutScroll = aboutScrollGO.AddComponent<ScrollRect>();
+        aboutScroll.horizontal = false; aboutScroll.vertical = true;
+        var aboutViewport = MakeGO("Viewport", aboutScrollGO.transform);
+        Stretch(aboutViewport);
+        aboutViewport.AddComponent<RectMask2D>();
+        aboutScroll.viewport = aboutViewport.GetComponent<RectTransform>();
+        var aboutContent = MakeGO("AboutContent", aboutViewport.transform);
+        var aboutContentRT = aboutContent.GetComponent<RectTransform>();
+        aboutContentRT.anchorMin = new Vector2(0, 1); aboutContentRT.anchorMax = new Vector2(1, 1);
+        aboutContentRT.pivot     = new Vector2(0.5f, 1);
+        aboutContentRT.offsetMin = aboutContentRT.offsetMax = Vector2.zero;
+        aboutContent.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        var aboutContentVLG = aboutContent.AddComponent<VerticalLayoutGroup>();
+        aboutContentVLG.childAlignment = TextAnchor.UpperLeft;
+        aboutContentVLG.childForceExpandWidth = true;
+        aboutContentVLG.childControlWidth = aboutContentVLG.childControlHeight = true;
+        aboutContentVLG.padding = new RectOffset(48, 48, 32, 48);
+        aboutContentVLG.spacing = 24;
+        aboutScroll.content = aboutContentRT;
+
+        var aboutBodyTMP = MakeTMP("AboutBodyText", aboutContent.transform, "", 32, C_TEXT, font);
+        aboutBodyTMP.alignment         = TextAlignmentOptions.TopLeft;
+        aboutBodyTMP.enableWordWrapping = true;
+
+        var aboutSuggestBtnGO = MakePrimaryButton("BtnSuggest", aboutContent.transform, "Предложить вопрос", font, minH: 104);
+        AddLocKey(aboutSuggestBtnGO, "btn_suggest");
+
+        var suggestUIComp = BuildSuggestPanel(canvasGO.transform, font);
+
+        var aboutPageUI = aboutPage.AddComponent<AboutPageUI>();
+        var soAboutPage = new SerializedObject(aboutPageUI);
+        Prop(soAboutPage, "bodyText",  aboutBodyTMP);
+        Prop(soAboutPage, "btnSuggest", aboutSuggestBtnGO.GetComponent<Button>());
+        Prop(soAboutPage, "suggestUI",  suggestUIComp);
+        soAboutPage.ApplyModifiedProperties();
+        aboutPage.SetActive(false);
+
+        // ── Страница 4: Профиль ───────────────────────────────────────────
+        var profilePage = MakeGO("ProfilePage", contentArea.transform);
+        Stretch(profilePage);
+        profilePage.AddComponent<Image>().color = C_BG;
+        var profVLG = profilePage.AddComponent<VerticalLayoutGroup>();
+        profVLG.childAlignment = TextAnchor.UpperCenter;
+        profVLG.childForceExpandWidth = true;
+        profVLG.childForceExpandHeight = false;
+        profVLG.childControlWidth = profVLG.childControlHeight = true;
+
+        var profHeader = MakeGO("ProfileHeader", profilePage.transform);
+        SetLE(profHeader, minH: 100, prefH: 100);
+        profHeader.AddComponent<Image>().color = C_PRIMARY;
+        var profTitleTMP = MakeTMP("ProfileTitle", profHeader.transform, "Профиль", 40, Color.white, font, bold: true);
+        var profTitleRT  = profTitleTMP.GetComponent<RectTransform>();
+        profTitleRT.anchorMin = Vector2.zero; profTitleRT.anchorMax = Vector2.one;
+        profTitleRT.offsetMin = new Vector2(40, 0); profTitleRT.offsetMax = Vector2.zero;
+        profTitleTMP.alignment = TextAlignmentOptions.MidlineLeft;
+        AddLocKey(profTitleTMP.gameObject, "btn_profile");
+
+        var profScrollGO = MakeGO("ProfileScroll", profilePage.transform);
+        SetLE(profScrollGO, flexH: 1f);
+        var profScroll = profScrollGO.AddComponent<ScrollRect>();
+        profScroll.horizontal = false; profScroll.vertical = true;
+        var profViewport = MakeGO("Viewport", profScrollGO.transform);
+        Stretch(profViewport);
+        profViewport.AddComponent<RectMask2D>();
+        profScroll.viewport = profViewport.GetComponent<RectTransform>();
+        var profContent = MakeGO("ProfileContent", profViewport.transform);
+        var profContentRT = profContent.GetComponent<RectTransform>();
+        profContentRT.anchorMin = new Vector2(0, 1); profContentRT.anchorMax = new Vector2(1, 1);
+        profContentRT.pivot     = new Vector2(0.5f, 1);
+        profContentRT.offsetMin = profContentRT.offsetMax = Vector2.zero;
+        profContent.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        var profContentVLG = profContent.AddComponent<VerticalLayoutGroup>();
+        profContentVLG.childAlignment = TextAnchor.UpperLeft;
+        profContentVLG.childForceExpandWidth = true;
+        profContentVLG.childControlWidth = profContentVLG.childControlHeight = true;
+        profContentVLG.padding = new RectOffset(48, 48, 32, 48);
+        profContentVLG.spacing = 24;
+        profScroll.content = profContentRT;
+
+        var profBodyTMP = MakeTMP("ProfileBodyText", profContent.transform, "", 32, C_TEXT, font);
+        profBodyTMP.alignment         = TextAlignmentOptions.TopLeft;
+        profBodyTMP.enableWordWrapping = true;
+
+        var profPageUI = profilePage.AddComponent<ProfilePageUI>();
+        var soProfPage = new SerializedObject(profPageUI);
+        Prop(soProfPage, "bodyText", profBodyTMP);
+        // db не объявлен здесь — wiring завершается ниже после объявления db
+        soProfPage.ApplyModifiedProperties();
+        profilePage.SetActive(false);
+
+        // ── BottomNavBar — прямой дочерний объект Canvas, полная ширина ───
+        var navBar   = MakeGO("BottomNavBar", canvasGO.transform);
+        var navBarRT = navBar.GetComponent<RectTransform>();
+        navBarRT.anchorMin        = new Vector2(0, 0);
+        navBarRT.anchorMax        = new Vector2(1, 0);
+        navBarRT.pivot            = new Vector2(0.5f, 0);
+        navBarRT.anchoredPosition = Vector2.zero;
+        navBarRT.sizeDelta        = new Vector2(0, 80);
+        navBar.AddComponent<Image>().color = C_CARD;
+
+        // Тонкая линия-разделитель сверху (ignoreLayout чтобы HLG её не тронул)
+        var navLine   = MakeGO("TopLine", navBar.transform);
+        var navLineRT = navLine.GetComponent<RectTransform>();
+        navLineRT.anchorMin = new Vector2(0, 1); navLineRT.anchorMax = new Vector2(1, 1);
+        navLineRT.pivot     = new Vector2(0.5f, 1); navLineRT.anchoredPosition = Vector2.zero;
+        navLineRT.sizeDelta = new Vector2(0, 1);
+        navLine.AddComponent<Image>().color = new Color(0.80f, 0.80f, 0.80f);
+        navLine.AddComponent<LayoutElement>().ignoreLayout = true;
+
+        var navHLG = navBar.AddComponent<HorizontalLayoutGroup>();
+        navHLG.childAlignment         = TextAnchor.MiddleCenter;
+        navHLG.childForceExpandWidth  = true;
+        navHLG.childForceExpandHeight = true;
+        navHLG.childControlWidth = navHLG.childControlHeight = true;
+
+        var (tabHomeBtn,  iconHome,     labelHome)     = MakeNavTab("TabHome",     "btn_play",     navBar.transform, font);
+        var (tabRecsBtn,  iconRecords,  labelRecords)  = MakeNavTab("TabRecords",  "btn_records",  navBar.transform, font);
+        var (tabSetBtn,   iconSettings, labelSettings) = MakeNavTab("TabSettings", "btn_settings", navBar.transform, font);
+        var (tabAboutBtn, iconAbout,    labelAbout)    = MakeNavTab("TabAbout",    "btn_about",    navBar.transform, font);
+        var (tabProfBtn,  iconProfile,  labelProfile)  = MakeNavTab("TabProfile",  "btn_profile",  navBar.transform, font);
+
+        // ── Попап «нет вопросов» ─────────────────────────────────────────
         var popup = MakeGO("NoQuestionsPopup", canvasGO.transform);
         Stretch(popup);
         popup.AddComponent<Image>().color = C_OVERLAY;
         var popupOverlayCG = popup.AddComponent<CanvasGroup>();
         popup.SetActive(false);
 
-        var card = MakeGO("PopupCard", popup.transform);
-        var cardRT = card.GetComponent<RectTransform>();
+        var card    = MakeGO("PopupCard", popup.transform);
+        var cardRT  = card.GetComponent<RectTransform>();
         cardRT.anchorMin = cardRT.anchorMax = new Vector2(0.5f, 0.5f);
         cardRT.pivot     = new Vector2(0.5f, 0.5f);
         cardRT.sizeDelta = new Vector2(900, 640);
         card.AddComponent<Image>().color = C_CARD;
         var popupCardCG = card.AddComponent<CanvasGroup>();
-
         var cardVLG = card.AddComponent<VerticalLayoutGroup>();
-        cardVLG.childAlignment        = TextAnchor.MiddleCenter;
+        cardVLG.childAlignment = TextAnchor.MiddleCenter;
         cardVLG.childForceExpandWidth = true;
-        cardVLG.childControlWidth     = cardVLG.childControlHeight = true;
+        cardVLG.childControlWidth = cardVLG.childControlHeight = true;
         cardVLG.padding = new RectOffset(60, 60, 60, 60);
         cardVLG.spacing = 32;
 
         var popupIcon = MakeTMP("PopupIcon", card.transform, "!", 96, C_SECONDARY, font, minH: 110, bold: true);
         popupIcon.alignment = TextAlignmentOptions.Center;
         AddLocKey(popupIcon.gameObject, "no_questions_icon");
-
         var popupTitle = MakeTMP("PopupTitle", card.transform, "Нет вопросов", 44, C_TEXT, font, minH: 60, bold: true);
         popupTitle.alignment = TextAlignmentOptions.Center;
         AddLocKey(popupTitle.gameObject, "no_questions_title");
-
-        var popupMsg = MakeTMP("PopupMessage", card.transform,
-                               "В этой категории пока нет вопросов", 34, C_TEXT2, font, minH: 80);
-        popupMsg.alignment         = TextAlignmentOptions.Center;
+        var popupMsg = MakeTMP("PopupMessage", card.transform, "", 34, C_TEXT2, font, minH: 80);
+        popupMsg.alignment = TextAlignmentOptions.Center;
         popupMsg.enableWordWrapping = true;
-
         var btnCloseGO = MakePrimaryButton("BtnClosePopup", card.transform, "Понятно", font, minH: 110);
         AddLocKey(btnCloseGO, "btn_close");
 
-        // --- Панель настроек ---
-        var settingsPanel = MakeGO("SettingsPanel", canvasGO.transform);
-        Stretch(settingsPanel);
-        settingsPanel.AddComponent<Image>().color = C_OVERLAY;
-        var settingsOverlayCG = settingsPanel.AddComponent<CanvasGroup>();
-        settingsPanel.SetActive(false);
-
-        var sheet = MakeGO("SettingsSheet", settingsPanel.transform);
-        var sheetRT = sheet.GetComponent<RectTransform>();
-        sheetRT.anchorMin = new Vector2(0.5f, 0.5f);
-        sheetRT.anchorMax = new Vector2(0.5f, 0.5f);
-        sheetRT.pivot     = new Vector2(0.5f, 0.5f);
-        sheetRT.sizeDelta = new Vector2(960, 0);
-        sheet.AddComponent<Image>().color = C_CARD;
-        var settingsSheetCG = sheet.AddComponent<CanvasGroup>();
-        sheet.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        var sheetVLG = sheet.AddComponent<VerticalLayoutGroup>();
-        sheetVLG.childAlignment        = TextAnchor.UpperCenter;
-        sheetVLG.childForceExpandWidth = true;
-        sheetVLG.childControlWidth     = sheetVLG.childControlHeight = true;
-
-        // Header панели
-        var sHeader = MakeGO("SettingsHeader", sheet.transform);
-        SetLE(sHeader, minH: 100, prefH: 100);
-        sHeader.AddComponent<Image>().color = C_PRIMARY;
-        var sHLG = sHeader.AddComponent<HorizontalLayoutGroup>();
-        sHLG.childAlignment        = TextAnchor.MiddleLeft;
-        sHLG.childForceExpandHeight = true;
-        sHLG.childControlWidth      = sHLG.childControlHeight = true;
-        sHLG.padding  = new RectOffset(40, 16, 0, 0);
-        sHLG.spacing  = 0;
-
-        var sTitleTMP = MakeTMP("SettingsTitle", sHeader.transform, "Настройки", 40, Color.white, font, bold: true);
-        SetLE(sTitleTMP.gameObject, flexW: 1f);
-        AddLocKey(sTitleTMP.gameObject, "settings_title");
-
-        var sBtnCloseGO = MakeGO("BtnSettingsClose", sHeader.transform);
-        SetLE(sBtnCloseGO, minW: 100, minH: 100);
-        var sBtnCloseImg = sBtnCloseGO.AddComponent<Image>();
-        sBtnCloseImg.color = Color.clear;
-        var sBtnClose = sBtnCloseGO.AddComponent<Button>();
-        sBtnClose.targetGraphic = sBtnCloseImg;
-        var sCloseTMP = MakeTMP("CloseLabel", sBtnCloseGO.transform, "X", 40, Color.white, font);
-        var sCloseRT  = sCloseTMP.GetComponent<RectTransform>();
-        sCloseRT.anchorMin = Vector2.zero; sCloseRT.anchorMax = Vector2.one;
-        sCloseRT.offsetMin = sCloseRT.offsetMax = Vector2.zero;
-        sCloseTMP.alignment = TextAlignmentOptions.Center;
-
-        // Строки настроек
-        var rowsGO = MakeGO("SettingsRows", sheet.transform);
-        var rowsVLG = rowsGO.AddComponent<VerticalLayoutGroup>();
-        rowsVLG.childAlignment        = TextAnchor.UpperCenter;
-        rowsVLG.childForceExpandWidth = true;
-        rowsVLG.childControlWidth     = rowsVLG.childControlHeight = true;
-        rowsVLG.padding = new RectOffset(0, 0, 16, 32);
-
-        var toggleMusic  = MakeSettingRow("Музыка",      rowsGO.transform, font, "settings_music");
-        var sliderMusic  = MakeVolumeSliderRow("MusicVol", rowsGO.transform, font);
-        MakeRowSeparator(rowsGO.transform);
-        var toggleSound  = MakeSettingRow("Звуки",       rowsGO.transform, font, "settings_sound");
-        var sliderSound  = MakeVolumeSliderRow("SoundVol", rowsGO.transform, font);
-        MakeRowSeparator(rowsGO.transform);
-        var toggleVibro  = MakeSettingRow("Виброотклик", rowsGO.transform, font, "settings_vibration");
-        MakeRowSeparator(rowsGO.transform);
-        var (btnLangRu, btnLangSah) = MakeLangRow(rowsGO.transform, font);
-
-        // SettingsUI компонент
-        var settingsMgrGO = new GameObject("SettingsManager");
-        var settingsUI    = settingsMgrGO.AddComponent<SettingsUI>();
-        var soSet         = new SerializedObject(settingsUI);
-        Prop(soSet, "panel",          settingsPanel);
-        Prop(soSet, "btnClose",       sBtnClose);
-        Prop(soSet, "sheetRect",      sheetRT);
-        Prop(soSet, "sheetGroup",     settingsSheetCG);
-        Prop(soSet, "overlayGroup",   settingsOverlayCG);
-        Prop(soSet, "toggleMusic",      toggleMusic);
-        Prop(soSet, "toggleSound",      toggleSound);
-        Prop(soSet, "toggleVibration",  toggleVibro);
-        Prop(soSet, "sliderMusic",      sliderMusic);
-        Prop(soSet, "sliderSound",      sliderSound);
-        Prop(soSet, "btnLangRu",        btnLangRu);
-        Prop(soSet, "btnLangSah",       btnLangSah);
-        soSet.ApplyModifiedProperties();
-
-        // --- Панель "О приложении" ---
-        var aboutPanel = MakeGO("AboutPanel", canvasGO.transform);
-        Stretch(aboutPanel);
-        aboutPanel.AddComponent<Image>().color = C_OVERLAY;
-        var aboutOverlayCG = aboutPanel.AddComponent<CanvasGroup>();
-        aboutPanel.SetActive(false);
-
-        var aboutSheet = MakeGO("AboutSheet", aboutPanel.transform);
-        var aboutSheetRT = aboutSheet.GetComponent<RectTransform>();
-        aboutSheetRT.anchorMin = new Vector2(0.5f, 0.5f);
-        aboutSheetRT.anchorMax = new Vector2(0.5f, 0.5f);
-        aboutSheetRT.pivot     = new Vector2(0.5f, 0.5f);
-        aboutSheetRT.sizeDelta = new Vector2(960, 0);
-        aboutSheet.AddComponent<Image>().color = C_CARD;
-        var aboutSheetCG = aboutSheet.AddComponent<CanvasGroup>();
-        aboutSheet.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        var aboutVLG = aboutSheet.AddComponent<VerticalLayoutGroup>();
-        aboutVLG.childAlignment        = TextAnchor.UpperCenter;
-        aboutVLG.childForceExpandWidth = true;
-        aboutVLG.childControlWidth     = aboutVLG.childControlHeight = true;
-
-        // Header
-        var aboutHeader = MakeGO("AboutHeader", aboutSheet.transform);
-        SetLE(aboutHeader, minH: 100, prefH: 100);
-        aboutHeader.AddComponent<Image>().color = C_PRIMARY;
-        var aboutHLG = aboutHeader.AddComponent<HorizontalLayoutGroup>();
-        aboutHLG.childAlignment        = TextAnchor.MiddleLeft;
-        aboutHLG.childForceExpandHeight = true;
-        aboutHLG.childControlWidth      = aboutHLG.childControlHeight = true;
-        aboutHLG.padding = new RectOffset(40, 16, 0, 0);
-
-        var aboutTitleTMP = MakeTMP("AboutTitle", aboutHeader.transform, "О приложении", 40, Color.white, font, bold: true);
-        SetLE(aboutTitleTMP.gameObject, flexW: 1f);
-        AddLocKey(aboutTitleTMP.gameObject, "btn_about");
-
-        var aboutCloseBtnGO = MakeGO("BtnAboutClose", aboutHeader.transform);
-        SetLE(aboutCloseBtnGO, minW: 100, minH: 100);
-        var aboutCloseImg = aboutCloseBtnGO.AddComponent<Image>();
-        aboutCloseImg.color = Color.clear;
-        var aboutCloseBtn = aboutCloseBtnGO.AddComponent<Button>();
-        aboutCloseBtn.targetGraphic = aboutCloseImg;
-        var aboutCloseTMP = MakeTMP("CloseLabel", aboutCloseBtnGO.transform, "X", 40, Color.white, font);
-        var aboutCloseRT  = aboutCloseTMP.GetComponent<RectTransform>();
-        aboutCloseRT.anchorMin = Vector2.zero; aboutCloseRT.anchorMax = Vector2.one;
-        aboutCloseRT.offsetMin = aboutCloseRT.offsetMax = Vector2.zero;
-        aboutCloseTMP.alignment = TextAlignmentOptions.Center;
-
-        // Body текст
-        var aboutBodyGO = MakeGO("AboutBody", aboutSheet.transform);
-        var aboutBodyPad = aboutBodyGO.AddComponent<HorizontalLayoutGroup>();
-        aboutBodyPad.padding = new RectOffset(48, 48, 32, 48);
-        aboutBodyPad.childForceExpandWidth = true;
-        aboutBodyPad.childControlWidth     = aboutBodyPad.childControlHeight = true;
-        SetLE(aboutBodyGO);
-        var aboutBodyTMP = MakeTMP("AboutBodyText", aboutBodyGO.transform, "", 32, C_TEXT, font);
-        aboutBodyTMP.alignment  = TextAlignmentOptions.TopLeft;
-        aboutBodyTMP.enableWordWrapping = true;
-
-        // Кнопка "Предложить вопрос" в листе "О приложении"
-        var suggestBtnRow = MakeGO("SuggestBtnRow", aboutSheet.transform);
-        SetLE(suggestBtnRow, minH: 124, prefH: 124);
-        var sbrHLG = suggestBtnRow.AddComponent<HorizontalLayoutGroup>();
-        sbrHLG.padding = new RectOffset(48, 48, 12, 32);
-        sbrHLG.childForceExpandWidth = true;
-        sbrHLG.childControlWidth = sbrHLG.childControlHeight = true;
-        var btnSuggestGO   = MakePrimaryButton("BtnSuggest", suggestBtnRow.transform, "Предложить вопрос", font);
-        AddLocKey(btnSuggestGO, "btn_suggest");
-        var btnSuggestComp = btnSuggestGO.GetComponent<Button>();
-
-        // Панель "Предложить вопрос"
-        var suggestUIComp = BuildSuggestPanel(canvasGO.transform, font);
-
-        // AboutUI компонент
-        var aboutMgrGO = new GameObject("AboutManager");
-        var aboutUI    = aboutMgrGO.AddComponent<UstAldanQuiz.UI.AboutUI>();
-        var soAbout    = new SerializedObject(aboutUI);
-        Prop(soAbout, "panel",        aboutPanel);
-        Prop(soAbout, "btnClose",     aboutCloseBtn);
-        Prop(soAbout, "titleText",    aboutTitleTMP);
-        Prop(soAbout, "bodyText",     aboutBodyTMP);
-        Prop(soAbout, "sheetRect",    aboutSheetRT);
-        Prop(soAbout, "sheetGroup",   aboutSheetCG);
-        Prop(soAbout, "overlayGroup", aboutOverlayCG);
-        Prop(soAbout, "btnSuggest",   btnSuggestComp);
-        Prop(soAbout, "suggestUI",    suggestUIComp);
-        soAbout.ApplyModifiedProperties();
-
-        // AudioManager
-        var audioGO  = new GameObject("AudioManager");
-        var audioMgr = audioGO.AddComponent<AudioManager>();
-        var audioSrc1 = audioGO.AddComponent<AudioSource>(); // музыка
-        audioSrc1.loop        = true;
-        audioSrc1.playOnAwake = false;
-        audioSrc1.volume      = 0.6f;
-        var audioSrc2 = audioGO.AddComponent<AudioSource>(); // SFX
-        audioSrc2.playOnAwake = false;
-        audioSrc2.volume      = 1f;
+        // ── AudioManager ──────────────────────────────────────────────────
+        var audioGO   = new GameObject("AudioManager");
+        var audioMgr  = audioGO.AddComponent<AudioManager>();
+        var audioSrc1 = audioGO.AddComponent<AudioSource>();
+        audioSrc1.loop = true; audioSrc1.playOnAwake = false; audioSrc1.volume = 0.6f;
+        var audioSrc2 = audioGO.AddComponent<AudioSource>();
+        audioSrc2.playOnAwake = false; audioSrc2.volume = 1f;
 
         var soAudio = new SerializedObject(audioMgr);
         Prop(soAudio, "musicSource", audioSrc1);
@@ -646,21 +693,41 @@ public static class GameSceneBuilder
             AssetDatabase.SaveAssets();
         }
 
+        // Завершаем wiring ProfilePageUI.questionDatabase теперь, когда db объявлен
+        Prop(soProfPage, "questionDatabase", db);
+        soProfPage.ApplyModifiedProperties();
+
         // MainMenuUI
         var managerGO = MakeRootGO("MenuManager");
         var menuUI = managerGO.AddComponent<MainMenuUI>();
         var soUI   = new SerializedObject(menuUI);
 
         Prop(soUI, "questionDatabase",     db);
+        Prop(soUI, "homePage",             homePage);
+        Prop(soUI, "recordsPage",          recordsPage);
+        Prop(soUI, "settingsPage",         settingsPage);
+        Prop(soUI, "aboutPage",            aboutPage);
+        Prop(soUI, "profilePage",          profilePage);
+        Prop(soUI, "tabHome",              tabHomeBtn);
+        Prop(soUI, "tabRecords",           tabRecsBtn);
+        Prop(soUI, "tabSettings",          tabSetBtn);
+        Prop(soUI, "tabAbout",             tabAboutBtn);
+        Prop(soUI, "tabProfile",           tabProfBtn);
+        Prop(soUI, "iconHome",             iconHome);
+        Prop(soUI, "iconRecords",          iconRecords);
+        Prop(soUI, "iconSettings",         iconSettings);
+        Prop(soUI, "iconAbout",            iconAbout);
+        Prop(soUI, "iconProfile",          iconProfile);
+        Prop(soUI, "labelHome",            labelHome);
+        Prop(soUI, "labelRecords",         labelRecords);
+        Prop(soUI, "labelSettings",        labelSettings);
+        Prop(soUI, "labelAbout",           labelAbout);
+        Prop(soUI, "labelProfile",         labelProfile);
         Prop(soUI, "categoryGrid",         gridGO.transform);
         Prop(soUI, "categoryButtonPrefab", catBtnPrefab?.GetComponent<CategoryButtonUI>());
         Prop(soUI, "btnPlay",              btnPlayGO.GetComponent<Button>());
-        Prop(soUI, "btnSettings",          btnSettingsGO.GetComponent<Button>());
-        Prop(soUI, "btnRecords",           btnRecordsGO.GetComponent<Button>());
-        Prop(soUI, "btnAbout",             btnAboutGO.GetComponent<Button>());
         Prop(soUI, "statsText",            statsTMP);
-        Prop(soUI, "settingsUI",       settingsUI);
-        Prop(soUI, "aboutUI",          aboutUI);
+        Prop(soUI, "recordsContent",       recContent.transform);
 
         var noQPopupComp = popup.AddComponent<NoQuestionsPopup>();
         var soNQ = new SerializedObject(noQPopupComp);
@@ -1814,6 +1881,40 @@ public static class GameSceneBuilder
         var sp = MakeGO("FormSpacer", parent);
         SetLE(sp, minH: 20, prefH: 20);
         sp.AddComponent<Image>().color = Color.clear;
+    }
+
+    // Вкладка нижнего навбара: кнопка с иконкой-кружком и подписью
+    static (Button btn, Image icon, TMP_Text label) MakeNavTab(
+        string name, string labelKey, Transform parent, TMP_FontAsset font)
+    {
+        var go  = MakeGO(name, parent);
+        var img = go.AddComponent<Image>();
+        img.color = Color.clear;
+        var btn = go.AddComponent<Button>();
+        btn.targetGraphic = img;
+        go.AddComponent<ButtonSFX>();
+
+        var vlg = go.AddComponent<VerticalLayoutGroup>();
+        vlg.childAlignment         = TextAnchor.MiddleCenter;
+        vlg.childForceExpandWidth  = false;
+        vlg.childForceExpandHeight = false;
+        vlg.childControlWidth = vlg.childControlHeight = true;
+        vlg.padding = new RectOffset(0, 0, 10, 10);
+        vlg.spacing = 4;
+
+        var iconGO  = MakeGO("Icon", go.transform);
+        SetLE(iconGO, minW: 36, minH: 36, prefH: 36);
+        var iconImg = iconGO.AddComponent<Image>();
+        iconImg.color  = new Color(0.60f, 0.60f, 0.60f);
+        iconImg.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        iconImg.type   = Image.Type.Sliced;
+
+        var lbl = MakeTMP("Label", go.transform, labelKey, 22,
+                          new Color(0.60f, 0.60f, 0.60f), font, minH: 28);
+        AddLocKey(lbl.gameObject, labelKey);
+        lbl.alignment = TextAlignmentOptions.Center;
+
+        return (btn, iconImg, lbl);
     }
 
     // =====================================================================
