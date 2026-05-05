@@ -1,3 +1,11 @@
+# Сцены и префабы — генерируются GameSceneBuilder, не хранить в git
+Assets/Scenes/*.unity
+Assets/Scenes/*.unity.meta
+Assets/Prefabs/CategoryButton.prefab
+Assets/Prefabs/CategoryButton.prefab.meta
+Assets/Prefabs/QuestionTile.prefab
+Assets/Prefabs/QuestionTile.prefab.meta
+
 # Unity generated files
 [Ll]ibrary/
 [Tt]emp/

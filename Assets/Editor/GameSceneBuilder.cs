@@ -57,17 +57,32 @@ public static class GameSceneBuilder
     [MenuItem("UstAldan Quiz/Game Setup/5 — Add Scenes to Build Settings")]
     public static void AddScenesToBuildSettings() => DoAddScenes();
 
-    [MenuItem("UstAldan Quiz/Game Setup/RUN ALL (full setup)")]
+    // Обновляет вопросы и Build Settings, сцены НЕ пересоздаёт
+    [MenuItem("UstAldan Quiz/Game Setup/RUN ALL — обновить вопросы (сцены не трогать)")]
     public static void RunAll()
     {
-        SetPTSansAsDefault();   // сначала — чтобы все новые тексты сразу брали PTSans
+        SetPTSansAsDefault();
+        DoCreateQuestions();
+        DoBuildIntro(skipIfExists: true);
+        DoBuildMainMenu(skipIfExists: true);
+        DoBuildQuestionMap(skipIfExists: true);
+        DoBuildResults(skipIfExists: true);
+        DoAddScenes();
+        Debug.Log("[GameSceneBuilder] ✓ Вопросы и Build Settings обновлены. Сцены не трогались.");
+    }
+
+    // Принудительно пересоздаёт все сцены (использовать только при изменении билдера)
+    [MenuItem("UstAldan Quiz/Game Setup/FORCE REBUILD — пересоздать все сцены")]
+    public static void ForceRebuildAll()
+    {
+        SetPTSansAsDefault();
         DoBuildIntro();
         DoCreateQuestions();
         DoBuildMainMenu();
         DoBuildQuestionMap();
         DoBuildResults();
         DoAddScenes();
-        Debug.Log("[GameSceneBuilder] ✓ Полная настройка завершена!");
+        Debug.Log("[GameSceneBuilder] ✓ Все сцены пересозданы.");
     }
 
     static void SetPTSansAsDefault()
@@ -107,8 +122,11 @@ public static class GameSceneBuilder
     // 0. ИНТРО-СЦЕНА
     // =====================================================================
 
-    static void DoBuildIntro()
+    static void DoBuildIntro(bool skipIfExists = false)
     {
+        if (skipIfExists && File.Exists("Assets/Scenes/Intro.unity"))
+        { Debug.Log("[GameSceneBuilder] Intro.unity уже существует — пропускаем."); return; }
+
         OpenOrCreateScene("Assets/Scenes/Intro.unity");
 
         // Камера — чёрный фон
@@ -223,8 +241,11 @@ public static class GameSceneBuilder
     // 2. СЦЕНА ГЛАВНОГО МЕНЮ
     // =====================================================================
 
-    static void DoBuildMainMenu()
+    static void DoBuildMainMenu(bool skipIfExists = false)
     {
+        if (skipIfExists && File.Exists("Assets/Scenes/MainMenu.unity"))
+        { Debug.Log("[GameSceneBuilder] MainMenu.unity уже существует — пропускаем."); return; }
+
         var scene    = OpenOrCreateScene("Assets/Scenes/MainMenu.unity");
         var font     = FindFont();
         var canvasGO = SetupCanvas(scene.name);
@@ -683,8 +704,11 @@ public static class GameSceneBuilder
     // 3. СЦЕНА КАРТЫ ВОПРОСОВ
     // =====================================================================
 
-    static void DoBuildQuestionMap()
+    static void DoBuildQuestionMap(bool skipIfExists = false)
     {
+        if (skipIfExists && File.Exists("Assets/Scenes/QuestionMap.unity"))
+        { Debug.Log("[GameSceneBuilder] QuestionMap.unity уже существует — пропускаем."); return; }
+
         OpenOrCreateScene("Assets/Scenes/QuestionMap.unity");
         var font = FindFont();
 
@@ -915,8 +939,11 @@ public static class GameSceneBuilder
     // 4. СЦЕНА РЕЗУЛЬТАТОВ
     // =====================================================================
 
-    static void DoBuildResults()
+    static void DoBuildResults(bool skipIfExists = false)
     {
+        if (skipIfExists && File.Exists("Assets/Scenes/Results.unity"))
+        { Debug.Log("[GameSceneBuilder] Results.unity уже существует — пропускаем."); return; }
+
         OpenOrCreateScene("Assets/Scenes/Results.unity");
         var font = FindFont();
 
