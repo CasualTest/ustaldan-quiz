@@ -300,10 +300,6 @@ public static class GameSceneBuilder
         AddLocKey(MakeTMP("TitleMain", logo.transform, "Викторина",           64, C_TEXT,     font, minH: 80, bold: true).gameObject, "app_title");
         AddLocKey(MakeTMP("TitleYear", logo.transform, "100 лет",             48, C_SECONDARY, font, minH: 60, bold: true).gameObject, "app_year");
 
-        // Кнопка «Играть» — по центру, между логотипом и сеткой категорий
-        var btnPlayGO = MakePrimaryButton("BtnPlay", homePage.transform, "Начать игру", font, minH: 104);
-        AddLocKey(btnPlayGO, "btn_play");
-
         // CategoryGrid
         var gridGO = MakeGO("CategoryGrid", homePage.transform);
         SetLE(gridGO, minH: 160, prefH: 260, flexH: 1f);
@@ -322,6 +318,10 @@ public static class GameSceneBuilder
         statsRT.anchorMin = Vector2.zero; statsRT.anchorMax = Vector2.one;
         statsRT.offsetMin = statsRT.offsetMax = Vector2.zero;
         statsTMP.alignment = TextAlignmentOptions.Center;
+
+        // Кнопка «Играть» — после сетки категорий
+        var btnPlayGO = MakePrimaryButton("BtnPlay", homePage.transform, "Начать игру", font, minH: 104);
+        AddLocKey(btnPlayGO, "btn_play");
 
         // ── Страница 1: Рекорды ───────────────────────────────────────────
         var recordsPage = MakeGO("RecordsPage", contentArea.transform);
