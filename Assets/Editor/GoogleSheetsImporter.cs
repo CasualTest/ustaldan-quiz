@@ -241,6 +241,10 @@ namespace UstAldanQuiz.Editor
             var allQuestions = new List<QuestionData>();
             foreach (var kv in catAssets) allQuestions.AddRange(kv.Value);
 
+            // Стабильная сортировка — порядок в asset всегда одинаковый, нет лишних диффов в git
+            allCats.Sort((a, b) => string.Compare(a.categoryId, b.categoryId, System.StringComparison.Ordinal));
+            allQuestions.Sort((a, b) => string.Compare(a.name, b.name, System.StringComparison.Ordinal));
+
             // Обновляем все существующие QuestionDatabase — каждая получает полный список
             UpdateAllDatabases(allCats, allQuestions);
 
