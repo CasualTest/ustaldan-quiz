@@ -41,10 +41,11 @@ namespace UstAldanQuiz.UI
         [SerializeField] private TMP_Text labelAbout;
         [SerializeField] private TMP_Text labelProfile;
 
-        [Header("Главная — категории и кнопка")]
+        [Header("Главная — категории и кнопки")]
         [SerializeField] private Transform        categoryGrid;
         [SerializeField] private CategoryButtonUI categoryButtonPrefab;
         [SerializeField] private Button           btnPlay;
+        [SerializeField] private Button           btnArcade;
         [SerializeField] private TMP_Text         statsText;
 
         [Header("Рекорды — контейнер строк")]
@@ -73,6 +74,7 @@ namespace UstAldanQuiz.UI
             tabAbout?.onClick.AddListener(() => SwitchTab(3));
             tabProfile?.onClick.AddListener(() => SwitchTab(4));
             btnPlay?.onClick.AddListener(HandlePlay);
+            btnArcade?.onClick.AddListener(HandleArcade);
 
             SpawnCategoryButtons();
             RefreshRecords();
@@ -97,6 +99,7 @@ namespace UstAldanQuiz.UI
             tabAbout?.onClick.RemoveAllListeners();
             tabProfile?.onClick.RemoveAllListeners();
             btnPlay?.onClick.RemoveAllListeners();
+            btnArcade?.onClick.RemoveAllListeners();
             foreach (var btn in _spawnedButtons)
                 if (btn != null) btn.OnClicked -= HandleCategoryButtonClick;
             LocaleManager.OnLanguageChanged -= RefreshStats;
@@ -214,6 +217,12 @@ namespace UstAldanQuiz.UI
             _selectedCategory = clickedBtn.Category;
             _selectedButton.SetSelected(true);
             RefreshStats();
+        }
+
+        private void HandleArcade()
+        {
+            var gm = GameManager.Instance;
+            if (gm != null) gm.LoadScene("Roadmap");
         }
 
         private void HandlePlay()

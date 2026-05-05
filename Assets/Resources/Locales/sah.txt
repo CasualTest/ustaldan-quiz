@@ -8,6 +8,7 @@ btn_records=Рекордтар
 btn_about=Бырагыраама туhунан
 btn_profile=Бэлиэхэ
 btn_play_again=Оссо оонньуохха
+btn_arcade=Аркаада
 btn_main_menu=Сурун меню
 btn_share=Бэлиэтээ
 btn_close=Соп

@@ -8,6 +8,7 @@ btn_records=Рекорды
 btn_about=О приложении
 btn_profile=Профиль
 btn_play_again=Играть снова
+btn_arcade=Аркада
 btn_main_menu=Главное меню
 btn_share=Поделиться
 btn_close=Понятно
