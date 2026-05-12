@@ -4,100 +4,67 @@ using UstAldanQuiz.Data;
 
 namespace UstAldanQuiz.Managers
 {
+    /// <summary>
+    /// Генерирует змейкообразный путь из вопросов (как в Quizzland)
+    /// и сохраняет/загружает его через PlayerPrefs.
+    /// </summary>
     public static class RoadmapManager
     {
-        private const string SaveKey     = "roadmap_layout";
-        private const float  CellSize    = 260f;
-        private const float  Jitter      = 55f;
-        private const int    ExtraEdges  = 2;
+        private const string SaveKey = "roadmap_layout";
+
+        // Layout constants — должны совпадать с RoadmapUI.TileSize
+        public const int   Cols      = 3;
+        public const float TileSize  = 200f;
+        public const float HGap      = 28f;
+        public const float VGap      = 28f;
+        public const float TopMargin = 80f;
+
+        private static float StepX => TileSize + HGap;
+        private static float StepY => TileSize + VGap;
 
         // ── Generate ────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Создаёт змейку из <paramref name="questions"/> в 3 колонки.
+        /// Чётные строки идут слева направо, нечётные — справа налево.
+        /// </summary>
         public static RoadmapSaveData Generate(List<QuestionData> questions)
         {
             int count = questions.Count;
-            int cols  = Mathf.Max(2, Mathf.CeilToInt(Mathf.Sqrt(count)));
-
-            float ox = CellSize;
-            float oy = CellSize;
+            var colX  = ColumnCenters();
 
             var nodes = new List<RoadmapNodeData>(count);
             for (int i = 0; i < count; i++)
             {
-                int row = i / cols;
-                int col = i % cols;
-                float x =  ox + col * CellSize + Random.Range(-Jitter, Jitter);
-                float y = -(oy + row * CellSize + Random.Range(-Jitter, Jitter));
+                int  row          = i / Cols;
+                int  col          = i % Cols;
+                bool leftToRight  = (row % 2 == 0);
+
+                float x = leftToRight ? colX[col] : colX[Cols - 1 - col];
+                float y = -(TopMargin + TileSize / 2f + row * StepY);
+
                 nodes.Add(new RoadmapNodeData { questionName = questions[i].name, x = x, y = y });
             }
 
-            BuildMST(nodes);
-            AddExtraEdges(nodes);
+            // Последовательные соединения — просто цепочка
+            for (int i = 0; i < count - 1; i++)
+            {
+                nodes[i].edges.Add(i + 1);
+                nodes[i + 1].edges.Add(i);
+            }
 
             return new RoadmapSaveData { nodes = nodes };
         }
 
-        private static void BuildMST(List<RoadmapNodeData> nodes)
+        /// <summary>Горизонтальные центры 3 колонок, выровненных по центру 1080px.</summary>
+        private static float[] ColumnCenters()
         {
-            int n = nodes.Count;
-            if (n <= 1) return;
-
-            var inMST  = new bool[n];
-            var minCost = new float[n];
-            var parent  = new int[n];
-            for (int i = 0; i < n; i++) { minCost[i] = float.MaxValue; parent[i] = -1; }
-            minCost[0] = 0f;
-
-            for (int iter = 0; iter < n; iter++)
-            {
-                int u = -1;
-                for (int i = 0; i < n; i++)
-                    if (!inMST[i] && (u < 0 || minCost[i] < minCost[u])) u = i;
-
-                inMST[u] = true;
-                if (parent[u] >= 0) AddEdge(nodes, parent[u], u);
-
-                for (int v = 0; v < n; v++)
-                {
-                    if (inMST[v]) continue;
-                    float d = Dist(nodes[u], nodes[v]);
-                    if (d < minCost[v]) { minCost[v] = d; parent[v] = u; }
-                }
-            }
-        }
-
-        private static void AddExtraEdges(List<RoadmapNodeData> nodes)
-        {
-            int n = nodes.Count;
-            for (int i = 0; i < n; i++)
-            {
-                var sorted = new List<(float d, int idx)>(n - 1);
-                for (int j = 0; j < n; j++)
-                {
-                    if (i == j) continue;
-                    sorted.Add((Dist(nodes[i], nodes[j]), j));
-                }
-                sorted.Sort((a, b) => a.d.CompareTo(b.d));
-
-                int added = 0;
-                foreach (var (_, j) in sorted)
-                {
-                    if (added >= ExtraEdges) break;
-                    if (!nodes[i].edges.Contains(j)) { AddEdge(nodes, i, j); added++; }
-                }
-            }
-        }
-
-        private static void AddEdge(List<RoadmapNodeData> nodes, int a, int b)
-        {
-            if (!nodes[a].edges.Contains(b)) nodes[a].edges.Add(b);
-            if (!nodes[b].edges.Contains(a)) nodes[b].edges.Add(a);
-        }
-
-        private static float Dist(RoadmapNodeData a, RoadmapNodeData b)
-        {
-            float dx = a.x - b.x, dy = a.y - b.y;
-            return Mathf.Sqrt(dx * dx + dy * dy);
+            float totalW  = Cols * TileSize + (Cols - 1) * HGap;
+            float leftEdge = (1080f - totalW) / 2f;
+            var   centers  = new float[Cols];
+            for (int c = 0; c < Cols; c++)
+                centers[c] = leftEdge + TileSize / 2f + c * StepX;
+            return centers;
         }
 
         // ── Save / Load / Clear ─────────────────────────────────────────────

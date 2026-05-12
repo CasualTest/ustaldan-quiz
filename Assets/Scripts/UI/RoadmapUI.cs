@@ -11,8 +11,8 @@ using UstAldanQuiz.Utils;
 namespace UstAldanQuiz.UI
 {
     /// <summary>
-    /// Управляет сценой Roadmap — генерирует граф вопросов, рисует линии,
-    /// обрабатывает нажатия на тайлы и показывает вопрос.
+    /// Сцена Roadmap — змейка из вопросов (как Quizzland).
+    /// Карта генерируется один раз и хранится в PlayerPrefs до прохождения всех вопросов.
     /// </summary>
     public class RoadmapUI : MonoBehaviour
     {
@@ -20,12 +20,15 @@ namespace UstAldanQuiz.UI
         [SerializeField] private QuestionDatabase questionDatabase;
 
         [Header("Карта")]
-        [SerializeField] private RoadmapTileUI   tilePrefab;
-        [SerializeField] private RectTransform   mapContent;
-        [SerializeField] private RectTransform   linesContainer;
+        [SerializeField] private RoadmapTileUI tilePrefab;
+        [SerializeField] private RectTransform mapContent;
+        [SerializeField] private RectTransform linesContainer;
+
+        [Header("Прогресс")]
+        [SerializeField] private RectTransform progressBarFill;
+        [SerializeField] private TMP_Text      progressText;
 
         [Header("Хедер")]
-        [SerializeField] private TMP_Text scoreText;
         [SerializeField] private Button   btnBack;
         [SerializeField] private Button   btnFinish;
 
@@ -46,10 +49,11 @@ namespace UstAldanQuiz.UI
         [SerializeField] private Color colorDefault = Color.white;
         [SerializeField] private Color colorCorrect = new Color(0.30f, 0.69f, 0.31f);
         [SerializeField] private Color colorWrong   = new Color(0.96f, 0.26f, 0.21f);
-        [SerializeField] private Color lineColor    = new Color(0.72f, 0.65f, 0.52f);
+        [SerializeField] private Color lineColor    = new Color(0.55f, 0.50f, 0.42f, 0.70f);
 
-        private const float TileSize      = 140f;
-        private const float LineThickness = 6f;
+        // Must match RoadmapManager.TileSize
+        private const float TileSize      = RoadmapManager.TileSize;
+        private const float LineThickness = 10f;
 
         private readonly List<RoadmapTileUI>  _tiles     = new List<RoadmapTileUI>();
         private          List<QuestionData>   _questions = new List<QuestionData>();
@@ -88,7 +92,6 @@ namespace UstAldanQuiz.UI
                 return;
             }
 
-            // Если все вопросы уже отвечены — обнуляем прогресс и карту
             if (AllQuestionsAnswered())
             {
                 foreach (var cat in questionDatabase.categories)
@@ -104,10 +107,10 @@ namespace UstAldanQuiz.UI
             }
 
             SpawnMap();
-            UpdateScore();
+            UpdateProgress();
 
-            if (NewQuestionsTotal == 0)
-                if (btnFinish != null) btnFinish.gameObject.SetActive(true);
+            if (NewQuestionsTotal == 0 && btnFinish != null)
+                btnFinish.gameObject.SetActive(true);
         }
 
         private void OnDestroy()
@@ -129,19 +132,14 @@ namespace UstAldanQuiz.UI
             var byName = new Dictionary<string, QuestionData>(_questions.Count);
             foreach (var q in _questions) byName[q.name] = q;
 
-            // Size the content area to contain all nodes
-            float maxX = 0f, maxAbsY = 0f;
-            foreach (var n in _layout.nodes)
-            {
-                if (n.x       > maxX)    maxX    = n.x;
-                if (-n.y      > maxAbsY) maxAbsY = -n.y;
-            }
-            mapContent.sizeDelta = new Vector2(
-                Mathf.Max(1080f, maxX    + TileSize + 80f),
-                Mathf.Max(1920f, maxAbsY + TileSize + 80f)
-            );
+            // Content height based on number of rows
+            int rows = Mathf.CeilToInt((float)_layout.nodes.Count / RoadmapManager.Cols);
+            float contentHeight = RoadmapManager.TopMargin
+                                + rows * (TileSize + RoadmapManager.VGap)
+                                + 80f;
+            mapContent.sizeDelta = new Vector2(1080f, contentHeight);
 
-            // Lines container: full stretch over content
+            // Lines container: stretch over content
             if (linesContainer != null)
             {
                 linesContainer.anchorMin = Vector2.zero;
@@ -164,7 +162,7 @@ namespace UstAldanQuiz.UI
                 tileRT.anchoredPosition = new Vector2(node.x, node.y);
                 tileRT.sizeDelta        = new Vector2(TileSize, TileSize);
 
-                tile.Setup(q);
+                tile.Setup(q, i);
                 tile.OnTileClicked += HandleTileClick;
                 _tiles.Add(tile);
 
@@ -182,8 +180,8 @@ namespace UstAldanQuiz.UI
 
         private void DrawLines()
         {
-            var parent = linesContainer != null ? linesContainer : mapContent;
-            var drawn  = new HashSet<int>(); // encoded pair: min*10000+max
+            var parent  = linesContainer != null ? linesContainer : mapContent;
+            var drawn   = new HashSet<int>();
 
             for (int i = 0; i < _layout.nodes.Count; i++)
             {
@@ -191,17 +189,16 @@ namespace UstAldanQuiz.UI
                 foreach (int j in nodeA.edges)
                 {
                     if (j < 0 || j >= _layout.nodes.Count) continue;
-                    int pairKey = Mathf.Min(i, j) * 10000 + Mathf.Max(i, j);
-                    if (!drawn.Add(pairKey)) continue;
+                    int key = Mathf.Min(i, j) * 10000 + Mathf.Max(i, j);
+                    if (!drawn.Add(key)) continue;
 
                     var nodeB = _layout.nodes[j];
                     var line  = new GameObject("Line", typeof(RectTransform));
                     line.transform.SetParent(parent, false);
 
-                    var img = line.AddComponent<Image>();
-                    img.color = lineColor;
+                    line.AddComponent<Image>().color = lineColor;
 
-                    var rt  = line.GetComponent<RectTransform>();
+                    var rt   = line.GetComponent<RectTransform>();
                     var posA = new Vector2(nodeA.x, nodeA.y);
                     var posB = new Vector2(nodeB.x, nodeB.y);
                     var mid  = (posA + posB) * 0.5f;
@@ -215,6 +212,26 @@ namespace UstAldanQuiz.UI
                     rt.sizeDelta        = new Vector2(dist, LineThickness);
                     rt.localRotation    = Quaternion.Euler(0, 0, angle);
                 }
+            }
+        }
+
+        // ── Progress ───────────────────────────────────────────────────────
+
+        private void UpdateProgress()
+        {
+            int total    = _tiles.Count;
+            int answered = _lockedCount + _answeredCount;
+
+            if (progressText != null)
+                progressText.text = $"{answered} / {total}";
+
+            if (progressBarFill != null)
+            {
+                var parentRT = (RectTransform)progressBarFill.parent;
+                float w = parentRT != null ? parentRT.rect.width : 800f;
+                if (w <= 0f) w = 800f;
+                float ratio = total > 0 ? Mathf.Clamp01((float)answered / total) : 0f;
+                progressBarFill.sizeDelta = new Vector2(w * ratio, progressBarFill.sizeDelta.y);
             }
         }
 
@@ -285,7 +302,7 @@ namespace UstAldanQuiz.UI
             if (_activeTile != null)
                 SaveManager.MarkQuestionAnswered(catId, _activeTile.Question.name, isCorrect);
 
-            UpdateScore();
+            UpdateProgress();
 
             var    qd   = _activeTile?.Question;
             bool   sah  = LocaleManager.CurrentLanguage == LocaleManager.LangSah;
@@ -332,12 +349,6 @@ namespace UstAldanQuiz.UI
                 if (!r.HasValue) return false;
             }
             return true;
-        }
-
-        private void UpdateScore()
-        {
-            if (scoreText != null)
-                scoreText.text = LocaleManager.Get("score_format", _correctCount, _tiles.Count);
         }
 
         private void GoToMainMenu()

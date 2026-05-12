@@ -1092,32 +1092,61 @@ public static class GameSceneBuilder
         saVLG.padding  = new RectOffset(0, 0, 0, 0);
         saVLG.spacing  = 0;
 
-        // ── Header ──────────────────────────────────────────────────────────
+        // ── Header (compact) ────────────────────────────────────────────────
         var header = MakeGO("Header", safeArea.transform);
-        SetLE(header, minH: 100, prefH: 100);
+        SetLE(header, minH: 68, prefH: 68);
         header.AddComponent<Image>().color = C_PRIMARY;
         var hHLG = header.AddComponent<HorizontalLayoutGroup>();
         hHLG.childAlignment        = TextAnchor.MiddleCenter;
         hHLG.childForceExpandWidth = false; hHLG.childForceExpandHeight = true;
         hHLG.childControlWidth = hHLG.childControlHeight = true;
-        hHLG.padding = new RectOffset(24, 24, 0, 0); hHLG.spacing = 16;
+        hHLG.padding = new RectOffset(20, 20, 0, 0); hHLG.spacing = 12;
 
-        var btnBackGO = MakeSecondaryButton("BtnBack", header.transform, "← Назад", font, minH: 70, minW: 160);
+        var btnBackGO = MakeSecondaryButton("BtnBack", header.transform, "← Назад", font, minH: 52, minW: 140);
         btnBackGO.GetComponent<Image>().color = new Color(1, 1, 1, 0.2f);
-        SetLE(btnBackGO, minH: 70, minW: 160);
+        SetLE(btnBackGO, minH: 52, minW: 140);
         AddLocKey(btnBackGO, "btn_back");
 
-        var scoreTMP = MakeTMP("ScoreText", header.transform, "", 28, Color.white, font);
-        SetLE(scoreTMP.gameObject, flexW: 1f);
-        scoreTMP.alignment = TextAlignmentOptions.Right;
+        var headerSpacer = MakeGO("Spacer", header.transform);
+        SetLE(headerSpacer, flexW: 1f);
+        headerSpacer.AddComponent<Image>().color = Color.clear;
+
+        // ── ProgressBar ──────────────────────────────────────────────────────
+        var progressRow = MakeGO("ProgressRow", safeArea.transform);
+        SetLE(progressRow, minH: 52, prefH: 52);
+        progressRow.AddComponent<Image>().color = Hex("1E4A2E"); // тёмно-зелёный под шапкой
+        var pHLG = progressRow.AddComponent<HorizontalLayoutGroup>();
+        pHLG.childAlignment        = TextAnchor.MiddleCenter;
+        pHLG.childForceExpandWidth = false; pHLG.childForceExpandHeight = false;
+        pHLG.childControlWidth = pHLG.childControlHeight = true;
+        pHLG.padding = new RectOffset(24, 24, 10, 10); pHLG.spacing = 12;
+
+        // BarContainer (background + fill)
+        var barContainerGO = MakeGO("ProgressBarContainer", progressRow.transform);
+        SetLE(barContainerGO, flexW: 1f, minH: 20);
+        barContainerGO.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.22f);
+
+        var progressFillGO = MakeGO("ProgressFill", barContainerGO.transform);
+        var progressFillRT = progressFillGO.GetComponent<RectTransform>();
+        progressFillRT.anchorMin = new Vector2(0, 0);
+        progressFillRT.anchorMax = new Vector2(0, 1);
+        progressFillRT.pivot     = new Vector2(0, 0.5f);
+        progressFillRT.anchoredPosition = Vector2.zero;
+        progressFillRT.sizeDelta = new Vector2(0, 0);
+        progressFillGO.AddComponent<Image>().color = C_SECONDARY;
+
+        // ProgressText (right of bar)
+        var progressTextTMP = MakeTMP("ProgressText", progressRow.transform, "0/0", 26, Color.white, font, minH: 32);
+        SetLE(progressTextTMP.gameObject, minW: 90);
+        progressTextTMP.alignment = TextAlignmentOptions.MidlineRight;
 
         // ── MapScrollView ────────────────────────────────────────────────────
         var scrollGO = MakeGO("MapScrollView", safeArea.transform);
         SetLE(scrollGO, flexH: 1f, minH: 400);
         var scroll = scrollGO.AddComponent<ScrollRect>();
-        scroll.horizontal = true; scroll.vertical = true;
-        scroll.scrollSensitivity = 40f;
-        scroll.movementType      = ScrollRect.MovementType.Clamped;
+        scroll.horizontal = false; scroll.vertical = true;
+        scroll.scrollSensitivity = 60f;
+        scroll.movementType      = ScrollRect.MovementType.Elastic;
 
         var viewport = MakeGO("Viewport", scrollGO.transform);
         Stretch(viewport);
@@ -1290,7 +1319,8 @@ public static class GameSceneBuilder
         Prop(soMap, "tilePrefab",           tilePrefab?.GetComponent<RoadmapTileUI>());
         Prop(soMap, "mapContent",           mapContentRT);
         Prop(soMap, "linesContainer",       linesRT);
-        Prop(soMap, "scoreText",            scoreTMP);
+        Prop(soMap, "progressBarFill",      progressFillRT);
+        Prop(soMap, "progressText",         progressTextTMP);
         Prop(soMap, "btnBack",              btnBackGO.GetComponent<Button>());
         Prop(soMap, "btnFinish",            bfBtn);
         Prop(soMap, "questionPanel",        qPanel);
@@ -1504,18 +1534,33 @@ public static class GameSceneBuilder
         iconImg.color = Color.white;
         iconImg.preserveAspect = true;
 
-        // Checkmark dot (top-right corner)
+        // Checkmark dot (top-right corner, shown on correct/wrong)
         var chkGO = new GameObject("Checkmark", typeof(RectTransform));
         chkGO.transform.SetParent(root.transform, false);
         var chkRT = chkGO.GetComponent<RectTransform>();
-        chkRT.anchorMin = new Vector2(0.62f, 0.62f);
+        chkRT.anchorMin = new Vector2(0.60f, 0.60f);
         chkRT.anchorMax = new Vector2(0.95f, 0.95f);
         chkRT.offsetMin = chkRT.offsetMax = Vector2.zero;
         var chkImg = chkGO.AddComponent<Image>();
-        chkImg.color  = C_CORRECT;
+        chkImg.color  = Color.white;
         chkImg.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
         chkImg.type   = Image.Type.Sliced;
         chkGO.SetActive(false);
+
+        // Index label (bottom-center, small number)
+        var idxGO = new GameObject("IndexLabel", typeof(RectTransform));
+        idxGO.transform.SetParent(root.transform, false);
+        var idxRT = idxGO.GetComponent<RectTransform>();
+        idxRT.anchorMin = new Vector2(0f, 0f);
+        idxRT.anchorMax = new Vector2(1f, 0.30f);
+        idxRT.offsetMin = idxRT.offsetMax = Vector2.zero;
+        var idxTMP = idxGO.AddComponent<TextMeshProUGUI>();
+        idxTMP.text      = "1";
+        idxTMP.fontSize  = 28;
+        idxTMP.color     = new Color(1f, 1f, 1f, 0.85f);
+        idxTMP.alignment = TextAlignmentOptions.Center;
+        idxTMP.fontStyle = FontStyles.Bold;
+        if (font != null) idxTMP.font = font;
 
         // RoadmapTileUI component
         var tileUI = root.AddComponent<RoadmapTileUI>();
@@ -1524,6 +1569,7 @@ public static class GameSceneBuilder
         Prop(soTile, "background",   rootImg);
         Prop(soTile, "categoryIcon", iconImg);
         Prop(soTile, "checkmark",    chkImg);
+        Prop(soTile, "indexLabel",   idxTMP);
         soTile.ApplyModifiedProperties();
 
         var prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
