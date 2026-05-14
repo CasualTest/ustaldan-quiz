@@ -65,6 +65,11 @@ public static partial class GameSceneBuilder
         SetLE(headerSpacer, flexW: 1f);
         headerSpacer.AddComponent<Image>().color = Color.clear;
 
+        var btnResetGO = MakeSecondaryButton("BtnReset", header.transform, "↺ Сброс", font, minH: 52, minW: 140);
+        btnResetGO.GetComponent<Image>().color = new Color(1, 1, 1, 0.2f);
+        SetLE(btnResetGO, minH: 52, minW: 140);
+        AddLocKey(btnResetGO, "btn_reset");
+
         // ── ProgressBar ──────────────────────────────────────────────────────
         var progressRow = MakeGO("ProgressRow", safeArea.transform);
         SetLE(progressRow, minH: 52, prefH: 52);
@@ -276,6 +281,7 @@ public static partial class GameSceneBuilder
         Prop(soMap, "progressBarFill",      progressFillRT);
         Prop(soMap, "progressText",         progressTextTMP);
         Prop(soMap, "btnBack",              btnBackGO.GetComponent<Button>());
+        Prop(soMap, "btnReset",             btnResetGO.GetComponent<Button>());
         Prop(soMap, "btnFinish",            bfBtn);
         Prop(soMap, "questionPanel",        qPanel);
         Prop(soMap, "questionCard",         qCardRT);

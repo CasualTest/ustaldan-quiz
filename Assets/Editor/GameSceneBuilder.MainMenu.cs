@@ -94,16 +94,37 @@ public static partial class GameSceneBuilder
         statsRT.offsetMin = statsRT.offsetMax = Vector2.zero;
         statsTMP.alignment = TextAlignmentOptions.Center;
 
-        // Кнопка «Играть» — после сетки категорий
-        var btnPlayGO = MakePrimaryButton("BtnPlay", homePage.transform, "Начать игру", font, minH: 104);
+        // Обёртка центрирует BtnPlay и ограничивает его ширину
+        var btnPlayWrapper = MakeGO("BtnPlayWrapper", homePage.transform);
+        SetLE(btnPlayWrapper, minH: 166);
+        var wrapHLG = btnPlayWrapper.AddComponent<HorizontalLayoutGroup>();
+        wrapHLG.childAlignment         = TextAnchor.MiddleCenter;
+        wrapHLG.childForceExpandWidth  = false;
+        wrapHLG.childForceExpandHeight = false;
+        wrapHLG.childControlWidth = wrapHLG.childControlHeight = true;
+
+        var btnPlayGO = MakePrimaryButton("BtnPlay", btnPlayWrapper.transform, "Начать игру", font, minH: 166);
+        SetLE(btnPlayGO, minW: 520, flexW: 0);
         AddLocKey(btnPlayGO, "btn_play");
         ApplyHyperCasualButton(btnPlayGO,
             "Assets/Images/Sprites/buttons.png",
             normalName: "buttons_12", pressedName: "buttons_13");
 
         // Кнопка «Аркада» — переход на Roadmap
-        var btnArcadeGO = MakeSecondaryButton("BtnArcade", homePage.transform, "Аркада", font, minH: 88);
+        var btnArcadeWrapper = MakeGO("BtnArcadeWrapper", homePage.transform);
+        SetLE(btnArcadeWrapper, minH: 166);
+        var arcadeWrapHLG = btnArcadeWrapper.AddComponent<HorizontalLayoutGroup>();
+        arcadeWrapHLG.childAlignment         = TextAnchor.MiddleCenter;
+        arcadeWrapHLG.childForceExpandWidth  = false;
+        arcadeWrapHLG.childForceExpandHeight = false;
+        arcadeWrapHLG.childControlWidth = arcadeWrapHLG.childControlHeight = true;
+
+        var btnArcadeGO = MakePrimaryButton("BtnArcade", btnArcadeWrapper.transform, "Аркада", font, minH: 166);
+        SetLE(btnArcadeGO, minW: 520, flexW: 0);
         AddLocKey(btnArcadeGO, "btn_arcade");
+        ApplyHyperCasualButton(btnArcadeGO,
+            "Assets/Images/Sprites/buttons.png",
+            normalName: "buttons_12", pressedName: "buttons_13");
 
         // ── Страница 1: Рекорды ───────────────────────────────────────────
         var recordsPage = MakeGO("RecordsPage", contentArea.transform);

@@ -30,6 +30,7 @@ namespace UstAldanQuiz.UI
 
         [Header("Хедер")]
         [SerializeField] private Button   btnBack;
+        [SerializeField] private Button   btnReset;
         [SerializeField] private Button   btnFinish;
 
         [Header("Панель вопроса")]
@@ -73,6 +74,7 @@ namespace UstAldanQuiz.UI
         private void Start()
         {
             btnBack?.onClick.AddListener(GoToMainMenu);
+            btnReset?.onClick.AddListener(ResetProgress);
             btnContinue?.onClick.AddListener(CloseQuestionPanel);
             btnFinish?.onClick.AddListener(GoToMainMenu);
 
@@ -116,6 +118,7 @@ namespace UstAldanQuiz.UI
         private void OnDestroy()
         {
             btnBack?.onClick.RemoveAllListeners();
+            btnReset?.onClick.RemoveAllListeners();
             btnContinue?.onClick.RemoveAllListeners();
             btnFinish?.onClick.RemoveAllListeners();
             foreach (var btn in answerButtons) btn?.onClick.RemoveAllListeners();
@@ -356,6 +359,26 @@ namespace UstAldanQuiz.UI
             var gm = GameManager.Instance;
             if (gm != null) gm.LoadScene("MainMenu");
             else SceneTransition.Instance?.LoadScene("MainMenu");
+        }
+
+        private void ResetProgress()
+        {
+            foreach (var cat in questionDatabase.categories)
+                SaveManager.ClearQuestionProgress(cat.categoryId);
+            RoadmapManager.Clear();
+
+            _lockedCount   = 0;
+            _answeredCount = 0;
+            _correctCount  = 0;
+
+            _layout = RoadmapManager.Generate(_questions);
+            RoadmapManager.Save(_layout);
+
+            if (questionPanel != null) questionPanel.SetActive(false);
+            if (btnFinish     != null) btnFinish.gameObject.SetActive(false);
+
+            SpawnMap();
+            UpdateProgress();
         }
 
         private static string GetLocalizedQuestion(QuestionData q)
