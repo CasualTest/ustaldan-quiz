@@ -97,6 +97,9 @@ public static partial class GameSceneBuilder
         // Кнопка «Играть» — после сетки категорий
         var btnPlayGO = MakePrimaryButton("BtnPlay", homePage.transform, "Начать игру", font, minH: 104);
         AddLocKey(btnPlayGO, "btn_play");
+        ApplyHyperCasualButton(btnPlayGO,
+            "Assets/Images/Sprites/buttons.png",
+            normalName: "buttons_12", pressedName: "buttons_13");
 
         // Кнопка «Аркада» — переход на Roadmap
         var btnArcadeGO = MakeSecondaryButton("BtnArcade", homePage.transform, "Аркада", font, minH: 88);

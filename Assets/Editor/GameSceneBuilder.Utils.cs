@@ -746,6 +746,45 @@ public static partial class GameSceneBuilder
         return AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(guids[0]));
     }
 
+    static Sprite LoadSprite(string atlasPath, string spriteName)
+    {
+        return AssetDatabase.LoadAllAssetsAtPath(atlasPath)
+            .OfType<Sprite>()
+            .FirstOrDefault(s => s.name == spriteName);
+    }
+
+    static void ApplyHyperCasualButton(GameObject btnGO, string atlasPath,
+                                        string normalName, string pressedName)
+    {
+        var normalSprite  = LoadSprite(atlasPath, normalName);
+        var pressedSprite = LoadSprite(atlasPath, pressedName);
+        if (normalSprite == null)
+        {
+            Debug.LogWarning($"[GameSceneBuilder] Спрайт '{normalName}' не найден в {atlasPath}");
+            return;
+        }
+
+        var img = btnGO.GetComponent<Image>();
+        img.sprite = normalSprite;
+        img.type   = Image.Type.Sliced;
+        img.color  = Color.white;
+
+        var btn = btnGO.GetComponent<Button>();
+        btn.transition = Selectable.Transition.SpriteSwap;
+        if (pressedSprite != null)
+        {
+            var ss = btn.spriteState;
+            ss.pressedSprite     = pressedSprite;
+            ss.highlightedSprite = pressedSprite;
+            // selectedSprite не задаём: Selected-состояние использует null → выглядит как Normal
+            btn.spriteState = ss;
+        }
+
+        // Сбрасывает Pressed-состояние если указатель уходит за пределы кнопки
+        if (btnGO.GetComponent<ButtonDragReset>() == null)
+            btnGO.AddComponent<ButtonDragReset>();
+    }
+
     static Color Hex(string hex)
     {
         ColorUtility.TryParseHtmlString("#" + hex, out var c);
