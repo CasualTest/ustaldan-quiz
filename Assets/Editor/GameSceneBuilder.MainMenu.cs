@@ -60,7 +60,7 @@ public static partial class GameSceneBuilder
         homeVLG.childForceExpandWidth  = true;
         homeVLG.childForceExpandHeight = false;
         homeVLG.childControlWidth = homeVLG.childControlHeight = true;
-        homeVLG.padding = new RectOffset(40, 40, 40, 24);
+        homeVLG.padding = new RectOffset(40, 40, 40, 100);
         homeVLG.spacing = 16;
 
         // LogoBlock
@@ -354,11 +354,91 @@ public static partial class GameSceneBuilder
         navHLG.childForceExpandHeight = true;
         navHLG.childControlWidth = navHLG.childControlHeight = true;
 
-        var (tabHomeBtn,  iconHome,     labelHome)     = MakeNavTab("TabHome",     "btn_play",     navBar.transform, font);
         var (tabRecsBtn,  iconRecords,  labelRecords)  = MakeNavTab("TabRecords",  "btn_records",  navBar.transform, font);
         var (tabSetBtn,   iconSettings, labelSettings) = MakeNavTab("TabSettings", "btn_settings", navBar.transform, font);
+        var (tabHomeBtn,  iconHome,     labelHome)     = MakeNavTab("TabHome",     "btn_play",     navBar.transform, font);
         var (tabAboutBtn, iconAbout,    labelAbout)    = MakeNavTab("TabAbout",    "btn_about",    navBar.transform, font);
         var (tabProfBtn,  iconProfile,  labelProfile)  = MakeNavTab("TabProfile",  "btn_profile",  navBar.transform, font);
+
+        // Иконка Home — спрайт buttons_41 + пружинная анимация
+        var homeSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_41");
+        if (homeSprite != null)
+        {
+            iconHome.sprite         = homeSprite;
+            iconHome.type           = Image.Type.Simple;
+            iconHome.preserveAspect = true;
+            iconHome.color          = Color.white;
+            var iconLE = iconHome.GetComponent<LayoutElement>();
+            iconLE.minWidth      = homeSprite.rect.width;
+            iconLE.minHeight     = homeSprite.rect.height;
+            iconLE.preferredWidth  = homeSprite.rect.width;
+            iconLE.preferredHeight = homeSprite.rect.height;
+        }
+        tabHomeBtn.gameObject.AddComponent<ButtonSpringAnim>();
+
+        // Иконка Settings — спрайт buttons_33
+        var settingsSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_33");
+        if (settingsSprite != null)
+        {
+            iconSettings.sprite         = settingsSprite;
+            iconSettings.type           = Image.Type.Simple;
+            iconSettings.preserveAspect = true;
+            iconSettings.color          = Color.white;
+            var iconLE = iconSettings.GetComponent<LayoutElement>();
+            iconLE.minWidth      = settingsSprite.rect.width;
+            iconLE.minHeight     = settingsSprite.rect.height;
+            iconLE.preferredWidth  = settingsSprite.rect.width;
+            iconLE.preferredHeight = settingsSprite.rect.height;
+        }
+        tabSetBtn.gameObject.AddComponent<ButtonSpringAnim>();
+
+        // Иконка About — спрайт buttons_34
+        var aboutSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_34");
+        if (aboutSprite != null)
+        {
+            iconAbout.sprite         = aboutSprite;
+            iconAbout.type           = Image.Type.Simple;
+            iconAbout.preserveAspect = true;
+            iconAbout.color          = Color.white;
+            var iconLE = iconAbout.GetComponent<LayoutElement>();
+            iconLE.minWidth      = aboutSprite.rect.width;
+            iconLE.minHeight     = aboutSprite.rect.height;
+            iconLE.preferredWidth  = aboutSprite.rect.width;
+            iconLE.preferredHeight = aboutSprite.rect.height;
+        }
+        tabAboutBtn.gameObject.AddComponent<ButtonSpringAnim>();
+
+        // Иконка Profile — спрайт buttons_34
+        var profileSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_36");
+        if (profileSprite != null)
+        {
+            iconProfile.sprite         = profileSprite;
+            iconProfile.type           = Image.Type.Simple;
+            iconProfile.preserveAspect = true;
+            iconProfile.color          = Color.white;
+            var iconLE = iconProfile.GetComponent<LayoutElement>();
+            iconLE.minWidth      = profileSprite.rect.width;
+            iconLE.minHeight     = profileSprite.rect.height;
+            iconLE.preferredWidth  = profileSprite.rect.width;
+            iconLE.preferredHeight = profileSprite.rect.height;
+        }
+        tabProfBtn.gameObject.AddComponent<ButtonSpringAnim>();
+
+        // Иконка Records — спрайт buttons_42
+        var recordsSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_42");
+        if (recordsSprite != null)
+        {
+            iconRecords.sprite         = recordsSprite;
+            iconRecords.type           = Image.Type.Simple;
+            iconRecords.preserveAspect = true;
+            iconRecords.color          = Color.white;
+            var iconLE = iconRecords.GetComponent<LayoutElement>();
+            iconLE.minWidth      = recordsSprite.rect.width;
+            iconLE.minHeight     = recordsSprite.rect.height;
+            iconLE.preferredWidth  = recordsSprite.rect.width;
+            iconLE.preferredHeight = recordsSprite.rect.height;
+        }
+        tabRecsBtn.gameObject.AddComponent<ButtonSpringAnim>();
 
         // ── Попап «нет вопросов» ─────────────────────────────────────────
         var popup = MakeGO("NoQuestionsPopup", canvasGO.transform);

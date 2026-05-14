@@ -187,9 +187,10 @@ namespace UstAldanQuiz.UI
 
         private static void SetTabColor(Image icon, TMP_Text label, bool active)
         {
-            Color c = active ? ColorActive : ColorInactive;
-            if (icon  != null) icon.color  = c;
-            if (label != null) label.color = c;
+            // Иконки: белый тинт (не искажает цветные спрайты) или полупрозрачный для неактивных
+            if (icon  != null) icon.color  = active ? Color.white : new Color(1f, 1f, 1f, 0.85f);
+            // Подписи: цветной текст — тёмно-зелёный активный, серый неактивный
+            if (label != null) label.color = active ? ColorActive : ColorInactive;
         }
 
         // ── Главная ───────────────────────────────────────────────────────
