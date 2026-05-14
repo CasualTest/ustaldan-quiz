@@ -780,9 +780,10 @@ public static partial class GameSceneBuilder
             btn.spriteState = ss;
         }
 
-        // Сбрасывает Pressed-состояние если указатель уходит за пределы кнопки
         if (btnGO.GetComponent<ButtonDragReset>() == null)
             btnGO.AddComponent<ButtonDragReset>();
+        if (btnGO.GetComponent<ButtonSpringAnim>() == null)
+            btnGO.AddComponent<ButtonSpringAnim>();
     }
 
     static Color Hex(string hex)
