@@ -15,5 +15,5 @@ MonoBehaviour:
   categoryId: people
   displayName: "\u041B\u044E\u0434\u0438"
   description: 
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 394fe57728b662947aa0937f12e2b29f, type: 3}
   themeColor: {r: 1, g: 1, b: 1, a: 1}

@@ -36,7 +36,7 @@ public static partial class GameSceneBuilder
         saVLG.childForceExpandWidth = true;
         saVLG.childForceExpandHeight = false;
         saVLG.childControlWidth = saVLG.childControlHeight = true;
-        saVLG.padding  = new RectOffset(0, 0, 68, 0); // top padding = header height
+        saVLG.padding  = new RectOffset(0, 0, 100, 0); // top padding = header height
         saVLG.spacing  = 0;
 
         // ── Header (compact, ignoreLayout + absolute so VLG doesn't expand it) ──
@@ -47,7 +47,7 @@ public static partial class GameSceneBuilder
         headerRT.anchorMin = new Vector2(0, 1);
         headerRT.anchorMax = new Vector2(1, 1);
         headerRT.pivot     = new Vector2(0.5f, 1f);
-        headerRT.offsetMin = new Vector2(0, -68);
+        headerRT.offsetMin = new Vector2(0, -100);
         headerRT.offsetMax = Vector2.zero;
         header.AddComponent<Image>().color = C_PRIMARY;
         var hHLG = header.AddComponent<HorizontalLayoutGroup>();
@@ -56,18 +56,18 @@ public static partial class GameSceneBuilder
         hHLG.childControlWidth = hHLG.childControlHeight = true;
         hHLG.padding = new RectOffset(20, 20, 0, 0); hHLG.spacing = 12;
 
-        var btnBackGO = MakeSecondaryButton("BtnBack", header.transform, "← Назад", font, minH: 52, minW: 140);
+        var btnBackGO = MakeSecondaryButton("BtnBack", header.transform, "← Назад", font, minH: 64, minW: 160);
         btnBackGO.GetComponent<Image>().color = new Color(1, 1, 1, 0.2f);
-        SetLE(btnBackGO, minH: 52, minW: 140);
+        SetLE(btnBackGO, minH: 64, minW: 160);
         AddLocKey(btnBackGO, "btn_back");
 
         var headerSpacer = MakeGO("Spacer", header.transform);
         SetLE(headerSpacer, flexW: 1f);
         headerSpacer.AddComponent<Image>().color = Color.clear;
 
-        var btnResetGO = MakeSecondaryButton("BtnReset", header.transform, "↺ Сброс", font, minH: 52, minW: 140);
+        var btnResetGO = MakeSecondaryButton("BtnReset", header.transform, "↺ Сброс", font, minH: 64, minW: 160);
         btnResetGO.GetComponent<Image>().color = new Color(1, 1, 1, 0.2f);
-        SetLE(btnResetGO, minH: 52, minW: 140);
+        SetLE(btnResetGO, minH: 64, minW: 160);
         AddLocKey(btnResetGO, "btn_reset");
 
         // ── ProgressBar ──────────────────────────────────────────────────────
@@ -307,21 +307,33 @@ public static partial class GameSceneBuilder
     static GameObject CreateRoadmapTilePrefab(TMP_FontAsset font)
     {
         const string prefabPath = "Assets/Prefabs/RoadmapTile.prefab";
+        const string atlas      = "Assets/Images/Sprites/buttons.png";
         Directory.CreateDirectory("Assets/Prefabs");
         if (File.Exists(prefabPath)) AssetDatabase.DeleteAsset(prefabPath);
 
+        var sDefault = LoadSprite(atlas, "buttons_3");
+        var sCorrect = LoadSprite(atlas, "buttons_4");
+        var sWrong   = LoadSprite(atlas, "buttons_5");
+
         var root    = new GameObject("RoadmapTile", typeof(RectTransform));
         var rootImg = root.AddComponent<Image>();
-        rootImg.color  = Hex("E8E0D0");
-        rootImg.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-        rootImg.type   = Image.Type.Sliced;
+        if (sDefault != null)
+        {
+            rootImg.sprite = sDefault;
+            rootImg.type   = Image.Type.Sliced;
+            rootImg.color  = Color.white;
+        }
+        else
+        {
+            rootImg.color  = Hex("E8E0D0");
+            rootImg.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            rootImg.type   = Image.Type.Sliced;
+        }
 
         var btn = root.AddComponent<Button>();
         btn.targetGraphic = rootImg;
-        var cb = btn.colors;
-        cb.highlightedColor = new Color(0.85f, 0.82f, 0.76f);
-        cb.pressedColor     = new Color(0.75f, 0.72f, 0.66f);
-        btn.colors = cb;
+        btn.transition    = Selectable.Transition.None;
+        root.AddComponent<ButtonSpringAnim>();
 
         // CategoryIcon (centred, shows category sprite)
         var iconGO = new GameObject("CategoryIcon", typeof(RectTransform));
@@ -365,11 +377,14 @@ public static partial class GameSceneBuilder
         // RoadmapTileUI component
         var tileUI = root.AddComponent<RoadmapTileUI>();
         var soTile = new UnityEditor.SerializedObject(tileUI);
-        Prop(soTile, "button",       btn);
-        Prop(soTile, "background",   rootImg);
-        Prop(soTile, "categoryIcon", iconImg);
-        Prop(soTile, "checkmark",    chkImg);
-        Prop(soTile, "indexLabel",   idxTMP);
+        Prop(soTile, "button",        btn);
+        Prop(soTile, "background",    rootImg);
+        Prop(soTile, "categoryIcon",  iconImg);
+        Prop(soTile, "checkmark",     chkImg);
+        Prop(soTile, "indexLabel",    idxTMP);
+        Prop(soTile, "spriteDefault", sDefault);
+        Prop(soTile, "spriteCorrect", sCorrect);
+        Prop(soTile, "spriteWrong",   sWrong);
         soTile.ApplyModifiedProperties();
 
         var prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);

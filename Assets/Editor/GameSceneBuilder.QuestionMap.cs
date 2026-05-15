@@ -36,7 +36,7 @@ public static partial class GameSceneBuilder
         saVLG.childForceExpandWidth = true;
         saVLG.childForceExpandHeight = false;
         saVLG.childControlWidth = saVLG.childControlHeight = true;
-        saVLG.padding  = new RectOffset(0, 0, 64, 0); // top padding = header height
+        saVLG.padding  = new RectOffset(0, 0, 100, 0); // top padding = header height
         saVLG.spacing  = 0;
 
         // --- Header (ignoreLayout + absolute so VLG doesn't expand it) ---
@@ -47,7 +47,7 @@ public static partial class GameSceneBuilder
         headerRT.anchorMin = new Vector2(0, 1);
         headerRT.anchorMax = new Vector2(1, 1);
         headerRT.pivot     = new Vector2(0.5f, 1f);
-        headerRT.offsetMin = new Vector2(0, -64);
+        headerRT.offsetMin = new Vector2(0, -100);
         headerRT.offsetMax = Vector2.zero;
         header.AddComponent<Image>().color = C_PRIMARY;
         var hHLG = header.AddComponent<HorizontalLayoutGroup>();
@@ -89,8 +89,13 @@ public static partial class GameSceneBuilder
         content.AddComponent<Image>().color = Color.clear;
         content.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
+        var tileSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_3");
+        var tileCell   = tileSprite != null
+            ? new Vector2(tileSprite.rect.width, tileSprite.rect.height)
+            : new Vector2(300, 200);
+
         var gridLG = content.AddComponent<GridLayoutGroup>();
-        gridLG.cellSize        = new Vector2(300, 200);
+        gridLG.cellSize        = tileCell;
         gridLG.spacing         = new Vector2(20, 20);
         gridLG.padding         = new RectOffset(30, 30, 30, 30);
         gridLG.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
@@ -263,27 +268,31 @@ public static partial class GameSceneBuilder
 
         var root = new GameObject("QuestionTile", typeof(RectTransform));
 
+        const string atlas = "Assets/Images/Sprites/buttons.png";
+        var sDefault = LoadSprite(atlas, "buttons_3");
+        var sCorrect = LoadSprite(atlas, "buttons_4");
+        var sWrong   = LoadSprite(atlas, "buttons_5");
+
         var rootImg = root.AddComponent<Image>();
-        rootImg.color  = C_TILE_DEF;
-        rootImg.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-        rootImg.type   = Image.Type.Sliced;
+        rootImg.sprite = sDefault != null ? sDefault
+                       : AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        rootImg.type  = Image.Type.Sliced;
+        rootImg.color = sDefault != null ? Color.white : C_TILE_DEF;
 
         var btn = root.AddComponent<Button>();
         btn.targetGraphic = rootImg;
-        var cb = btn.colors;
-        cb.highlightedColor = new Color(0.85f, 0.82f, 0.76f);
-        cb.pressedColor     = new Color(0.75f, 0.72f, 0.66f);
-        btn.colors = cb;
+        btn.transition    = Selectable.Transition.None;
+        root.AddComponent<ButtonSpringAnim>();
 
         // Number
         var numGO  = new GameObject("TileNumber", typeof(RectTransform));
         numGO.transform.SetParent(root.transform, false);
         var numRT  = numGO.GetComponent<RectTransform>();
-        numRT.anchorMin = new Vector2(0, 0.5f); numRT.anchorMax = Vector2.one;
-        numRT.offsetMin = new Vector2(12, 0); numRT.offsetMax = new Vector2(-12, -8);
+        numRT.anchorMin = Vector2.zero; numRT.anchorMax = Vector2.one;
+        numRT.offsetMin = numRT.offsetMax = Vector2.zero;
         var numTMP = numGO.AddComponent<TextMeshProUGUI>();
         numTMP.text = "1"; numTMP.fontSize = 44; numTMP.color = C_TEXT;
-        numTMP.alignment = TextAlignmentOptions.BottomRight;
+        numTMP.alignment = TextAlignmentOptions.Center;
         if (font != null) numTMP.font = font;
 
         // Checkmark (hidden)
@@ -302,6 +311,9 @@ public static partial class GameSceneBuilder
         Prop(soTile, "tileBackground",  rootImg);
         Prop(soTile, "tileNumber",      numTMP);
         Prop(soTile, "tileCheckmark",   chkGO.GetComponent<Image>());
+        Prop(soTile, "spriteDefault",   sDefault);
+        Prop(soTile, "spriteCorrect",   sCorrect);
+        Prop(soTile, "spriteWrong",     sWrong);
         soTile.ApplyModifiedProperties();
 
         var prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);

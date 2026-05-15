@@ -22,7 +22,10 @@ namespace UstAldanQuiz.UI
         [SerializeField] private Image tileCategoryIcon;
         [SerializeField] private Image tileCheckmark;
 
-        [Header("Спрайты (необязательно)")]
+        [Header("Спрайты состояний")]
+        [SerializeField] private Sprite spriteDefault;
+        [SerializeField] private Sprite spriteCorrect;
+        [SerializeField] private Sprite spriteWrong;
         [SerializeField] private Sprite checkmarkSprite;
         [SerializeField] private Sprite crossSprite;
 
@@ -74,38 +77,53 @@ namespace UstAldanQuiz.UI
             switch (state)
             {
                 case TileState.Closed:
-                    tileBackground.color  = colorClosed;
-                    button.interactable   = true;
+                    ApplySprite(spriteDefault, colorClosed);
+                    button.interactable = true;
                     if (tileCheckmark != null) tileCheckmark.gameObject.SetActive(false);
                     break;
 
                 case TileState.Correct:
-                    tileBackground.color = colorCorrect;
-                    button.interactable  = false;
+                    ApplySprite(spriteCorrect, colorCorrect);
+                    button.interactable = false;
                     ShowCheckmark(correct: true);
                     StartCoroutine(BounceScale());
                     break;
 
                 case TileState.Wrong:
-                    tileBackground.color = colorWrong;
-                    button.interactable  = false;
+                    ApplySprite(spriteWrong, colorWrong);
+                    button.interactable = false;
                     ShowCheckmark(correct: false);
                     StartCoroutine(BounceScale());
                     break;
 
                 case TileState.Active:
-                    tileBackground.color = colorActive;
-                    button.interactable  = false;
+                    ApplySprite(spriteDefault, colorActive);
+                    button.interactable = false;
                     break;
+            }
+        }
+
+        private void ApplySprite(Sprite sprite, Color fallbackColor)
+        {
+            if (sprite != null)
+            {
+                tileBackground.sprite = sprite;
+                tileBackground.type   = Image.Type.Sliced;
+                tileBackground.color  = Color.white;
+            }
+            else
+            {
+                tileBackground.color = fallbackColor;
             }
         }
 
         private void ShowCheckmark(bool correct)
         {
             if (tileCheckmark == null) return;
+            var sprite = correct ? checkmarkSprite : crossSprite;
+            if (sprite == null) { tileCheckmark.gameObject.SetActive(false); return; }
+            tileCheckmark.sprite = sprite;
             tileCheckmark.gameObject.SetActive(true);
-            if (correct  && checkmarkSprite != null) tileCheckmark.sprite = checkmarkSprite;
-            if (!correct && crossSprite     != null) tileCheckmark.sprite = crossSprite;
         }
 
         private void HandleClick()

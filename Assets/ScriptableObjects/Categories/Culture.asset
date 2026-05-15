@@ -15,5 +15,5 @@ MonoBehaviour:
   categoryId: culture
   displayName: "\u041A\u0443\u043B\u044C\u0442\u0443\u0440\u0430"
   description: 
-  icon: {fileID: 10911, guid: 0000000000000000f000000000000000, type: 0}
+  icon: {fileID: 21300000, guid: 65130f52e50acd54bba5f36004b73f38, type: 3}
   themeColor: {r: 1, g: 1, b: 1, a: 1}

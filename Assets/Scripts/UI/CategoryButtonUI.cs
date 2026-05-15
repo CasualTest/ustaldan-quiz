@@ -8,9 +8,10 @@ namespace UstAldanQuiz.UI
 {
     public class CategoryButtonUI : MonoBehaviour
     {
-        [SerializeField] Button    button;
-        [SerializeField] Image     background;
-        [SerializeField] TMP_Text  label;
+        [SerializeField] Button     button;
+        [SerializeField] Image      background;
+        [SerializeField] Image      iconImage;
+        [SerializeField] TMP_Text   label;
         [SerializeField] GameObject highlight;
 
         public QuestionCategory Category { get; private set; }
@@ -20,6 +21,11 @@ namespace UstAldanQuiz.UI
         {
             Category = category;
             if (label != null) label.text = category.displayName;
+            if (iconImage != null)
+            {
+                iconImage.sprite = category.icon;
+                iconImage.gameObject.SetActive(category.icon != null);
+            }
             button?.onClick.AddListener(() => OnClicked?.Invoke(this));
         }
 

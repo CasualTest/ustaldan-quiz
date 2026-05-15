@@ -21,6 +21,21 @@ public static partial class GameSceneBuilder
         if (skipIfExists && File.Exists("Assets/Scenes/MainMenu.unity"))
         { Debug.Log("[GameSceneBuilder] MainMenu.unity уже существует — пропускаем."); return; }
 
+        // Автоназначение иконок категориям по categoryId → Assets/Images/Icons/{id}.png
+        foreach (var guid in AssetDatabase.FindAssets("t:QuestionCategory"))
+        {
+            var catPath = AssetDatabase.GUIDToAssetPath(guid);
+            var cat     = AssetDatabase.LoadAssetAtPath<QuestionCategory>(catPath);
+            if (cat == null) continue;
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>($"Assets/Images/Icons/{cat.categoryId}.png");
+            if (sprite != null && cat.icon != sprite)
+            {
+                cat.icon = sprite;
+                EditorUtility.SetDirty(cat);
+            }
+        }
+        AssetDatabase.SaveAssets();
+
         var scene    = OpenOrCreateScene("Assets/Scenes/MainMenu.unity");
         var font     = FindFont();
         var canvasGO = SetupCanvas(scene.name);
@@ -337,16 +352,7 @@ public static partial class GameSceneBuilder
         navBarRT.pivot            = new Vector2(0.5f, 0);
         navBarRT.anchoredPosition = Vector2.zero;
         navBarRT.sizeDelta        = new Vector2(0, 80);
-        navBar.AddComponent<Image>().color = C_CARD;
-
-        // Тонкая линия-разделитель сверху (ignoreLayout чтобы HLG её не тронул)
-        var navLine   = MakeGO("TopLine", navBar.transform);
-        var navLineRT = navLine.GetComponent<RectTransform>();
-        navLineRT.anchorMin = new Vector2(0, 1); navLineRT.anchorMax = new Vector2(1, 1);
-        navLineRT.pivot     = new Vector2(0.5f, 1); navLineRT.anchoredPosition = Vector2.zero;
-        navLineRT.sizeDelta = new Vector2(0, 1);
-        navLine.AddComponent<Image>().color = new Color(0.80f, 0.80f, 0.80f);
-        navLine.AddComponent<LayoutElement>().ignoreLayout = true;
+        navBar.AddComponent<Image>().color = C_BG;
 
         var navHLG = navBar.AddComponent<HorizontalLayoutGroup>();
         navHLG.childAlignment         = TextAnchor.MiddleCenter;
@@ -614,13 +620,25 @@ public static partial class GameSceneBuilder
         hlGO.AddComponent<Image>().color = new Color(1f, 0.84f, 0f, 0.35f);
         hlGO.SetActive(false);
 
+        // IconImage — верхние 60% кнопки
+        var iconGO = new GameObject("IconImage", typeof(RectTransform));
+        iconGO.transform.SetParent(root.transform, false);
+        var iconRT = iconGO.GetComponent<RectTransform>();
+        iconRT.anchorMin = new Vector2(0.1f, 0.38f);
+        iconRT.anchorMax = new Vector2(0.9f, 0.96f);
+        iconRT.offsetMin = iconRT.offsetMax = Vector2.zero;
+        var iconImg = iconGO.AddComponent<Image>();
+        iconImg.color           = Color.white;
+        iconImg.preserveAspect  = true;
+        iconGO.SetActive(false); // включается в Setup() если icon != null
+
         // Label
         var lblGO = new GameObject("Label", typeof(RectTransform));
         lblGO.transform.SetParent(root.transform, false);
         var lblRT = lblGO.GetComponent<RectTransform>();
         lblRT.anchorMin = new Vector2(0f, 0f);
-        lblRT.anchorMax = new Vector2(1f, 0.55f);
-        lblRT.offsetMin = new Vector2(12f, 8f);
+        lblRT.anchorMax = new Vector2(1f, 0.42f);
+        lblRT.offsetMin = new Vector2(12f, 6f);
         lblRT.offsetMax = new Vector2(-12f, 0f);
         var lbl = lblGO.AddComponent<TextMeshProUGUI>();
         lbl.text      = "Категория";
@@ -634,10 +652,11 @@ public static partial class GameSceneBuilder
         // CategoryButtonUI
         var catUI = root.AddComponent<CategoryButtonUI>();
         var soCat = new UnityEditor.SerializedObject(catUI);
-        var pBtn  = soCat.FindProperty("button");    if (pBtn  != null) pBtn.objectReferenceValue  = btn;
-        var pBg   = soCat.FindProperty("background"); if (pBg   != null) pBg.objectReferenceValue   = rootImg;
-        var pLbl  = soCat.FindProperty("label");     if (pLbl  != null) pLbl.objectReferenceValue  = lbl;
-        var pHl   = soCat.FindProperty("highlight"); if (pHl   != null) pHl.objectReferenceValue   = hlGO;
+        var pBtn  = soCat.FindProperty("button");     if (pBtn  != null) pBtn.objectReferenceValue  = btn;
+        var pBg   = soCat.FindProperty("background"); if (pBg  != null) pBg.objectReferenceValue   = rootImg;
+        var pIcon = soCat.FindProperty("iconImage");  if (pIcon != null) pIcon.objectReferenceValue = iconImg;
+        var pLbl  = soCat.FindProperty("label");      if (pLbl  != null) pLbl.objectReferenceValue  = lbl;
+        var pHl   = soCat.FindProperty("highlight");  if (pHl   != null) pHl.objectReferenceValue   = hlGO;
         soCat.ApplyModifiedProperties();
 
         var prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
