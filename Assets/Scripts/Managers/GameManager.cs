@@ -43,6 +43,7 @@ namespace UstAldanQuiz.Managers
             _database        = database;
             CorrectAnswers   = 0;
 
+            database.EnsureRuntimeQuestionsLoaded();
             var pool = database.GetQuestionsByCategory(category);
             Shuffle(pool);
             SessionQuestions = pool;

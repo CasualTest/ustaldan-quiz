@@ -85,6 +85,7 @@ namespace UstAldanQuiz.Editor
 
         static void RunImportQuestions()
         {
+            AssetDatabase.Refresh(); // сбрасываем кэш перед импортом — иначе Unity видит "призраки" удалённых ассетов
             string csv = Download(QuestionsUrl);
             if (csv != null) ProcessQuestions(csv);
         }
@@ -137,16 +138,16 @@ namespace UstAldanQuiz.Editor
             var rows = ParseCsv(csv);
             if (rows.Count < 2) { Debug.LogWarning("[GoogleSheets] Лист вопросов пустой."); return; }
 
-            var hdr   = rows[0];
-            int iId   = ColAny(hdr, "id", "ID");
-            int iCatId= ColAny(hdr, "category_id", "category", "Category");
-            int iCatN = ColAny(hdr, "category_name", "category", "Category");
-            int iQ    = ColAny(hdr, "question", "question_ru", "Question_RU");
-            int iQSah = ColAny(hdr, "question_sah", "Question_SAH");
-            int iA1   = ColAny(hdr, "answer1", "answer_1", "Answer_1");
-            int iA2   = ColAny(hdr, "answer2", "answer_2", "Answer_2");
-            int iA3   = ColAny(hdr, "answer3", "answer_3", "Answer_3");
-            int iA4   = ColAny(hdr, "answer4", "answer_4", "Answer_4");
+            var hdr      = rows[0];
+            int iId      = ColAny(hdr, "id", "ID");
+            int iCatId   = ColAny(hdr, "category_id", "category", "Category");
+            int iCatN    = ColAny(hdr, "category_name", "category", "Category");
+            int iQ       = ColAny(hdr, "question", "question_ru", "Question_RU");
+            int iQSah    = ColAny(hdr, "question_sah", "Question_SAH");
+            int iA1      = ColAny(hdr, "answer1", "answer_1", "Answer_1");
+            int iA2      = ColAny(hdr, "answer2", "answer_2", "Answer_2");
+            int iA3      = ColAny(hdr, "answer3", "answer_3", "Answer_3");
+            int iA4      = ColAny(hdr, "answer4", "answer_4", "Answer_4");
             int iCorr    = ColAny(hdr, "correct_index", "Correct_Index");
             int iDiff    = ColAny(hdr, "difficulty", "Difficulty");
             int iFactRu  = ColAny(hdr, "fact_after_ru", "Fact_After_RU", "fact_after", "Fact_After");
@@ -159,20 +160,13 @@ namespace UstAldanQuiz.Editor
                 return;
             }
 
-            Directory.CreateDirectory(QuestionsDir);
-            Directory.CreateDirectory(CategoriesDir);
-            Directory.CreateDirectory(DatabaseDir);
+            EnsureAssetFolder(CategoriesDir);
+            EnsureAssetFolder(DatabaseDir);
+            EnsureAssetFolder("Assets/Resources");
 
-            // Собираем все существующие QuestionData assets до импорта
-            var existingGuids = AssetDatabase.FindAssets("t:QuestionData", new[] { QuestionsDir });
-            var existingPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var g in existingGuids)
-                existingPaths.Add(AssetDatabase.GUIDToAssetPath(g));
-
-            var catCache   = new Dictionary<string, QuestionCategory>(StringComparer.OrdinalIgnoreCase);
-            var catAssets  = new Dictionary<string, List<QuestionData>>(StringComparer.OrdinalIgnoreCase);
-            var touchedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            int created = 0, updated = 0, skipped = 0;
+            var catCache = new Dictionary<string, QuestionCategory>(StringComparer.OrdinalIgnoreCase);
+            var entries  = new List<QuestionDatabase.QuestionJsonEntry>();
+            int skipped  = 0;
 
             for (int r = 1; r < rows.Count; r++)
             {
@@ -180,75 +174,47 @@ namespace UstAldanQuiz.Editor
                 string q = V(row, iQ);
                 if (string.IsNullOrWhiteSpace(q)) { skipped++; continue; }
 
-                string rowId   = iId >= 0 ? V(row, iId) : r.ToString();
+                string rowId   = iId >= 0 ? V(row, iId) : "";
+                if (string.IsNullOrWhiteSpace(rowId)) rowId = r.ToString();
                 string catId   = (iCatId >= 0 ? V(row, iCatId) : "general").ToLower();
-                string catName = iCatN >= 0 ? V(row, iCatN) : catId;
+                string catName = iCatN  >= 0 ? V(row, iCatN)  : catId;
                 if (string.IsNullOrWhiteSpace(catId)) catId = "general";
 
                 var answers = new[] { V(row, iA1), V(row, iA2), V(row, iA3), V(row, iA4) };
                 int corr = iCorr >= 0 && int.TryParse(V(row, iCorr), out int ci) ? Mathf.Clamp(ci, 0, 3) : 0;
                 int diff = iDiff >= 0 && int.TryParse(V(row, iDiff), out int d)  ? Mathf.Clamp(d,  1, 3) : 1;
 
-                // Правильный ответ всегда на индексе 0
                 if (corr != 0) (answers[0], answers[corr]) = (answers[corr], answers[0]);
 
-                if (!catCache.TryGetValue(catId, out var cat))
+                if (!catCache.ContainsKey(catId))
+                    catCache[catId] = GetOrCreateCategory(catId, catName);
+
+                entries.Add(new QuestionDatabase.QuestionJsonEntry
                 {
-                    cat = GetOrCreateCategory(catId, catName);
-                    catCache[catId] = cat;
-                }
-
-                string folder    = $"{QuestionsDir}/{Cap(catId)}";
-                Directory.CreateDirectory(folder);
-                string assetPath = $"{folder}/Q{rowId.Trim().PadLeft(3, '0')}.asset";
-
-                var asset = AssetDatabase.LoadAssetAtPath<QuestionData>(assetPath);
-                if (asset == null)
-                {
-                    asset = ScriptableObject.CreateInstance<QuestionData>();
-                    AssetDatabase.CreateAsset(asset, assetPath);
-                    created++;
-                }
-                else updated++;
-
-                asset.category        = cat;
-                asset.questionText    = q;
-                asset.questionTextSah = iQSah    >= 0 ? V(row, iQSah)    : "";
-                asset.answers         = answers;
-                asset.difficulty      = diff;
-                asset.factAfterRu     = iFactRu  >= 0 ? V(row, iFactRu)  : "";
-                asset.factAfterSah    = iFactSah >= 0 ? V(row, iFactSah) : "";
-                EditorUtility.SetDirty(asset);
-                touchedPaths.Add(assetPath);
-
-                if (!catAssets.ContainsKey(catId)) catAssets[catId] = new List<QuestionData>();
-                catAssets[catId].Add(asset);
+                    id          = $"Q{rowId.Trim().PadLeft(3, '0')}",
+                    categoryId  = catId,
+                    questionRu  = q,
+                    questionSah = iQSah    >= 0 ? V(row, iQSah)    : "",
+                    answers     = answers,
+                    difficulty  = diff,
+                    factRu      = iFactRu  >= 0 ? V(row, iFactRu)  : "",
+                    factSah     = iFactSah >= 0 ? V(row, iFactSah) : "",
+                });
             }
 
-            // Удаляем ассеты которых нет в таблице
-            int deleted = 0;
-            foreach (var path in existingPaths)
-            {
-                if (!touchedPaths.Contains(path))
-                {
-                    AssetDatabase.DeleteAsset(path);
-                    deleted++;
-                }
-            }
+            // Сохраняем все вопросы в один JSON — Resources/questions.json
+            const string jsonPath = "Assets/Resources/questions.json";
+            string json = JsonUtility.ToJson(
+                new QuestionDatabase.QuestionsJson { questions = entries.ToArray() },
+                prettyPrint: true);
+            File.WriteAllText(jsonPath, json, Encoding.UTF8);
+            AssetDatabase.ImportAsset(jsonPath, ImportAssetOptions.ForceUpdate);
 
-            // Собираем полный список всех импортированных категорий и вопросов
-            var allCats      = new List<QuestionCategory>(catCache.Values);
-            var allQuestions = new List<QuestionData>();
-            foreach (var kv in catAssets) allQuestions.AddRange(kv.Value);
+            var allCats = new List<QuestionCategory>(catCache.Values);
+            allCats.Sort((a, b) => string.Compare(a.categoryId, b.categoryId, StringComparison.Ordinal));
+            UpdateAllDatabases(allCats);
 
-            // Стабильная сортировка — порядок в asset всегда одинаковый, нет лишних диффов в git
-            allCats.Sort((a, b) => string.Compare(a.categoryId, b.categoryId, System.StringComparison.Ordinal));
-            allQuestions.Sort((a, b) => string.Compare(a.name, b.name, System.StringComparison.Ordinal));
-
-            // Обновляем все существующие QuestionDatabase — каждая получает полный список
-            UpdateAllDatabases(allCats, allQuestions);
-
-            Debug.Log($"[GoogleSheets] Вопросы — создано: {created}, обновлено: {updated}, удалено: {deleted}, пропущено: {skipped}.");
+            Debug.Log($"[GoogleSheets] Вопросы — сохранено: {entries.Count}, пропущено: {skipped}. → {jsonPath}");
         }
 
         static QuestionCategory GetOrCreateCategory(string catId, string displayName)
@@ -266,11 +232,10 @@ namespace UstAldanQuiz.Editor
             return cat;
         }
 
-        static void UpdateAllDatabases(List<QuestionCategory> allCats, List<QuestionData> allQuestions)
+        static void UpdateAllDatabases(List<QuestionCategory> allCats)
         {
             var guids = AssetDatabase.FindAssets("t:QuestionDatabase");
 
-            // Если баз нет вообще — создаём одну мастер-базу
             if (guids.Length == 0)
             {
                 var master = ScriptableObject.CreateInstance<QuestionDatabase>();
@@ -280,17 +245,16 @@ namespace UstAldanQuiz.Editor
                 Debug.Log("[GoogleSheets] Создана мастер-база QuestionDatabase.asset");
             }
 
-            // Каждую найденную базу наполняем полным списком категорий и вопросов
             foreach (var guid in guids)
             {
                 var db = AssetDatabase.LoadAssetAtPath<QuestionDatabase>(AssetDatabase.GUIDToAssetPath(guid));
                 if (db == null) continue;
                 db.categories   = new List<QuestionCategory>(allCats);
-                db.allQuestions = new List<QuestionData>(allQuestions);
+                db.allQuestions = new List<QuestionData>(); // вопросы загружаются из JSON в рантайме
                 EditorUtility.SetDirty(db);
             }
 
-            Debug.Log($"[GoogleSheets] Обновлено баз данных: {guids.Length} — категорий: {allCats.Count}, вопросов: {allQuestions.Count}.");
+            Debug.Log($"[GoogleSheets] Обновлено баз данных: {guids.Length} — категорий: {allCats.Count}.");
         }
 
         // ── Locale ────────────────────────────────────────────────────────────
@@ -396,6 +360,15 @@ namespace UstAldanQuiz.Editor
         static int    ColAny(List<string> h, params string[] names) { foreach (var n in names) { int i = Col(h, n); if (i >= 0) return i; } return -1; }
         static string V(List<string> row, int idx)  => idx >= 0 && idx < row.Count ? row[idx].Trim() : "";
         static string Cap(string s)                 => string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s.Substring(1).ToLower();
+
+        static void EnsureAssetFolder(string path)
+        {
+            if (AssetDatabase.IsValidFolder(path)) return;
+            string parent = System.IO.Path.GetDirectoryName(path)?.Replace('\\', '/') ?? "Assets";
+            string name   = System.IO.Path.GetFileName(path);
+            EnsureAssetFolder(parent); // рекурсивно создаём родителя
+            AssetDatabase.CreateFolder(parent, name);
+        }
 
         static bool EnsureConfig()
         {

@@ -87,6 +87,7 @@ namespace UstAldanQuiz.UI
                 return;
             }
 
+            questionDatabase.EnsureRuntimeQuestionsLoaded();
             _questions = new List<QuestionData>(questionDatabase.allQuestions);
             if (_questions.Count == 0)
             {
