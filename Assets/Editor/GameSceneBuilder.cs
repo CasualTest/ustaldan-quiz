@@ -61,18 +61,19 @@ public static partial class GameSceneBuilder
     [MenuItem("UstAldan Quiz/Game Setup/6 — Add Scenes to Build Settings")]
     public static void AddScenesToBuildSettings() => DoAddScenes();
 
-    // Принудительно пересоздаёт все сцены
-    [MenuItem("UstAldan Quiz/Game Setup/FORCE REBUILD — пересоздать все сцены")]
+    // Принудительно пересоздаёт prefab'ы и все сцены
+    [MenuItem("UstAldan Quiz/Game Setup/FORCE REBUILD — пересоздать всё")]
     public static void ForceRebuildAll()
     {
         SetPTSansAsDefault();
+        BuildUIPrefabs();
         DoBuildIntro();
         DoBuildMainMenu();
         DoBuildQuestionMap();
         DoBuildResults();
         DoBuildRoadmap();
         DoAddScenes();
-        Debug.Log("[GameSceneBuilder] ✓ Все сцены пересозданы.");
+        Debug.Log("[GameSceneBuilder] ✓ Всё пересоздано.");
     }
 
     static void SetPTSansAsDefault()
