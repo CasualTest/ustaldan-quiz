@@ -10,10 +10,6 @@ using UstAldanQuiz.Utils;
 
 namespace UstAldanQuiz.UI
 {
-    /// <summary>
-    /// Сцена Roadmap — змейка из вопросов (как Quizzland).
-    /// Карта генерируется один раз и хранится в PlayerPrefs до прохождения всех вопросов.
-    /// </summary>
     public class RoadmapUI : MonoBehaviour
     {
         [Header("Данные")]
@@ -29,22 +25,12 @@ namespace UstAldanQuiz.UI
         [SerializeField] private TMP_Text      progressText;
 
         [Header("Хедер")]
-        [SerializeField] private Button   btnBack;
-        [SerializeField] private Button   btnReset;
-        [SerializeField] private Button   btnFinish;
+        [SerializeField] private Button btnBack;
+        [SerializeField] private Button btnReset;
+        [SerializeField] private Button btnFinish;
 
         [Header("Панель вопроса")]
-        [SerializeField] private GameObject    questionPanel;
-        [SerializeField] private RectTransform questionCard;
-        [SerializeField] private CanvasGroup   questionCardGroup;
-        [SerializeField] private TMP_Text      questionText;
-        [SerializeField] private Image         questionImage;
-        [SerializeField] private GameObject    questionImageContainer;
-        [SerializeField] private Button[]      answerButtons = new Button[4];
-        [SerializeField] private TMP_Text[]    answerLabels  = new TMP_Text[4];
-        [SerializeField] private TMP_Text      resultFeedback;
-        [SerializeField] private Button        btnContinue;
-        [SerializeField] private FactPopup     factPopup;
+        [SerializeField] private QuestionWindow questionWindow;
 
         [Header("Цвета")]
         [SerializeField] private Color colorDefault = Color.white;
@@ -52,18 +38,17 @@ namespace UstAldanQuiz.UI
         [SerializeField] private Color colorWrong   = new Color(0.96f, 0.26f, 0.21f);
         [SerializeField] private Color lineColor    = new Color(0.55f, 0.50f, 0.42f, 0.70f);
 
-        // Must match RoadmapManager.TileSize
         private const float TileSize      = RoadmapManager.TileSize;
         private const float LineThickness = 10f;
 
-        private readonly List<RoadmapTileUI>  _tiles     = new List<RoadmapTileUI>();
-        private          List<QuestionData>   _questions = new List<QuestionData>();
-        private          RoadmapSaveData      _layout;
-        private          RoadmapTileUI        _activeTile;
-        private          int                  _correctCount;
-        private          int                  _answeredCount;
-        private          int                  _lockedCount;
-        private          int[]                _shuffledIndices;
+        private readonly List<RoadmapTileUI> _tiles     = new List<RoadmapTileUI>();
+        private          List<QuestionData>  _questions = new List<QuestionData>();
+        private          RoadmapSaveData     _layout;
+        private          RoadmapTileUI       _activeTile;
+        private          int                 _correctCount;
+        private          int                 _answeredCount;
+        private          int                 _lockedCount;
+        private          int[]               _shuffledIndices;
 
         private int NewQuestionsTotal => _tiles.Count - _lockedCount;
 
@@ -75,11 +60,12 @@ namespace UstAldanQuiz.UI
         {
             btnBack?.onClick.AddListener(GoToMainMenu);
             btnReset?.onClick.AddListener(ResetProgress);
-            btnContinue?.onClick.AddListener(CloseQuestionPanel);
             btnFinish?.onClick.AddListener(GoToMainMenu);
 
-            if (questionPanel != null) questionPanel.SetActive(false);
-            if (btnFinish     != null) btnFinish.gameObject.SetActive(false);
+            if (questionWindow != null)
+                questionWindow.OnClosed += HandleWindowClosed;
+
+            if (btnFinish != null) btnFinish.gameObject.SetActive(false);
 
             if (questionDatabase == null)
             {
@@ -120,9 +106,9 @@ namespace UstAldanQuiz.UI
         {
             btnBack?.onClick.RemoveAllListeners();
             btnReset?.onClick.RemoveAllListeners();
-            btnContinue?.onClick.RemoveAllListeners();
             btnFinish?.onClick.RemoveAllListeners();
-            foreach (var btn in answerButtons) btn?.onClick.RemoveAllListeners();
+            if (questionWindow != null)
+                questionWindow.OnClosed -= HandleWindowClosed;
         }
 
         // ── Map building ───────────────────────────────────────────────────
@@ -133,14 +119,12 @@ namespace UstAldanQuiz.UI
             _tiles.Clear();
             _lockedCount = 0;
 
-            // Content height based on number of rows
             int rows = Mathf.CeilToInt((float)_layout.nodes.Count / RoadmapManager.Cols);
             float contentHeight = RoadmapManager.TopMargin
                                 + rows * (TileSize + RoadmapManager.VGap)
                                 + 80f;
             mapContent.sizeDelta = new Vector2(1080f, contentHeight);
 
-            // Lines container: stretch over content
             if (linesContainer != null)
             {
                 linesContainer.anchorMin = Vector2.zero;
@@ -149,7 +133,6 @@ namespace UstAldanQuiz.UI
                 linesContainer.SetAsFirstSibling();
             }
 
-            // Spawn tiles — match by index (nodes are generated in the same order as _questions)
             for (int i = 0; i < _layout.nodes.Count; i++)
             {
                 var node = _layout.nodes[i];
@@ -182,8 +165,8 @@ namespace UstAldanQuiz.UI
 
         private void DrawLines()
         {
-            var parent  = linesContainer != null ? linesContainer : mapContent;
-            var drawn   = new HashSet<int>();
+            var parent = linesContainer != null ? linesContainer : mapContent;
+            var drawn  = new HashSet<int>();
 
             for (int i = 0; i < _layout.nodes.Count; i++)
             {
@@ -197,7 +180,6 @@ namespace UstAldanQuiz.UI
                     var nodeB = _layout.nodes[j];
                     var line  = new GameObject("Line", typeof(RectTransform));
                     line.transform.SetParent(parent, false);
-
                     line.AddComponent<Image>().color = lineColor;
 
                     var rt   = line.GetComponent<RectTransform>();
@@ -237,7 +219,7 @@ namespace UstAldanQuiz.UI
             }
         }
 
-        // ── Question popup ─────────────────────────────────────────────────
+        // ── Question window ────────────────────────────────────────────────
 
         private void HandleTileClick(RoadmapTileUI tile)
         {
@@ -248,50 +230,61 @@ namespace UstAldanQuiz.UI
 
         private void ShowQuestion(QuestionData q)
         {
+            if (questionWindow == null) return;
+
             _shuffledIndices = new[] { 0, 1, 2, 3 };
             ShuffleArray(_shuffledIndices);
 
-            if (questionText != null) questionText.text = GetLocalizedQuestion(q);
+            if (questionWindow.questionText != null)
+                questionWindow.questionText.text = GetLocalizedQuestion(q);
 
             bool hasImage = q.questionImage != null;
-            if (questionImageContainer != null) questionImageContainer.SetActive(hasImage);
-            if (hasImage && questionImage != null) questionImage.sprite = q.questionImage;
+            if (questionWindow.mediaZone != null)
+                questionWindow.mediaZone.SetActive(hasImage);
+            if (hasImage && questionWindow.questionImage != null)
+                questionWindow.questionImage.sprite = q.questionImage;
 
-            for (int i = 0; i < answerButtons.Length; i++)
+            var btns   = questionWindow.answerButtons;
+            var labels = questionWindow.answerLabels;
+            for (int i = 0; i < btns.Length; i++)
             {
-                if (answerButtons[i] == null) continue;
+                if (btns[i] == null) continue;
                 int captured = i;
-                answerLabels[i].text          = $"{Prefixes[i]}: {q.answers[_shuffledIndices[i]]}";
-                answerButtons[i].image.color  = colorDefault;
-                answerButtons[i].interactable = true;
-                answerButtons[i].onClick.RemoveAllListeners();
-                answerButtons[i].onClick.AddListener(() => HandleAnswer(captured));
+                labels[i].text         = $"{Prefixes[i]}: {q.answers[_shuffledIndices[i]]}";
+                btns[i].image.color    = colorDefault;
+                btns[i].interactable   = true;
+                btns[i].onClick.RemoveAllListeners();
+                btns[i].onClick.AddListener(() => HandleAnswer(captured));
             }
 
-            if (resultFeedback != null) resultFeedback.gameObject.SetActive(false);
-            if (btnContinue    != null) btnContinue.gameObject.SetActive(false);
+            if (questionWindow.resultFeedback != null)
+                questionWindow.resultFeedback.gameObject.SetActive(false);
+            if (questionWindow.btnContinue != null)
+                questionWindow.btnContinue.gameObject.SetActive(false);
 
-            if (questionPanel != null) questionPanel.SetActive(true);
-            StartCoroutine(AnimateCardIn());
+            questionWindow.Open();
         }
 
         private void HandleAnswer(int displayedIndex)
         {
+            if (questionWindow == null) return;
+
             bool isCorrect      = _shuffledIndices[displayedIndex] == 0;
             int  correctDisplay = Array.IndexOf(_shuffledIndices, 0);
 
-            foreach (var btn in answerButtons) if (btn != null) btn.interactable = false;
+            var btns = questionWindow.answerButtons;
+            foreach (var btn in btns) if (btn != null) btn.interactable = false;
 
-            if (answerButtons[correctDisplay] != null)
-                answerButtons[correctDisplay].image.color = colorCorrect;
-            if (!isCorrect && answerButtons[displayedIndex] != null)
-                answerButtons[displayedIndex].image.color = colorWrong;
+            if (btns[correctDisplay] != null)
+                btns[correctDisplay].image.color = colorCorrect;
+            if (!isCorrect && btns[displayedIndex] != null)
+                btns[displayedIndex].image.color = colorWrong;
 
-            if (resultFeedback != null)
+            if (questionWindow.resultFeedback != null)
             {
-                resultFeedback.gameObject.SetActive(true);
-                resultFeedback.text  = LocaleManager.Get(isCorrect ? "question_correct" : "question_wrong");
-                resultFeedback.color = isCorrect ? colorCorrect : colorWrong;
+                questionWindow.resultFeedback.gameObject.SetActive(true);
+                questionWindow.resultFeedback.text  = LocaleManager.Get(isCorrect ? "question_correct" : "question_wrong");
+                questionWindow.resultFeedback.color = isCorrect ? colorCorrect : colorWrong;
             }
 
             if (isCorrect) { _correctCount++; AudioManager.Instance?.PlayCorrect(); HapticManager.Correct(); }
@@ -311,7 +304,7 @@ namespace UstAldanQuiz.UI
             string fact = sah && !string.IsNullOrWhiteSpace(qd?.factAfterSah)
                 ? qd.factAfterSah : qd?.factAfterRu;
 
-            if (!isCorrect && !string.IsNullOrWhiteSpace(fact) && factPopup != null)
+            if (!isCorrect && !string.IsNullOrWhiteSpace(fact) && questionWindow.factPopup != null)
                 StartCoroutine(ShowFactAfterDelay(fact, 0.8f));
             else
                 StartCoroutine(ShowContinueAfterDelay(1.5f));
@@ -320,23 +313,23 @@ namespace UstAldanQuiz.UI
         private IEnumerator ShowContinueAfterDelay(float delay)
         {
             yield return new WaitForSeconds(delay);
-            if (btnContinue != null) btnContinue.gameObject.SetActive(true);
+            if (questionWindow?.btnContinue != null)
+                questionWindow.btnContinue.gameObject.SetActive(true);
         }
 
         private IEnumerator ShowFactAfterDelay(string fact, float delay)
         {
             yield return new WaitForSeconds(delay);
-            factPopup?.Show(fact, onClosed: () =>
+            questionWindow?.factPopup?.Show(fact, onClosed: () =>
             {
-                if (btnContinue != null) btnContinue.gameObject.SetActive(true);
+                if (questionWindow?.btnContinue != null)
+                    questionWindow.btnContinue.gameObject.SetActive(true);
             });
         }
 
-        private void CloseQuestionPanel()
+        private void HandleWindowClosed()
         {
-            if (questionPanel != null) questionPanel.SetActive(false);
             _activeTile = null;
-
             if (_answeredCount >= NewQuestionsTotal && btnFinish != null)
                 btnFinish.gameObject.SetActive(true);
         }
@@ -373,8 +366,8 @@ namespace UstAldanQuiz.UI
             _layout = RoadmapManager.Generate(_questions);
             RoadmapManager.Save(_layout);
 
-            if (questionPanel != null) questionPanel.SetActive(false);
-            if (btnFinish     != null) btnFinish.gameObject.SetActive(false);
+            questionWindow?.Close();
+            if (btnFinish != null) btnFinish.gameObject.SetActive(false);
 
             SpawnMap();
             UpdateProgress();
@@ -385,25 +378,6 @@ namespace UstAldanQuiz.UI
             bool useSah = LocaleManager.CurrentLanguage == LocaleManager.LangSah;
             if (useSah && !string.IsNullOrWhiteSpace(q.questionTextSah)) return q.questionTextSah;
             return q.questionText;
-        }
-
-        private IEnumerator AnimateCardIn()
-        {
-            if (questionCard == null) yield break;
-            const float duration = 0.2f;
-            questionCard.localScale = Vector3.one * 0.8f;
-            if (questionCardGroup != null) questionCardGroup.alpha = 0f;
-
-            for (float t = 0; t < duration; t += Time.deltaTime)
-            {
-                float p = Mathf.Clamp01(t / duration);
-                float e = 1f - Mathf.Pow(1f - p, 3f);
-                questionCard.localScale = Vector3.Lerp(Vector3.one * 0.8f, Vector3.one, e);
-                if (questionCardGroup != null) questionCardGroup.alpha = e;
-                yield return null;
-            }
-            questionCard.localScale = Vector3.one;
-            if (questionCardGroup != null) questionCardGroup.alpha = 1f;
         }
 
         private static void ShuffleArray(int[] arr)

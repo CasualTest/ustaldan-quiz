@@ -198,74 +198,122 @@ public static partial class GameSceneBuilder
         AddLocKey(btnFinishGO, "btn_main_menu");
         btnFinishGO.SetActive(false);
 
-        // ── QuestionPanel ────────────────────────────────────────────────────
-        var qPanel = MakeGO("QuestionPanel", canvasGO.transform);
-        Stretch(qPanel);
-        qPanel.AddComponent<Image>().color = C_OVERLAY;
-        qPanel.SetActive(false);
+        // ── QuestionWindow ───────────────────────────────────────────────────
+        const string popupsAtlas = "Assets/Images/Sprites/popups.png";
+        EnsureReadable(popupsAtlas);
+        var sPopup = LoadSprite(popupsAtlas, "popups_3");
 
-        var qCard = MakeGO("QuestionCard", qPanel.transform);
-        var qCardRT = qCard.GetComponent<RectTransform>();
-        qCardRT.anchorMin = new Vector2(0.03f, 0.05f);
-        qCardRT.anchorMax = new Vector2(0.97f, 0.95f);
-        qCardRT.offsetMin = qCardRT.offsetMax = Vector2.zero;
-        qCard.AddComponent<Image>().color = C_CARD;
-        var qCardCG = qCard.AddComponent<CanvasGroup>();
+        // Overlay (затемнение)
+        var qOverlay   = MakeGO("QuestionWindow", canvasGO.transform);
+        Stretch(qOverlay);
+        var qOverlayImg = qOverlay.AddComponent<Image>();
+        qOverlayImg.color = new Color(0f, 0f, 0f, 0.55f);
+        var qOverlayCG = qOverlay.AddComponent<CanvasGroup>();
+        qOverlay.SetActive(false);
 
-        var qCardVLG = qCard.AddComponent<VerticalLayoutGroup>();
-        qCardVLG.childAlignment        = TextAnchor.UpperCenter;
-        qCardVLG.childForceExpandWidth = true;
-        qCardVLG.childForceExpandHeight = false;
-        qCardVLG.childControlWidth = qCardVLG.childControlHeight = true;
-        qCardVLG.padding = new RectOffset(40, 40, 40, 40);
-        qCardVLG.spacing = 24;
+        // Карточка (sheet) — занимает нижние ~80% экрана
+        var qSheet   = MakeGO("Sheet", qOverlay.transform);
+        var qSheetRT = qSheet.GetComponent<RectTransform>();
+        qSheetRT.anchorMin = new Vector2(0.04f, 0.05f);
+        qSheetRT.anchorMax = new Vector2(0.96f, 0.88f);
+        qSheetRT.offsetMin = qSheetRT.offsetMax = Vector2.zero;
+        var qSheetCG = qSheet.AddComponent<CanvasGroup>();
 
-        var qTextTMP = MakeTMP("QuestionText", qCard.transform, "Текст вопроса...", 34, C_TEXT, font);
+        var qSheetVLG = qSheet.AddComponent<VerticalLayoutGroup>();
+        qSheetVLG.childAlignment         = TextAnchor.UpperCenter;
+        qSheetVLG.childForceExpandWidth  = true;
+        qSheetVLG.childForceExpandHeight = false;
+        qSheetVLG.childControlWidth = qSheetVLG.childControlHeight = true;
+        qSheetVLG.spacing = 20;
+
+        // ── Зона 1: Вопрос (popups_3, 9-slice) ──────────────────────────────
+        var qZone1 = MakeGO("Zone_Question", qSheet.transform);
+        SetLE(qZone1, minH: 180, prefH: 220, flexH: 1f);
+        var qZone1Img = qZone1.AddComponent<Image>();
+        qZone1Img.sprite = sPopup;
+        qZone1Img.type   = Image.Type.Sliced;
+        qZone1Img.color  = Color.white;
+
+        var qZone1VLG = qZone1.AddComponent<VerticalLayoutGroup>();
+        qZone1VLG.childAlignment         = TextAnchor.MiddleCenter;
+        qZone1VLG.childForceExpandWidth  = true;
+        qZone1VLG.childForceExpandHeight = false;
+        qZone1VLG.childControlWidth = qZone1VLG.childControlHeight = true;
+        qZone1VLG.padding = new RectOffset(48, 48, 36, 36);
+
+        var qTextTMP = MakeTMP("QuestionText", qZone1.transform, "Текст вопроса...", 34, C_TEXT, font);
         qTextTMP.enableWordWrapping = true;
-        SetLE(qTextTMP.gameObject, minH: 120, prefH: 200, flexH: 1f);
+        qTextTMP.alignment          = TextAlignmentOptions.Center;
+        SetLE(qTextTMP.gameObject, flexH: 1f);
 
-        var qImgContainer = MakeGO("QuestionImageContainer", qCard.transform);
-        SetLE(qImgContainer, minH: 200, prefH: 300);
-        qImgContainer.SetActive(false);
-        var qImgGO = MakeGO("QuestionImage", qImgContainer.transform);
+        // ── Зона 2: Медиа (фото/видео, скрыта по умолчанию) ────────────────
+        var qMediaZone = MakeGO("Zone_Media", qSheet.transform);
+        SetLE(qMediaZone, minH: 200, prefH: 260);
+        qMediaZone.SetActive(false);
+        var qImgGO = MakeGO("QuestionImage", qMediaZone.transform);
         var qImgRT = qImgGO.GetComponent<RectTransform>();
         qImgRT.anchorMin = Vector2.zero; qImgRT.anchorMax = Vector2.one;
         qImgRT.offsetMin = qImgRT.offsetMax = Vector2.zero;
         var qImg = qImgGO.AddComponent<Image>();
         qImg.preserveAspect = true;
 
-        var answersGrid = MakeGO("AnswersGrid", qCard.transform);
-        SetLE(answersGrid, minH: 340, prefH: 380);
-        var aVLG = answersGrid.AddComponent<VerticalLayoutGroup>();
-        aVLG.childAlignment        = TextAnchor.UpperCenter;
-        aVLG.childForceExpandWidth = true;
+        // ── Зона 3: Варианты ответа ──────────────────────────────────────────
+        var qAnswersZone = MakeGO("Zone_Answers", qSheet.transform);
+        SetLE(qAnswersZone, minH: 340, prefH: 360);
+        var aVLG = qAnswersZone.AddComponent<VerticalLayoutGroup>();
+        aVLG.childAlignment         = TextAnchor.UpperCenter;
+        aVLG.childForceExpandWidth  = true;
+        aVLG.childForceExpandHeight = false;
         aVLG.childControlWidth = aVLG.childControlHeight = true;
-        aVLG.spacing = 16;
+        aVLG.spacing = 14;
 
         string[] abcd = { "A", "B", "C", "D" };
         var answerBtns   = new Button[4];
         var answerLabels = new TMP_Text[4];
         for (int i = 0; i < 4; i++)
         {
-            var (aBtnGO, aLbl) = MakeAnswerButton($"AnswerBtn_{abcd[i]}", answersGrid.transform,
-                                                  $"{abcd[i]}: Вариант ответа", font);
-            SetLE(aBtnGO, minH: 72, prefH: 76);
-            answerBtns[i]   = aBtnGO.GetComponent<Button>();
+            var aBtnGO = MakeGO($"AnswerBtn_{abcd[i]}", qAnswersZone.transform);
+            SetLE(aBtnGO, minH: 92, prefH: 96);
+
+            var aBtnImg = aBtnGO.AddComponent<Image>();
+            aBtnImg.sprite = sPopup;
+            aBtnImg.type   = Image.Type.Sliced;
+            aBtnImg.color  = Color.white;
+
+            var aBtn = aBtnGO.AddComponent<Button>();
+            aBtn.targetGraphic = aBtnImg;
+            aBtn.transition    = Selectable.Transition.None;
+            aBtnGO.AddComponent<ButtonSpringAnim>();
+
+            var aLbl = MakeTMP($"Label_{abcd[i]}", aBtnGO.transform, $"{abcd[i]}: Вариант ответа", 30, C_TEXT, font);
+            aLbl.enableWordWrapping = true;
+            aLbl.alignment          = TextAlignmentOptions.MidlineLeft;
+            var aLblRT = aLbl.GetComponent<RectTransform>();
+            aLblRT.anchorMin = Vector2.zero; aLblRT.anchorMax = Vector2.one;
+            aLblRT.offsetMin = new Vector2(40, 8); aLblRT.offsetMax = new Vector2(-40, -8);
+
+            answerBtns[i]   = aBtn;
             answerLabels[i] = aLbl;
         }
 
-        var feedbackTMP = MakeTMP("ResultFeedback", qCard.transform, "Правильно!", 36, C_CORRECT, font);
-        SetLE(feedbackTMP.gameObject, minH: 60);
+        // ResultFeedback и BtnContinue внутри Sheet
+        // Фиксированная зона снизу — резервирует место под фидбек и кнопку,
+        // чтобы при их появлении контент не смещался
+        var bottomZone = MakeGO("Zone_Bottom", qSheet.transform);
+        SetLE(bottomZone, minH: 200, prefH: 200);
+
+        var feedbackTMP = MakeTMP("ResultFeedback", bottomZone.transform, "Правильно!", 38, C_CORRECT, font);
+        var feedbackRT  = feedbackTMP.GetComponent<RectTransform>();
+        feedbackRT.anchorMin = new Vector2(0f, 0.44f); feedbackRT.anchorMax = Vector2.one;
+        feedbackRT.offsetMin = feedbackRT.offsetMax = Vector2.zero;
         feedbackTMP.alignment = TextAlignmentOptions.Center;
         feedbackTMP.gameObject.SetActive(false);
 
-        var btnContinueGO = MakePrimaryButton("BtnContinue", qPanel.transform, "Продолжить", font);
+        var btnContinueGO = MakePrimaryButton("BtnContinue", bottomZone.transform, "Продолжить", font, minH: 110);
         AddLocKey(btnContinueGO, "btn_continue");
         var bcRT = btnContinueGO.GetComponent<RectTransform>();
-        bcRT.anchorMin = new Vector2(0.5f, 0); bcRT.anchorMax = new Vector2(0.5f, 0);
-        bcRT.pivot     = new Vector2(0.5f, 0);
-        bcRT.anchoredPosition = new Vector2(0, 40);
-        bcRT.sizeDelta = new Vector2(400, 100);
+        bcRT.anchorMin = Vector2.zero; bcRT.anchorMax = new Vector2(1f, 0.44f);
+        bcRT.offsetMin = new Vector2(0, 8); bcRT.offsetMax = Vector2.zero;
         btnContinueGO.SetActive(false);
 
         // ── FactPopup ───────────────────────────────────────────────────────
@@ -291,7 +339,7 @@ public static partial class GameSceneBuilder
         factCardVLG.spacing = 32;
 
         var factTextTMP = MakeTMP("FactText", factCard.transform, "", 34, C_TEXT, font);
-        factTextTMP.alignment         = TextAlignmentOptions.Center;
+        factTextTMP.alignment          = TextAlignmentOptions.Center;
         factTextTMP.enableWordWrapping = true;
         SetLE(factTextTMP.gameObject);
 
@@ -308,6 +356,23 @@ public static partial class GameSceneBuilder
         Prop(soFact, "factText",     factTextTMP);
         soFact.ApplyModifiedProperties();
 
+        // ── QuestionWindow компонент ─────────────────────────────────────────
+        var qWin = qOverlay.AddComponent<QuestionWindow>();
+        var soQW = new UnityEditor.SerializedObject(qWin);
+        Prop(soQW, "panel",         qOverlay);
+        Prop(soQW, "sheetRect",     qSheetRT);
+        Prop(soQW, "sheetGroup",    qSheetCG);
+        Prop(soQW, "overlayGroup",  qOverlayCG);
+        Prop(soQW, "questionText",  qTextTMP);
+        Prop(soQW, "mediaZone",     qMediaZone);
+        Prop(soQW, "questionImage", qImg);
+        Prop(soQW, "resultFeedback", feedbackTMP);
+        Prop(soQW, "btnContinue",   btnContinueGO.GetComponent<Button>());
+        Prop(soQW, "factPopup",     factPopupComp);
+        SetArr(soQW, "answerButtons", answerBtns);
+        SetArr(soQW, "answerLabels",  answerLabels);
+        soQW.ApplyModifiedProperties();
+
         // ── RoadmapTile Prefab ───────────────────────────────────────────────
         var tilePrefab = CreateRoadmapTilePrefab(font);
 
@@ -318,26 +383,16 @@ public static partial class GameSceneBuilder
         var roadmapUI = mgrGO.AddComponent<RoadmapUI>();
         var soMap    = new UnityEditor.SerializedObject(roadmapUI);
 
-        Prop(soMap, "questionDatabase",     db);
-        Prop(soMap, "tilePrefab",           tilePrefab?.GetComponent<RoadmapTileUI>());
-        Prop(soMap, "mapContent",           mapContentRT);
-        Prop(soMap, "linesContainer",       linesRT);
-        Prop(soMap, "progressBarFill",      progressFillRT);
-        Prop(soMap, "progressText",         progressTextTMP);
-        Prop(soMap, "btnBack",              btnBackGO.GetComponent<Button>());
-        Prop(soMap, "btnReset",             btnResetGO.GetComponent<Button>());
-        Prop(soMap, "btnFinish",            bfBtn);
-        Prop(soMap, "questionPanel",        qPanel);
-        Prop(soMap, "questionCard",         qCardRT);
-        Prop(soMap, "questionCardGroup",    qCardCG);
-        Prop(soMap, "questionText",         qTextTMP);
-        Prop(soMap, "questionImage",        qImg);
-        Prop(soMap, "questionImageContainer", qImgContainer);
-        Prop(soMap, "resultFeedback",       feedbackTMP);
-        Prop(soMap, "btnContinue",          btnContinueGO.GetComponent<Button>());
-        Prop(soMap, "factPopup",            factPopupComp);
-        SetArr(soMap, "answerButtons", answerBtns);
-        SetArr(soMap, "answerLabels",  answerLabels);
+        Prop(soMap, "questionDatabase", db);
+        Prop(soMap, "tilePrefab",       tilePrefab?.GetComponent<RoadmapTileUI>());
+        Prop(soMap, "mapContent",       mapContentRT);
+        Prop(soMap, "linesContainer",   linesRT);
+        Prop(soMap, "progressBarFill",  progressFillRT);
+        Prop(soMap, "progressText",     progressTextTMP);
+        Prop(soMap, "btnBack",          btnBackGO.GetComponent<Button>());
+        Prop(soMap, "btnReset",         btnResetGO.GetComponent<Button>());
+        Prop(soMap, "btnFinish",        bfBtn);
+        Prop(soMap, "questionWindow",   qWin);
         soMap.ApplyModifiedProperties();
 
         SaveScene("Assets/Scenes/Roadmap.unity");

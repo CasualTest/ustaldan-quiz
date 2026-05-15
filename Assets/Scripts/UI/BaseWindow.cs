@@ -51,6 +51,7 @@ namespace UstAldanQuiz.UI
 
         public virtual void Close()
         {
+            if (panel != null && !panel.activeSelf) return;
             if (_anim != null) StopCoroutine(_anim);
             _anim = StartCoroutine(AnimateClose());
         }
