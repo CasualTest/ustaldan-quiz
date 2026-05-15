@@ -43,11 +43,8 @@ public static partial class GameSceneBuilder
     // МЕНЮ
     // =====================================================================
 
-    [MenuItem("UstAldan Quiz/Game Setup/0 — Build Intro Scene")]
+    [MenuItem("UstAldan Quiz/Game Setup/1 — Build Intro Scene")]
     public static void BuildIntroScene() => DoBuildIntro();
-
-    [MenuItem("UstAldan Quiz/Game Setup/1 — Create Question Assets")]
-    public static void CreateQuestionAssets() => DoCreateQuestions();
 
     [MenuItem("UstAldan Quiz/Game Setup/2 — Build Main Menu Scene")]
     public static void BuildMainMenuScene() => DoBuildMainMenu();
@@ -64,28 +61,12 @@ public static partial class GameSceneBuilder
     [MenuItem("UstAldan Quiz/Game Setup/6 — Add Scenes to Build Settings")]
     public static void AddScenesToBuildSettings() => DoAddScenes();
 
-    // Обновляет вопросы и Build Settings, сцены НЕ пересоздаёт
-    [MenuItem("UstAldan Quiz/Game Setup/RUN ALL — обновить вопросы (сцены не трогать)")]
-    public static void RunAll()
-    {
-        SetPTSansAsDefault();
-        DoCreateQuestions();
-        DoBuildIntro(skipIfExists: true);
-        DoBuildMainMenu(skipIfExists: true);
-        DoBuildQuestionMap(skipIfExists: true);
-        DoBuildResults(skipIfExists: true);
-        DoBuildRoadmap(skipIfExists: true);
-        DoAddScenes();
-        Debug.Log("[GameSceneBuilder] ✓ Вопросы и Build Settings обновлены. Сцены не трогались.");
-    }
-
-    // Принудительно пересоздаёт все сцены (использовать только при изменении билдера)
+    // Принудительно пересоздаёт все сцены
     [MenuItem("UstAldan Quiz/Game Setup/FORCE REBUILD — пересоздать все сцены")]
     public static void ForceRebuildAll()
     {
         SetPTSansAsDefault();
         DoBuildIntro();
-        DoCreateQuestions();
         DoBuildMainMenu();
         DoBuildQuestionMap();
         DoBuildResults();
@@ -124,44 +105,6 @@ public static partial class GameSceneBuilder
         {
             Debug.LogWarning("[FontFix] Свойство m_defaultFontAsset не найдено в TMP Settings.");
         }
-    }
-
-    // =====================================================================
-    // 1. ВОПРОСЫ
-    // =====================================================================
-
-    static void DoCreateQuestions()
-    {
-        AssetDatabase.Refresh();
-
-        var dbGuids = AssetDatabase.FindAssets("t:QuestionDatabase");
-        if (dbGuids.Length == 0) { Debug.LogWarning("[GameSceneBuilder] QuestionDatabase не найдена."); return; }
-
-        var db = AssetDatabase.LoadAssetAtPath<QuestionDatabase>(
-                     AssetDatabase.GUIDToAssetPath(dbGuids[0]));
-        if (db == null) return;
-
-        var so       = new UnityEditor.SerializedObject(db);
-        var listProp = so.FindProperty("allQuestions");
-
-        var qGuids = AssetDatabase.FindAssets("t:QuestionData");
-        int added  = 0;
-        foreach (var guid in qGuids)
-        {
-            var q = AssetDatabase.LoadAssetAtPath<QuestionData>(AssetDatabase.GUIDToAssetPath(guid));
-            if (q == null) continue;
-            bool alreadyIn = false;
-            for (int i = 0; i < listProp.arraySize; i++)
-                if (listProp.GetArrayElementAtIndex(i).objectReferenceValue == q) { alreadyIn = true; break; }
-            if (alreadyIn) continue;
-            listProp.arraySize++;
-            listProp.GetArrayElementAtIndex(listProp.arraySize - 1).objectReferenceValue = q;
-            added++;
-        }
-
-        so.ApplyModifiedProperties();
-        AssetDatabase.SaveAssets();
-        Debug.Log($"[GameSceneBuilder] QuestionDatabase обновлена: добавлено {added} вопросов из {qGuids.Length} найденных.");
     }
 
     // =====================================================================
