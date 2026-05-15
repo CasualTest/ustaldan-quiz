@@ -68,6 +68,8 @@ namespace UstAldanQuiz.UI
 
         private void Start()
         {
+            questionDatabase?.EnsureRuntimeQuestionsLoaded();
+
             tabHome?.onClick.AddListener(() => SwitchTab(0));
             tabRecords?.onClick.AddListener(() => SwitchTab(1));
             tabSettings?.onClick.AddListener(() => SwitchTab(2));

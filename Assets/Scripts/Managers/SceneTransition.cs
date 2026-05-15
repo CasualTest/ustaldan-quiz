@@ -89,7 +89,6 @@ namespace UstAldanQuiz.Managers
             // Canvas поверх всего
             var canvasGO = new GameObject("FadeCanvas");
             canvasGO.transform.SetParent(transform);
-            DontDestroyOnLoad(canvasGO);
 
             var canvas = canvasGO.AddComponent<Canvas>();
             canvas.renderMode   = RenderMode.ScreenSpaceOverlay;

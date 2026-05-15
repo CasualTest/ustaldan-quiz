@@ -16,34 +16,37 @@ namespace UstAldanQuiz.Data
         [Tooltip("Заполняется автоматически из Resources/questions.json при старте. В инспекторе можно оставить пустым.")]
         public List<QuestionData> allQuestions = new List<QuestionData>();
 
-        private bool _runtimeLoaded;
-
-        /// <summary>
-        /// Загружает вопросы из Resources/questions.json если ещё не загружены.
-        /// Вызывать в Start() перед использованием allQuestions.
-        /// </summary>
         public void EnsureRuntimeQuestionsLoaded()
         {
-            if (_runtimeLoaded) return;
-            _runtimeLoaded = true;
+            if (allQuestions.Count > 0 && allQuestions[0] != null)
+            {
+                Debug.Log($"[QuestionDatabase] Уже загружено {allQuestions.Count} вопросов, пропускаем.");
+                return;
+            }
 
             var textAsset = Resources.Load<TextAsset>("questions");
             if (textAsset == null)
             {
-                Debug.LogWarning("[QuestionDatabase] Resources/questions.json не найден — используются ассеты из инспектора.");
+                Debug.LogWarning("[QuestionDatabase] Resources/questions.json не найден.");
                 return;
             }
 
-            var data = JsonUtility.FromJson<QuestionsJson>(textAsset.text);
+            string json = textAsset.text;
+            // убираем BOM если есть
+            if (json.Length > 0 && json[0] == '﻿') json = json.Substring(1);
+
+            var data = JsonUtility.FromJson<QuestionsJson>(json);
             if (data?.questions == null || data.questions.Length == 0)
             {
-                Debug.LogWarning("[QuestionDatabase] questions.json пустой.");
+                Debug.LogWarning($"[QuestionDatabase] questions.json пустой или не распарсился. Длина текста: {json.Length}, первые символы: '{(json.Length > 20 ? json.Substring(0, 20) : json)}'");
                 return;
             }
 
             var catLookup = new Dictionary<string, QuestionCategory>(StringComparer.OrdinalIgnoreCase);
             foreach (var cat in categories)
                 if (cat != null) catLookup[cat.categoryId] = cat;
+
+            Debug.Log($"[QuestionDatabase] Категорий в базе: {catLookup.Count} ({string.Join(", ", catLookup.Keys)})");
 
             allQuestions = new List<QuestionData>(data.questions.Length);
             foreach (var entry in data.questions)

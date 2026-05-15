@@ -68,6 +68,18 @@ namespace UstAldanQuiz.Editor
             AssetDatabase.Refresh();
         }
 
+        [MenuItem("UstAldan Quiz/Google Sheets/↓ Вопросы из локального CSV", priority = 203)]
+        public static void ImportQuestionsFromFile()
+        {
+            string path = EditorUtility.OpenFilePanel("Выберите CSV с вопросами", "", "csv");
+            if (string.IsNullOrEmpty(path)) return;
+            AssetDatabase.Refresh();
+            string csv = File.ReadAllText(path, Encoding.UTF8);
+            ProcessQuestions(csv);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
         [MenuItem("UstAldan Quiz/Google Sheets/↓ Локализация", priority = 202)]
         public static void ImportLocaleMenu()
         {
@@ -207,7 +219,7 @@ namespace UstAldanQuiz.Editor
             string json = JsonUtility.ToJson(
                 new QuestionDatabase.QuestionsJson { questions = entries.ToArray() },
                 prettyPrint: true);
-            File.WriteAllText(jsonPath, json, Encoding.UTF8);
+            File.WriteAllText(jsonPath, json, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             AssetDatabase.ImportAsset(jsonPath, ImportAssetOptions.ForceUpdate);
 
             var allCats = new List<QuestionCategory>(catCache.Values);
