@@ -36,7 +36,7 @@ public static partial class GameSceneBuilder
         saVLG.childForceExpandWidth = true;
         saVLG.childForceExpandHeight = false;
         saVLG.childControlWidth = saVLG.childControlHeight = true;
-        saVLG.padding  = new RectOffset(0, 0, 100, 0); // top padding = header height
+        saVLG.padding  = new RectOffset(0, 0, 140, 0); // top padding = header height
         saVLG.spacing  = 0;
 
         // ── Header (compact, ignoreLayout + absolute so VLG doesn't expand it) ──
@@ -47,7 +47,7 @@ public static partial class GameSceneBuilder
         headerRT.anchorMin = new Vector2(0, 1);
         headerRT.anchorMax = new Vector2(1, 1);
         headerRT.pivot     = new Vector2(0.5f, 1f);
-        headerRT.offsetMin = new Vector2(0, -100);
+        headerRT.offsetMin = new Vector2(0, -140);
         headerRT.offsetMax = Vector2.zero;
         header.AddComponent<Image>().color = C_PRIMARY;
         var hHLG = header.AddComponent<HorizontalLayoutGroup>();
@@ -56,18 +56,62 @@ public static partial class GameSceneBuilder
         hHLG.childControlWidth = hHLG.childControlHeight = true;
         hHLG.padding = new RectOffset(20, 20, 0, 0); hHLG.spacing = 12;
 
-        var btnBackGO = MakeSecondaryButton("BtnBack", header.transform, "← Назад", font, minH: 64, minW: 160);
-        btnBackGO.GetComponent<Image>().color = new Color(1, 1, 1, 0.2f);
-        SetLE(btnBackGO, minH: 64, minW: 160);
+        const string backAtlas = "Assets/Images/Sprites/additional controls.png";
+        EnsureReadable(backAtlas);
+        var sBack  = LoadSprite(backAtlas, "additional controls_4");
+        const int backH = 120;
+        int backW = sBack != null ? Mathf.RoundToInt(backH * sBack.rect.width / sBack.rect.height) : backH;
+        var btnBackGO  = MakeSecondaryButton("BtnBack", header.transform, "", font, minH: backH, minW: backW);
+        var btnBackImg = btnBackGO.GetComponent<Image>();
+        if (sBack != null)
+        {
+            btnBackImg.sprite                       = sBack;
+            btnBackImg.type                         = Image.Type.Simple;
+            btnBackImg.preserveAspect               = true;
+            btnBackImg.color                        = Color.white;
+            btnBackImg.alphaHitTestMinimumThreshold = 0.1f;
+        }
+        else
+        {
+            btnBackImg.color = new Color(1, 1, 1, 0.2f);
+        }
+        var backLE = btnBackGO.GetComponent<LayoutElement>() ?? btnBackGO.AddComponent<LayoutElement>();
+        backLE.minWidth       = backW;
+        backLE.minHeight      = backH;
+        backLE.preferredWidth = backW;
+        backLE.flexibleWidth  = 0;
+        var backText = btnBackGO.transform.Find("Text");
+        if (backText != null) backText.gameObject.SetActive(false);
         AddLocKey(btnBackGO, "btn_back");
 
         var headerSpacer = MakeGO("Spacer", header.transform);
         SetLE(headerSpacer, flexW: 1f);
         headerSpacer.AddComponent<Image>().color = Color.clear;
 
-        var btnResetGO = MakeSecondaryButton("BtnReset", header.transform, "↺ Сброс", font, minH: 64, minW: 160);
-        btnResetGO.GetComponent<Image>().color = new Color(1, 1, 1, 0.2f);
-        SetLE(btnResetGO, minH: 64, minW: 160);
+        const string buttonsAtlas = "Assets/Images/Sprites/buttons.png";
+        EnsureReadable(buttonsAtlas);
+        var sReset    = LoadSprite(buttonsAtlas, "buttons_26");
+        var btnResetGO = MakeSecondaryButton("BtnReset", header.transform, "", font, minH: backH, minW: backH);
+        var btnResetImg = btnResetGO.GetComponent<Image>();
+        if (sReset != null)
+        {
+            btnResetImg.sprite                       = sReset;
+            btnResetImg.type                         = Image.Type.Simple;
+            btnResetImg.preserveAspect               = true;
+            btnResetImg.color                        = Color.white;
+            btnResetImg.alphaHitTestMinimumThreshold = 0.1f;
+        }
+        else
+        {
+            btnResetImg.color = new Color(1, 1, 1, 0.2f);
+        }
+        var resetLE = btnResetGO.GetComponent<LayoutElement>() ?? btnResetGO.AddComponent<LayoutElement>();
+        resetLE.minWidth       = backH;
+        resetLE.minHeight      = backH;
+        resetLE.preferredWidth = backH;
+        resetLE.flexibleWidth  = 0;
+        var resetText = btnResetGO.transform.Find("Text");
+        if (resetText != null) resetText.gameObject.SetActive(false);
         AddLocKey(btnResetGO, "btn_reset");
 
         // ── ProgressBar ──────────────────────────────────────────────────────

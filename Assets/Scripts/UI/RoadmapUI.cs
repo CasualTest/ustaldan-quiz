@@ -132,9 +132,6 @@ namespace UstAldanQuiz.UI
             _tiles.Clear();
             _lockedCount = 0;
 
-            var byName = new Dictionary<string, QuestionData>(_questions.Count);
-            foreach (var q in _questions) byName[q.name] = q;
-
             // Content height based on number of rows
             int rows = Mathf.CeilToInt((float)_layout.nodes.Count / RoadmapManager.Cols);
             float contentHeight = RoadmapManager.TopMargin
@@ -151,11 +148,12 @@ namespace UstAldanQuiz.UI
                 linesContainer.SetAsFirstSibling();
             }
 
-            // Spawn tiles
+            // Spawn tiles — match by index (nodes are generated in the same order as _questions)
             for (int i = 0; i < _layout.nodes.Count; i++)
             {
                 var node = _layout.nodes[i];
-                if (!byName.TryGetValue(node.questionName, out var q)) continue;
+                var q    = i < _questions.Count ? _questions[i] : null;
+                if (q == null) continue;
 
                 var tile   = Instantiate(tilePrefab, mapContent);
                 var tileRT = tile.GetComponent<RectTransform>();

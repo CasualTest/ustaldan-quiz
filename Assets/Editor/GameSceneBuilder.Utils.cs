@@ -753,6 +753,13 @@ public static partial class GameSceneBuilder
             .FirstOrDefault(s => s.name == spriteName);
     }
 
+    static void EnsureReadable(string atlasPath)
+    {
+        if (AssetImporter.GetAtPath(atlasPath) is not TextureImporter ti || ti.isReadable) return;
+        ti.isReadable = true;
+        AssetDatabase.ImportAsset(atlasPath, ImportAssetOptions.ForceUpdate);
+    }
+
     static void ApplyHyperCasualButton(GameObject btnGO, string atlasPath,
                                         string normalName, string pressedName)
     {

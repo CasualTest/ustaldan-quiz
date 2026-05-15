@@ -36,7 +36,7 @@ public static partial class GameSceneBuilder
         saVLG.childForceExpandWidth = true;
         saVLG.childForceExpandHeight = false;
         saVLG.childControlWidth = saVLG.childControlHeight = true;
-        saVLG.padding  = new RectOffset(0, 0, 100, 0); // top padding = header height
+        saVLG.padding  = new RectOffset(0, 0, 140, 0); // top padding = header height
         saVLG.spacing  = 0;
 
         // --- Header (ignoreLayout + absolute so VLG doesn't expand it) ---
@@ -47,7 +47,7 @@ public static partial class GameSceneBuilder
         headerRT.anchorMin = new Vector2(0, 1);
         headerRT.anchorMax = new Vector2(1, 1);
         headerRT.pivot     = new Vector2(0.5f, 1f);
-        headerRT.offsetMin = new Vector2(0, -100);
+        headerRT.offsetMin = new Vector2(0, -140);
         headerRT.offsetMax = Vector2.zero;
         header.AddComponent<Image>().color = C_PRIMARY;
         var hHLG = header.AddComponent<HorizontalLayoutGroup>();
@@ -56,9 +56,45 @@ public static partial class GameSceneBuilder
         hHLG.childControlWidth = hHLG.childControlHeight = true;
         hHLG.padding = new RectOffset(24, 24, 0, 0); hHLG.spacing = 16;
 
-        var btnBackGO = MakeSecondaryButton("BtnBack", header.transform, "← Назад", font, minH: 70, minW: 160);
-        btnBackGO.GetComponent<Image>().color = new Color(1,1,1,0.2f);
-        SetLE(btnBackGO, minH: 70, minW: 160);
+        const string backAtlas = "Assets/Images/Sprites/additional controls.png";
+        EnsureReadable(backAtlas);
+        var sBack = LoadSprite(backAtlas, "additional controls_4");
+        const int backH    = 120;
+        const int sideSlotW = 200; // одинаковая ширина слева и справа — текст по центру
+        int backW = sBack != null ? Mathf.RoundToInt(backH * sBack.rect.width / sBack.rect.height) : backH;
+
+        // Левый слот фиксированной ширины = правому, чтобы CategoryName был строго по центру
+        var leftSlot = MakeGO("LeftSlot", header.transform);
+        SetLE(leftSlot, minW: sideSlotW, flexW: 0);
+        var leftSlotHLG = leftSlot.AddComponent<HorizontalLayoutGroup>();
+        leftSlotHLG.childAlignment        = TextAnchor.MiddleLeft;
+        leftSlotHLG.childForceExpandWidth = false;
+        leftSlotHLG.childForceExpandHeight = true;
+        leftSlotHLG.childControlWidth = leftSlotHLG.childControlHeight = true;
+        leftSlotHLG.padding = new RectOffset(0, 0, 0, 0);
+        leftSlot.AddComponent<Image>().color = Color.clear;
+
+        var btnBackGO  = MakeSecondaryButton("BtnBack", leftSlot.transform, "", font, minH: backH, minW: backW);
+        var btnBackImg = btnBackGO.GetComponent<Image>();
+        if (sBack != null)
+        {
+            btnBackImg.sprite                       = sBack;
+            btnBackImg.type                         = Image.Type.Simple;
+            btnBackImg.preserveAspect               = true;
+            btnBackImg.color                        = Color.white;
+            btnBackImg.alphaHitTestMinimumThreshold = 0.1f;
+        }
+        else
+        {
+            btnBackImg.color = new Color(1, 1, 1, 0.2f);
+        }
+        var backLE = btnBackGO.GetComponent<LayoutElement>() ?? btnBackGO.AddComponent<LayoutElement>();
+        backLE.minWidth       = backW;
+        backLE.minHeight      = backH;
+        backLE.preferredWidth = backW;
+        backLE.flexibleWidth  = 0;
+        var backText = btnBackGO.transform.Find("Text");
+        if (backText != null) backText.gameObject.SetActive(false);
         AddLocKey(btnBackGO, "btn_back");
 
         var catNameTMP = MakeTMP("CategoryName", header.transform, "История", 36, Color.white, font);
@@ -66,7 +102,7 @@ public static partial class GameSceneBuilder
         catNameTMP.alignment = TextAlignmentOptions.Center;
 
         var scoreTMP = MakeTMP("ScoreText", header.transform, "Правильных: 0/15", 28, Color.white, font);
-        SetLE(scoreTMP.gameObject, minW: 200);
+        SetLE(scoreTMP.gameObject, minW: sideSlotW, flexW: 0);
         scoreTMP.alignment = TextAlignmentOptions.Right;
 
         // --- MapScrollView ---
