@@ -80,3 +80,5 @@ user.keystore
 # Node
 node_modules/
 npm-debug.log*
+# Claude Code memory
+.claude/
