@@ -100,9 +100,17 @@ namespace UstAldanQuiz.UI
 
         private static void Refresh(Toggle toggle, bool isOn)
         {
-            if (toggle.targetGraphic is Image img)
+            var sprOn  = toggle.transform.Find("SpriteOn");
+            var sprOff = toggle.transform.Find("SpriteOff");
+            if (sprOn != null && sprOff != null)
+            {
+                sprOn.gameObject.SetActive(isOn);
+                sprOff.gameObject.SetActive(!isOn);
+            }
+            else if (toggle.targetGraphic is Image img)
+            {
                 img.color = isOn ? ColorOn : ColorOff;
-
+            }
             var lbl = toggle.GetComponentInChildren<TMP_Text>();
             if (lbl != null) lbl.text = LocaleManager.Get(isOn ? "settings_on" : "settings_off");
         }

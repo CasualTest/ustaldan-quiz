@@ -203,33 +203,119 @@ public static partial class GameSceneBuilder
         setTitleTMP.alignment = TextAlignmentOptions.MidlineLeft;
         AddLocKey(setTitleTMP.gameObject, "settings_title");
 
-        var setRowsGO = MakeGO("SettingsRows", settingsPage.transform);
+        // ─── SettingsContent (название игры + версия) ────────────────────
+        var settingsContent = MakeGO("SettingsContent", settingsPage.transform);
+        SetLE(settingsContent, minH: 120, prefH: 120);
+        settingsContent.AddComponent<Image>().color = C_PRIMARY;
+        var scVLG = settingsContent.AddComponent<VerticalLayoutGroup>();
+        scVLG.childAlignment         = TextAnchor.MiddleCenter;
+        scVLG.childForceExpandWidth  = true;
+        scVLG.childForceExpandHeight = false;
+        scVLG.childControlWidth = scVLG.childControlHeight = true;
+        scVLG.spacing = 8;
+
+        var appTitleTMP = MakeTMP("AppTitle", settingsContent.transform, "Викторина", 36, Color.white, font, minH: 44, bold: true);
+        appTitleTMP.alignment = TextAlignmentOptions.Center;
+        AddLocKey(appTitleTMP.gameObject, "app_title");
+
+        var appVersionTMP = MakeTMP("AppVersion", settingsContent.transform,
+            $"v{UnityEditor.PlayerSettings.bundleVersion}", 26, new Color(1f, 1f, 1f, 0.7f), font, minH: 32);
+        appVersionTMP.alignment = TextAlignmentOptions.Center;
+
+        // ─── Панель настроек: таб-бар + контент ─────────────────────────
+        var setRowsGO  = MakeGO("SettingsRows", settingsPage.transform);
         SetLE(setRowsGO, flexH: 1f);
         var setRowsVLG = setRowsGO.AddComponent<VerticalLayoutGroup>();
-        setRowsVLG.childAlignment = TextAnchor.UpperCenter;
-        setRowsVLG.childForceExpandWidth = true;
+        setRowsVLG.childAlignment         = TextAnchor.UpperCenter;
+        setRowsVLG.childForceExpandWidth  = true;
+        setRowsVLG.childForceExpandHeight = false;
         setRowsVLG.childControlWidth = setRowsVLG.childControlHeight = true;
-        setRowsVLG.padding = new RectOffset(0, 0, 16, 32);
+        setRowsVLG.spacing = 0;
 
-        var toggleMusic = MakeSettingRow("Музыка",      setRowsGO.transform, font, "settings_music");
-        var sliderMusic = MakeVolumeSliderRow("MusicVol", setRowsGO.transform, font);
-        MakeRowSeparator(setRowsGO.transform);
-        var toggleSound = MakeSettingRow("Звуки",       setRowsGO.transform, font, "settings_sound");
-        var sliderSound = MakeVolumeSliderRow("SoundVol", setRowsGO.transform, font);
-        MakeRowSeparator(setRowsGO.transform);
-        var toggleVibro = MakeSettingRow("Виброотклик", setRowsGO.transform, font, "settings_vibration");
-        MakeRowSeparator(setRowsGO.transform);
-        var (btnLangRu, btnLangSah) = MakeLangRow(setRowsGO.transform, font);
+        // Таб-бар
+        var tabBar = MakeGO("TabBar", setRowsGO.transform);
+        SetLE(tabBar, minH: 100, prefH: 100);
+        var tabBarLE = tabBar.GetComponent<LayoutElement>();
+        tabBarLE.flexibleHeight = 0;
+        tabBarLE.layoutPriority = 2;
+        tabBar.AddComponent<Image>().color = C_PRIMARY;
+        var tabHLG = tabBar.AddComponent<HorizontalLayoutGroup>();
+        tabHLG.childAlignment         = TextAnchor.MiddleCenter;
+        tabHLG.childForceExpandWidth  = true;
+        tabHLG.childForceExpandHeight = false;
+        tabHLG.childControlWidth = tabHLG.childControlHeight = true;
+
+        var tabSettingsBtn = MakeTabButton("TabSettings",  "Настройки",    tabBar.transform, font);
+        var tabGameBtn     = MakeTabButton("TabGame",      "Игра",         tabBar.transform, font);
+        var tabSecurityBtn = MakeTabButton("TabSecurity",  "Безопасность", tabBar.transform, font);
+
+        // Область контента (под таб-баром)
+        var tabContent = MakeGO("TabContent", setRowsGO.transform);
+        SetLE(tabContent, flexH: 1f);
+        tabContent.AddComponent<Image>().color = Color.clear;
+
+        // ─── PanelSettings ───────────────────────────────────────────────
+        var panelSettings = MakeGO("PanelSettings", tabContent.transform);
+        Stretch(panelSettings);
+        panelSettings.AddComponent<Image>().color = Color.clear;
+        var panelVLG = panelSettings.AddComponent<VerticalLayoutGroup>();
+        panelVLG.childAlignment         = TextAnchor.UpperCenter;
+        panelVLG.childForceExpandWidth  = true;
+        panelVLG.childForceExpandHeight = false;
+        panelVLG.childControlWidth = panelVLG.childControlHeight = true;
+        panelVLG.padding = new RectOffset(24, 24, 24, 24);
+        panelVLG.spacing = 16;
+
+        // Сетка карточек (2 колонки)
+        var cardsGridGO = MakeGO("CardsGrid", panelSettings.transform);
+        var cardsGrid   = cardsGridGO.AddComponent<GridLayoutGroup>();
+        cardsGrid.cellSize        = new Vector2(480, 250);
+        cardsGrid.spacing         = new Vector2(16, 16);
+        cardsGrid.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
+        cardsGrid.constraintCount = 2;
+        cardsGrid.childAlignment  = TextAnchor.UpperCenter;
+        SetLE(cardsGridGO, minH: 516, prefH: 516); // 2 ряда: 2*250+16
+
+        const string btnAtlas = "Assets/Images/Sprites/buttons.png";
+        EnsureReadable(btnAtlas);
+        var sMusOn   = LoadSprite(btnAtlas, "buttons_31");
+        var sMusOff  = LoadSprite(btnAtlas, "buttons_32");
+        var sSndOn   = LoadSprite(btnAtlas, "buttons_27");
+        var sSndOff  = LoadSprite(btnAtlas, "buttons_28");
+        var sVibOn   = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/vibration/vibration_on.png");
+        var sVibOff  = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/vibration/vibration_off.png");
+        var sRuIcon  = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/language/rus.png");
+        var sSahIcon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/language/sakha.png");
+
+        var toggleMusic = MakeSettingsCard("CardMusic", new Color(0.94f, 0.64f, 0.23f), sMusOn, sMusOff, "Музыка",   cardsGridGO.transform, font);
+        var toggleSound = MakeSettingsCard("CardSound", new Color(0.29f, 0.56f, 0.89f), sSndOn, sSndOff, "Звук",     cardsGridGO.transform, font);
+        var toggleVibro = MakeSettingsCard("CardVibro", new Color(0.55f, 0.36f, 0.96f), sVibOn, sVibOff, "Вибрация", cardsGridGO.transform, font);
+        var toggleLang  = MakeLangToggleCard("CardLang", sRuIcon, sSahIcon, "Язык", cardsGridGO.transform, font);
+
+        // ─── PanelGame (пустой) ──────────────────────────────────────────
+        var panelGame = MakeGO("PanelGame", tabContent.transform);
+        Stretch(panelGame);
+        panelGame.AddComponent<Image>().color = Color.clear;
+        panelGame.SetActive(false);
+
+        // ─── PanelSecurity (пустой) ──────────────────────────────────────
+        var panelSecurity = MakeGO("PanelSecurity", tabContent.transform);
+        Stretch(panelSecurity);
+        panelSecurity.AddComponent<Image>().color = Color.clear;
+        panelSecurity.SetActive(false);
 
         var settingsPageUI = settingsPage.AddComponent<SettingsPageUI>();
         var soSetPage      = new UnityEditor.SerializedObject(settingsPageUI);
         Prop(soSetPage, "toggleMusic",     toggleMusic);
         Prop(soSetPage, "toggleSound",     toggleSound);
         Prop(soSetPage, "toggleVibration", toggleVibro);
-        Prop(soSetPage, "sliderMusic",     sliderMusic);
-        Prop(soSetPage, "sliderSound",     sliderSound);
-        Prop(soSetPage, "btnLangRu",       btnLangRu);
-        Prop(soSetPage, "btnLangSah",      btnLangSah);
+        Prop(soSetPage, "toggleLang",      toggleLang);
+        Prop(soSetPage, "tabSettings",     tabSettingsBtn);
+        Prop(soSetPage, "tabGame",         tabGameBtn);
+        Prop(soSetPage, "tabSecurity",     tabSecurityBtn);
+        Prop(soSetPage, "panelSettings",   panelSettings);
+        Prop(soSetPage, "panelGame",       panelGame);
+        Prop(soSetPage, "panelSecurity",   panelSecurity);
         soSetPage.ApplyModifiedProperties();
         settingsPage.SetActive(false);
 

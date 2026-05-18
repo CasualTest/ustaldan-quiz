@@ -230,11 +230,458 @@ public static partial class GameSceneBuilder
         return toggle;
     }
 
+    // Строка с иконкой-переключателем + ползунком на одном уровне
+    static (Toggle toggle, Slider slider) MakeIconSliderRow(
+        string rowName, string spriteOnName, string spriteOffName,
+        Transform parent, TMP_FontAsset font)
+    {
+        const string atlas = "Assets/Images/Sprites/buttons.png";
+        EnsureReadable(atlas);
+        var sOn  = LoadSprite(atlas, spriteOnName);
+        var sOff = LoadSprite(atlas, spriteOffName);
+
+        var row = MakeGO(rowName + "Row", parent);
+        SetLE(row, minH: 96, prefH: 96);
+        row.AddComponent<Image>().color = Color.clear;
+        var hlg = row.AddComponent<HorizontalLayoutGroup>();
+        hlg.childAlignment         = TextAnchor.MiddleLeft;
+        hlg.childForceExpandHeight = false;
+        hlg.childForceExpandWidth  = false;
+        hlg.childControlWidth = hlg.childControlHeight = true;
+        hlg.padding = new RectOffset(48, 48, 0, 0);
+        hlg.spacing = 24;
+
+        // Иконка-переключатель
+        var iconGO  = MakeGO(rowName + "Toggle", row.transform);
+        SetLE(iconGO, minW: 160, minH: 160);
+        var iconImg = iconGO.AddComponent<Image>();
+        iconImg.color = Color.clear;
+        var toggle = iconGO.AddComponent<Toggle>();
+        toggle.targetGraphic = iconImg;
+        toggle.transition    = Selectable.Transition.None;
+        toggle.isOn          = true;
+
+        Image MakeSpriteChild(string goName, Sprite sprite, bool active)
+        {
+            var go = new GameObject(goName, typeof(RectTransform));
+            go.transform.SetParent(iconGO.transform, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            var img = go.AddComponent<Image>();
+            img.sprite = sprite; img.type = Image.Type.Simple;
+            img.preserveAspect = true; img.color = Color.white;
+            go.SetActive(active);
+            return img;
+        }
+        MakeSpriteChild("SpriteOn",  sOn,  true);
+        MakeSpriteChild("SpriteOff", sOff, false);
+
+        // Ползунок (без надписи)
+        const string acAtlas = "Assets/Images/Sprites/additional controls.png";
+        EnsureReadable(acAtlas);
+        var sBgSlider   = LoadSprite(acAtlas, "additional controls_3");
+        var sFillSlider = LoadSprite(acAtlas, "additional controls_9");
+        var sHandle     = LoadSprite(acAtlas, "additional controls_11");
+
+        float handleH   = sHandle   != null ? (sHandle.rect.height / 2f)   : 44f;
+        float handleW   = sHandle   != null ? (sHandle.rect.width / 2f)   : 44f;
+        float sliderH   = sBgSlider != null ? (sBgSlider.rect.height / 2f) : 44f;
+
+        var sliderGO = MakeGO(rowName + "Slider", row.transform);
+        SetLE(sliderGO, minH: sliderH, prefH: sliderH, flexW: 1f);
+
+        var bgGO  = MakeGO("Background", sliderGO.transform);
+        var bgRT  = bgGO.GetComponent<RectTransform>();
+        bgRT.anchorMin = Vector2.zero; bgRT.anchorMax = Vector2.one;
+        bgRT.offsetMin = bgRT.offsetMax = Vector2.zero;
+        var bgImg = bgGO.AddComponent<Image>();
+        bgImg.sprite = sBgSlider; bgImg.type = Image.Type.Simple;
+        bgImg.preserveAspect = false; bgImg.color = Color.white;
+
+        var fillAreaGO = MakeGO("Fill Area", sliderGO.transform);
+        var faRT = fillAreaGO.GetComponent<RectTransform>();
+        faRT.anchorMin = Vector2.zero; faRT.anchorMax = Vector2.one;
+        faRT.offsetMin = faRT.offsetMax = Vector2.zero;
+        var fillGO = MakeGO("Fill", fillAreaGO.transform);
+        var fillRT = fillGO.GetComponent<RectTransform>();
+        fillRT.anchorMin = Vector2.zero; fillRT.anchorMax = new Vector2(1f, 1f);
+        fillRT.offsetMin = fillRT.offsetMax = Vector2.zero;
+        var fillImg = fillGO.AddComponent<Image>();
+        fillImg.sprite = sFillSlider; fillImg.type = Image.Type.Filled;
+        fillImg.fillMethod = Image.FillMethod.Horizontal;
+        fillImg.fillOrigin = (int)Image.OriginHorizontal.Left;
+        fillImg.fillAmount = 1f; fillImg.color = Color.white;
+
+        var handleAreaGO = MakeGO("Handle Slide Area", sliderGO.transform);
+        var haRT = handleAreaGO.GetComponent<RectTransform>();
+        haRT.anchorMin = Vector2.zero; haRT.anchorMax = Vector2.one;
+        haRT.offsetMin = haRT.offsetMax = Vector2.zero;
+        var handleGO = MakeGO("Handle", handleAreaGO.transform);
+        var handleRT = handleGO.GetComponent<RectTransform>();
+        handleRT.anchorMin = handleRT.anchorMax = new Vector2(0f, 0.5f);
+        handleRT.pivot     = new Vector2(0.5f, 0.5f);
+        handleRT.sizeDelta = new Vector2(handleW, handleH);
+        var handleImg = handleGO.AddComponent<Image>();
+        handleImg.sprite = sHandle; handleImg.type = Image.Type.Simple;
+        handleImg.preserveAspect = true; handleImg.color = Color.white;
+
+        var slider = sliderGO.AddComponent<Slider>();
+        slider.fillRect      = fillRT;
+        slider.handleRect    = handleRT;
+        slider.targetGraphic = handleImg;
+        slider.direction     = Slider.Direction.LeftToRight;
+        slider.minValue = 0f; slider.maxValue = 1f; slider.value = 1f;
+
+        return (toggle, slider);
+    }
+
+    // Строка с иконкой-переключателем без ползунка
+    static Toggle MakeIconToggleRow(
+        string rowName, string spriteOnPath, string spriteOffPath,
+        Transform parent)
+    {
+        var sOn  = AssetDatabase.LoadAssetAtPath<Sprite>(spriteOnPath);
+        var sOff = AssetDatabase.LoadAssetAtPath<Sprite>(spriteOffPath);
+
+        var row = MakeGO(rowName + "Row", parent);
+        SetLE(row, minH: 96, prefH: 96);
+        row.AddComponent<Image>().color = Color.clear;
+        var hlg = row.AddComponent<HorizontalLayoutGroup>();
+        hlg.childAlignment         = TextAnchor.MiddleLeft;
+        hlg.childForceExpandHeight = false;
+        hlg.childForceExpandWidth  = false;
+        hlg.childControlWidth = hlg.childControlHeight = true;
+        hlg.padding = new RectOffset(48, 48, 0, 0);
+
+        var iconGO  = MakeGO(rowName + "Toggle", row.transform);
+        SetLE(iconGO, minW: 160, minH: 160);
+        var iconImg = iconGO.AddComponent<Image>();
+        iconImg.color = Color.clear;
+        var toggle = iconGO.AddComponent<Toggle>();
+        toggle.targetGraphic = iconImg;
+        toggle.transition    = Selectable.Transition.None;
+        toggle.isOn          = true;
+
+        Image MakeSpriteChild(string goName, Sprite sprite, bool active)
+        {
+            var go = new GameObject(goName, typeof(RectTransform));
+            go.transform.SetParent(iconGO.transform, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            var img = go.AddComponent<Image>();
+            img.sprite = sprite; img.type = Image.Type.Simple;
+            img.preserveAspect = true; img.color = Color.white;
+            go.SetActive(active);
+            return img;
+        }
+        MakeSpriteChild("SpriteOn",  sOn,  true);
+        MakeSpriteChild("SpriteOff", sOff, false);
+
+        return toggle;
+    }
+
+    // Карточка-переключатель: цветной фон, SpriteOn/SpriteOff иконки, подпись
+    static Toggle MakeSettingsCard(string name, Color cardColor,
+                                   Sprite spriteOn, Sprite spriteOff,
+                                   string labelText, Transform parent, TMP_FontAsset font)
+    {
+        var cardGO  = MakeGO(name, parent);
+        var cardImg = cardGO.AddComponent<Image>();
+        cardImg.color                  = cardColor;
+        cardImg.sprite                 = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        cardImg.type                   = Image.Type.Sliced;
+        cardImg.pixelsPerUnitMultiplier = 0.5f;
+
+        var toggle = cardGO.AddComponent<Toggle>();
+        toggle.targetGraphic = cardImg;
+        toggle.transition    = Selectable.Transition.None;
+        toggle.isOn          = true;
+
+        // Иконка (центр, занимает верхние ~55% карточки)
+        Image MakeSpriteChild(string goName, Sprite sprite, bool active)
+        {
+            var go = new GameObject(goName, typeof(RectTransform));
+            go.transform.SetParent(cardGO.transform, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.15f, 0.30f);
+            rt.anchorMax = new Vector2(0.85f, 0.88f);
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            var img = go.AddComponent<Image>();
+            img.color          = Color.white;
+            img.type           = Image.Type.Simple;
+            img.preserveAspect = true;
+            if (sprite != null) img.sprite = sprite;
+            go.SetActive(active);
+            return img;
+        }
+        MakeSpriteChild("SpriteOn",  spriteOn,  true);
+        MakeSpriteChild("SpriteOff", spriteOff, false);
+
+        // Подпись (нижняя треть)
+        var lblGO = MakeGO("Label", cardGO.transform);
+        var lblRT = lblGO.GetComponent<RectTransform>();
+        lblRT.anchorMin = new Vector2(0, 0);
+        lblRT.anchorMax = new Vector2(1, 0.30f);
+        lblRT.offsetMin = new Vector2(8, 4);
+        lblRT.offsetMax = new Vector2(-8, 0);
+        var lbl = lblGO.AddComponent<TextMeshProUGUI>();
+        lbl.text               = labelText;
+        lbl.fontSize           = 30;
+        lbl.color              = Color.white;
+        lbl.alignment          = TextAlignmentOptions.Center;
+        lbl.fontStyle          = FontStyles.Bold;
+        lbl.enableWordWrapping = false;
+        if (font != null) lbl.font = font;
+
+        return toggle;
+    }
+
+    // Карточка переключения языка: один клик меняет флаг RU↔SAH (SpriteOn=RU, SpriteOff=SAH)
+    static Toggle MakeLangToggleCard(string name, Sprite spriteRu, Sprite spriteSah,
+                                     string labelText, Transform parent, TMP_FontAsset font)
+    {
+        var cardGO  = MakeGO(name, parent);
+        var cardImg = cardGO.AddComponent<Image>();
+        cardImg.color  = new Color(0.13f, 0.55f, 0.47f);
+        cardImg.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        cardImg.type   = Image.Type.Sliced;
+
+        var toggle = cardGO.AddComponent<Toggle>();
+        toggle.targetGraphic = cardImg;
+        toggle.transition    = Selectable.Transition.None;
+        toggle.isOn          = true;
+
+        Image MakeFlagChild(string goName, Sprite sprite, bool active)
+        {
+            var go = new GameObject(goName, typeof(RectTransform));
+            go.transform.SetParent(cardGO.transform, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.1f, 0.28f);
+            rt.anchorMax = new Vector2(0.9f, 0.86f);
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            var img = go.AddComponent<Image>();
+            img.color          = Color.white;
+            img.type           = Image.Type.Simple;
+            img.preserveAspect = true;
+            if (sprite != null) img.sprite = sprite;
+            go.SetActive(active);
+            return img;
+        }
+        MakeFlagChild("SpriteOn",  spriteRu,  true);
+        MakeFlagChild("SpriteOff", spriteSah, false);
+
+        var lblGO = MakeGO("Label", cardGO.transform);
+        var lblRT = lblGO.GetComponent<RectTransform>();
+        lblRT.anchorMin = new Vector2(0, 0);
+        lblRT.anchorMax = new Vector2(1, 0.28f);
+        lblRT.offsetMin = new Vector2(12, 4);
+        lblRT.offsetMax = new Vector2(-12, 0);
+        var lbl = lblGO.AddComponent<TextMeshProUGUI>();
+        lbl.text               = labelText;
+        lbl.fontSize           = 30;
+        lbl.color              = Color.white;
+        lbl.alignment          = TextAlignmentOptions.Center;
+        lbl.fontStyle          = FontStyles.Bold;
+        lbl.enableWordWrapping = false;
+        if (font != null) lbl.font = font;
+
+        return toggle;
+    }
+
+    // Карточка с вертикальным слайдером громкости внутри
+    static (Toggle toggle, Slider slider) MakeToggleCardWithSlider(
+        string name, Color cardColor,
+        Sprite spriteOn, Sprite spriteOff,
+        string labelText, Transform parent, TMP_FontAsset font)
+    {
+        var cardGO  = MakeGO(name, parent);
+        var cardImg = cardGO.AddComponent<Image>();
+        cardImg.color                   = cardColor;
+        cardImg.sprite                  = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        cardImg.type                    = Image.Type.Sliced;
+        cardImg.pixelsPerUnitMultiplier = 0.5f;
+
+        var toggle = cardGO.AddComponent<Toggle>();
+        toggle.targetGraphic = cardImg;
+        toggle.transition    = Selectable.Transition.None;
+        toggle.isOn          = true;
+
+        // Иконка — левая половина, выше подписи
+        Image MakeSpriteChild(string goName, Sprite sprite, bool active)
+        {
+            var go = new GameObject(goName, typeof(RectTransform));
+            go.transform.SetParent(cardGO.transform, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.05f, 0.26f);
+            rt.anchorMax = new Vector2(0.55f, 0.90f);
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            var img = go.AddComponent<Image>();
+            img.color          = Color.white;
+            img.type           = Image.Type.Simple;
+            img.preserveAspect = true;
+            if (sprite != null) img.sprite = sprite;
+            go.SetActive(active);
+            return img;
+        }
+        MakeSpriteChild("SpriteOn",  spriteOn,  true);
+        MakeSpriteChild("SpriteOff", spriteOff, false);
+
+        // Вертикальный слайдер — правая треть карточки
+        const string acAtlas = "Assets/Images/Sprites/additional controls.png";
+        EnsureReadable(acAtlas);
+        var sBg     = LoadSprite(acAtlas, "additional controls_3");
+        var sFill   = LoadSprite(acAtlas, "additional controls_9");
+        var sHandle = LoadSprite(acAtlas, "additional controls_11");
+
+        var sliderGO = MakeGO(name + "Slider", cardGO.transform);
+        var sliderRT = sliderGO.GetComponent<RectTransform>();
+        sliderRT.anchorMin = new Vector2(0.63f, 0.10f);
+        sliderRT.anchorMax = new Vector2(0.88f, 0.90f);
+        sliderRT.offsetMin = sliderRT.offsetMax = Vector2.zero;
+
+        var bgGO  = MakeGO("Background", sliderGO.transform);
+        var bgRT  = bgGO.GetComponent<RectTransform>();
+        bgRT.anchorMin = Vector2.zero; bgRT.anchorMax = Vector2.one;
+        bgRT.offsetMin = bgRT.offsetMax = Vector2.zero;
+        var bgImg = bgGO.AddComponent<Image>();
+        bgImg.sprite = sBg; bgImg.type = Image.Type.Simple;
+        bgImg.preserveAspect = false; bgImg.color = Color.white;
+
+        var fillAreaGO = MakeGO("Fill Area", sliderGO.transform);
+        var faRT = fillAreaGO.GetComponent<RectTransform>();
+        faRT.anchorMin = Vector2.zero; faRT.anchorMax = Vector2.one;
+        faRT.offsetMin = faRT.offsetMax = Vector2.zero;
+        var fillGO  = MakeGO("Fill", fillAreaGO.transform);
+        var fillRT  = fillGO.GetComponent<RectTransform>();
+        fillRT.anchorMin = Vector2.zero; fillRT.anchorMax = Vector2.one;
+        fillRT.offsetMin = fillRT.offsetMax = Vector2.zero;
+        var fillImg = fillGO.AddComponent<Image>();
+        fillImg.sprite = sFill; fillImg.type = Image.Type.Filled;
+        fillImg.fillMethod = Image.FillMethod.Vertical;
+        fillImg.fillOrigin = (int)Image.OriginVertical.Bottom;
+        fillImg.fillAmount = 1f; fillImg.color = Color.white;
+
+        var handleAreaGO = MakeGO("Handle Slide Area", sliderGO.transform);
+        var haRT = handleAreaGO.GetComponent<RectTransform>();
+        haRT.anchorMin = Vector2.zero; haRT.anchorMax = Vector2.one;
+        haRT.offsetMin = haRT.offsetMax = Vector2.zero;
+        var handleGO = MakeGO("Handle", handleAreaGO.transform);
+        var handleRT = handleGO.GetComponent<RectTransform>();
+        handleRT.anchorMin = handleRT.anchorMax = new Vector2(0.5f, 0f);
+        handleRT.pivot     = new Vector2(0.5f, 0.5f);
+        handleRT.sizeDelta = new Vector2(60f, 60f);
+        var handleImg = handleGO.AddComponent<Image>();
+        handleImg.sprite = sHandle; handleImg.type = Image.Type.Simple;
+        handleImg.preserveAspect = true; handleImg.color = Color.white;
+
+        var slider = sliderGO.AddComponent<Slider>();
+        slider.fillRect      = fillRT;
+        slider.handleRect    = handleRT;
+        slider.targetGraphic = handleImg;
+        slider.direction     = Slider.Direction.BottomToTop;
+        slider.minValue = 0f; slider.maxValue = 1f; slider.value = 1f;
+
+        // Подпись
+        var lblGO = MakeGO("Label", cardGO.transform);
+        var lblRT = lblGO.GetComponent<RectTransform>();
+        lblRT.anchorMin = new Vector2(0, 0);
+        lblRT.anchorMax = new Vector2(1, 0.26f);
+        lblRT.offsetMin = new Vector2(8, 4);
+        lblRT.offsetMax = new Vector2(-8, 0);
+        var lbl = lblGO.AddComponent<TextMeshProUGUI>();
+        lbl.text               = labelText;
+        lbl.fontSize           = 30;
+        lbl.color              = Color.white;
+        lbl.alignment          = TextAlignmentOptions.Center;
+        lbl.fontStyle          = FontStyles.Bold;
+        lbl.enableWordWrapping = false;
+        if (font != null) lbl.font = font;
+
+        return (toggle, slider);
+    }
+
+    // Карточка выбора языка (Button, цвет задаётся через SetLangBtn)
+    static Button MakeLangCard(string name, Sprite icon, string labelText, Transform parent, TMP_FontAsset font)
+    {
+        var cardGO  = MakeGO(name, parent);
+        var cardImg = cardGO.AddComponent<Image>();
+        cardImg.color  = new Color(0.85f, 0.85f, 0.85f);
+        cardImg.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        cardImg.type   = Image.Type.Sliced;
+
+        var btn = cardGO.AddComponent<Button>();
+        btn.targetGraphic = cardImg;
+        btn.transition    = Selectable.Transition.None;
+
+        var iconGO = new GameObject("Icon", typeof(RectTransform));
+        iconGO.transform.SetParent(cardGO.transform, false);
+        var iconRT = iconGO.GetComponent<RectTransform>();
+        iconRT.anchorMin = new Vector2(0.1f, 0.28f);
+        iconRT.anchorMax = new Vector2(0.9f, 0.86f);
+        iconRT.offsetMin = iconRT.offsetMax = Vector2.zero;
+        var iconImg = iconGO.AddComponent<Image>();
+        iconImg.color = Color.white;
+        if (icon != null)
+        {
+            iconImg.sprite         = icon;
+            iconImg.type           = Image.Type.Simple;
+            iconImg.preserveAspect = true;
+        }
+
+        var lblGO = MakeGO("Label", cardGO.transform);
+        var lblRT = lblGO.GetComponent<RectTransform>();
+        lblRT.anchorMin = new Vector2(0, 0);
+        lblRT.anchorMax = new Vector2(1, 0.28f);
+        lblRT.offsetMin = new Vector2(12, 4);
+        lblRT.offsetMax = new Vector2(-12, 0);
+        var lbl = lblGO.AddComponent<TextMeshProUGUI>();
+        lbl.text               = labelText;
+        lbl.fontSize           = 30;
+        lbl.color              = new Color(0.10f, 0.16f, 0.10f);
+        lbl.alignment          = TextAlignmentOptions.Center;
+        lbl.fontStyle          = FontStyles.Bold;
+        lbl.enableWordWrapping = false;
+        if (font != null) lbl.font = font;
+
+        return btn;
+    }
+
+    // Таб-кнопка: подпись + индикатор-подчёркивание
+    static Button MakeTabButton(string name, string labelText, Transform parent, TMP_FontAsset font)
+    {
+        var go  = MakeGO(name, parent);
+        var img = go.AddComponent<Image>();
+        img.color = Color.clear;
+        var btn = go.AddComponent<Button>();
+        btn.targetGraphic = img;
+        btn.transition    = Selectable.Transition.None;
+
+        var vlg = go.AddComponent<VerticalLayoutGroup>();
+        vlg.childAlignment         = TextAnchor.MiddleCenter;
+        vlg.childForceExpandWidth  = true;
+        vlg.childForceExpandHeight = false;
+        vlg.childControlWidth = vlg.childControlHeight = true;
+        vlg.padding = new RectOffset(0, 0, 8, 0);
+        vlg.spacing = 4;
+
+        var lbl = MakeTMP("Label", go.transform, labelText, 28, Color.white, font, minH: 36, bold: true);
+        lbl.alignment = TextAlignmentOptions.Center;
+        SetLE(lbl.gameObject, flexH: 1f);
+
+        var indGO = MakeGO("Indicator", go.transform);
+        SetLE(indGO, minH: 4, prefH: 4);
+        indGO.AddComponent<Image>().color = Color.clear;
+
+        return btn;
+    }
+
     // Разделитель строк настроек
     static void MakeRowSeparator(Transform parent)
     {
         var sep = MakeGO("Separator", parent);
-        SetLE(sep, minH: 1, prefH: 1);
+        SetLE(sep, minH: 1, prefH: 1, flexH: 0);
         sep.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.08f);
     }
 
@@ -264,36 +711,36 @@ public static partial class GameSceneBuilder
         bHLG.childControlWidth     = bHLG.childControlHeight = true;
         bHLG.spacing = 12;
 
-        var btnRuGO  = MakeLangButton("BtnLangRu",  btnGroup.transform, "Русский",   font, active: true);
-        var btnSahGO = MakeLangButton("BtnLangSah", btnGroup.transform, "Саха тыла", font, active: false);
-        AddLocKey(btnRuGO,  "lang_ru");
-        AddLocKey(btnSahGO, "lang_sah");
+        var sRu  = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/language/rus.png");
+        var sSah = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/language/sakha.png");
+
+        var btnRuGO  = MakeLangButton("BtnLangRu",  btnGroup.transform, sRu,  active: true);
+        var btnSahGO = MakeLangButton("BtnLangSah", btnGroup.transform, sSah, active: false);
 
         return (btnRuGO.GetComponent<Button>(), btnSahGO.GetComponent<Button>());
     }
 
-    static GameObject MakeLangButton(string name, Transform parent, string text,
-                                      TMP_FontAsset font, bool active)
+    static GameObject MakeLangButton(string name, Transform parent, Sprite icon, bool active)
     {
         var go  = MakeGO(name, parent);
-        SetLE(go, minW: 200, minH: 60);
+        SetLE(go, minW: 60, minH: 40);
         var img = go.AddComponent<Image>();
-        img.color  = active ? C_PRIMARY : new Color(0.85f, 0.85f, 0.85f);
-        img.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-        img.type   = Image.Type.Sliced;
+        if (icon != null)
+        {
+            img.sprite         = icon;
+            img.type           = Image.Type.Simple;
+            img.preserveAspect = false;
+            img.color          = active ? Color.white : new Color(1f, 1f, 1f, 0.4f);
+        }
+        else
+        {
+            img.color  = active ? C_PRIMARY : new Color(0.85f, 0.85f, 0.85f);
+            img.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            img.type   = Image.Type.Sliced;
+        }
         var btn = go.AddComponent<Button>();
         btn.targetGraphic = img;
-
-        var txtGO = MakeGO("Text", go.transform);
-        var tRT   = txtGO.GetComponent<RectTransform>();
-        tRT.anchorMin = Vector2.zero; tRT.anchorMax = Vector2.one;
-        tRT.offsetMin = new Vector2(8, 0); tRT.offsetMax = new Vector2(-8, 0);
-        var tmp = txtGO.AddComponent<TextMeshProUGUI>();
-        tmp.text      = text;
-        tmp.fontSize  = 28;
-        tmp.color     = active ? Color.white : C_TEXT;
-        tmp.alignment = TextAlignmentOptions.Center;
-        if (font != null) tmp.font = font;
+        btn.transition    = Selectable.Transition.None;
         return go;
     }
 
