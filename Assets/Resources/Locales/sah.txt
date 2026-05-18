@@ -64,3 +64,9 @@ suggest_email_subject=«Уус-Алдан улууһа төрүттэммитэ 
 
 # ── Google Sheets ──────────────────────────────────────────────────────────
 btn_profile=Профиль
+nconfirm_reset_sub=Бары сайдыылар сотуллуохтараnconfirm_no=Суох
+
+confirm_reset_title=Эн эрэллэҕин дуо?
+confirm_reset_sub=Бары сайдыылар сотуллуохтара
+confirm_yes=Ии
+confirm_no=Суох

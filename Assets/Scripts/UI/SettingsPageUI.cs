@@ -20,6 +20,12 @@ namespace UstAldanQuiz.UI
         [Header("Язык")]
         [SerializeField] private Toggle toggleLang;
 
+        [Header("Вкладка Игра")]
+        [SerializeField] private Button        btnReset;
+        [SerializeField] private ConfirmPopup  confirmResetPopup;
+        [SerializeField] private Button        btnSuggest;
+        [SerializeField] private SuggestQuestionUI suggestUI;
+
         [Header("Вкладки")]
         [SerializeField] private Button     tabSettings;
         [SerializeField] private Button     tabGame;
@@ -50,6 +56,9 @@ namespace UstAldanQuiz.UI
 
             BindLang();
 
+            btnReset?.onClick.AddListener(() => confirmResetPopup?.Show(SaveManager.ResetAll));
+            btnSuggest?.onClick.AddListener(() => suggestUI?.Open());
+
             tabSettings?.onClick.AddListener(() => ShowTab(0));
             tabGame?.onClick.AddListener(()     => ShowTab(1));
             tabSecurity?.onClick.AddListener(() => ShowTab(2));
@@ -61,6 +70,8 @@ namespace UstAldanQuiz.UI
         private void OnDestroy()
         {
             toggleLang?.onValueChanged.RemoveAllListeners();
+            btnReset?.onClick.RemoveAllListeners();
+            btnSuggest?.onClick.RemoveAllListeners();
             tabSettings?.onClick.RemoveAllListeners();
             tabGame?.onClick.RemoveAllListeners();
             tabSecurity?.onClick.RemoveAllListeners();

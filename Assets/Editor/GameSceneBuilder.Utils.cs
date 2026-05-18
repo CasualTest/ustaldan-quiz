@@ -336,6 +336,86 @@ public static partial class GameSceneBuilder
         return (toggle, slider);
     }
 
+    // Строка «Подпись + горизонтальный ползунок»
+    static Slider MakeHSliderRow(string name, string labelText, Transform parent, TMP_FontAsset font)
+    {
+        var row = MakeGO(name, parent);
+        SetLE(row, minH: 88, prefH: 88);
+        var rowLE = row.GetComponent<LayoutElement>();
+        rowLE.flexibleHeight = 0;
+        rowLE.layoutPriority = 2;
+        row.AddComponent<Image>().color = Color.clear;
+        var hlg = row.AddComponent<HorizontalLayoutGroup>();
+        hlg.childAlignment         = TextAnchor.MiddleLeft;
+        hlg.childForceExpandWidth  = false;
+        hlg.childForceExpandHeight = false;
+        hlg.childControlWidth = hlg.childControlHeight = true;
+        hlg.padding = new RectOffset(16, 16, 0, 0);
+        hlg.spacing = 20;
+
+        var lbl = MakeTMP("Label", row.transform, labelText, 30, C_TEXT, font, minH: 36);
+        SetLE(lbl.gameObject, minW: 160);
+        lbl.alignment = TextAlignmentOptions.MidlineLeft;
+
+        const string acAtlas = "Assets/Images/Sprites/additional controls.png";
+        EnsureReadable(acAtlas);
+        var sBg     = LoadSprite(acAtlas, "additional controls_3");
+        var sFill   = LoadSprite(acAtlas, "additional controls_9");
+        var sHandle = LoadSprite(acAtlas, "additional controls_11");
+
+        float handleH = sHandle != null ? sHandle.rect.height / 2f : 44f;
+        float handleW = sHandle != null ? sHandle.rect.width  / 2f : 44f;
+        float sliderH = sBg     != null ? sBg.rect.height     / 2f : 44f;
+
+        var sliderGO = MakeGO(name + "Slider", row.transform);
+        SetLE(sliderGO, minH: sliderH, prefH: sliderH, flexW: 1f);
+
+        var bgGO = MakeGO("Background", sliderGO.transform);
+        var bgRT = bgGO.GetComponent<RectTransform>();
+        bgRT.anchorMin = Vector2.zero; bgRT.anchorMax = Vector2.one;
+        bgRT.offsetMin = bgRT.offsetMax = Vector2.zero;
+        var bgImg = bgGO.AddComponent<Image>();
+        bgImg.sprite = sBg; bgImg.type = Image.Type.Simple;
+        bgImg.preserveAspect = false; bgImg.color = Color.white;
+
+        var fillAreaGO = MakeGO("Fill Area", sliderGO.transform);
+        var faRT = fillAreaGO.GetComponent<RectTransform>();
+        faRT.anchorMin = Vector2.zero; faRT.anchorMax = Vector2.one;
+        faRT.offsetMin = faRT.offsetMax = Vector2.zero;
+        var fillGO  = MakeGO("Fill", fillAreaGO.transform);
+        var fillRT  = fillGO.GetComponent<RectTransform>();
+        fillRT.anchorMin = Vector2.zero; fillRT.anchorMax = Vector2.one;
+        fillRT.offsetMin = fillRT.offsetMax = Vector2.zero;
+        var fillImg = fillGO.AddComponent<Image>();
+        fillImg.sprite     = sFill;
+        fillImg.type       = Image.Type.Filled;
+        fillImg.fillMethod = Image.FillMethod.Horizontal;
+        fillImg.fillOrigin = (int)Image.OriginHorizontal.Left;
+        fillImg.fillAmount = 1f; fillImg.color = Color.white;
+
+        var handleAreaGO = MakeGO("Handle Slide Area", sliderGO.transform);
+        var haRT = handleAreaGO.GetComponent<RectTransform>();
+        haRT.anchorMin = Vector2.zero; haRT.anchorMax = Vector2.one;
+        haRT.offsetMin = haRT.offsetMax = Vector2.zero;
+        var handleGO = MakeGO("Handle", handleAreaGO.transform);
+        var handleRT = handleGO.GetComponent<RectTransform>();
+        handleRT.anchorMin = handleRT.anchorMax = new Vector2(0f, 0.5f);
+        handleRT.pivot     = new Vector2(0.5f, 0.5f);
+        handleRT.sizeDelta = new Vector2(handleW, handleH);
+        var handleImg = handleGO.AddComponent<Image>();
+        handleImg.sprite = sHandle; handleImg.type = Image.Type.Simple;
+        handleImg.preserveAspect = true; handleImg.color = Color.white;
+
+        var slider = sliderGO.AddComponent<Slider>();
+        slider.fillRect      = fillRT;
+        slider.handleRect    = handleRT;
+        slider.targetGraphic = handleImg;
+        slider.direction     = Slider.Direction.LeftToRight;
+        slider.minValue = 0f; slider.maxValue = 1f; slider.value = 1f;
+
+        return slider;
+    }
+
     // Строка с иконкой-переключателем без ползунка
     static Toggle MakeIconToggleRow(
         string rowName, string spriteOnPath, string spriteOffPath,
@@ -488,6 +568,52 @@ public static partial class GameSceneBuilder
         if (font != null) lbl.font = font;
 
         return toggle;
+    }
+
+    // Карточка-кнопка: цветной фон, текстовый символ иконки, подпись
+    static Button MakeActionCard(string name, Color cardColor, string iconText,
+                                 string labelText, Transform parent, TMP_FontAsset font)
+    {
+        var cardGO  = MakeGO(name, parent);
+        var cardImg = cardGO.AddComponent<Image>();
+        cardImg.color                   = cardColor;
+        cardImg.sprite                  = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        cardImg.type                    = Image.Type.Sliced;
+        cardImg.pixelsPerUnitMultiplier = 0.5f;
+
+        var btn = cardGO.AddComponent<Button>();
+        btn.targetGraphic = cardImg;
+        btn.transition    = Selectable.Transition.None;
+
+        var iconGO = new GameObject("Icon", typeof(RectTransform));
+        iconGO.transform.SetParent(cardGO.transform, false);
+        var iconRT = iconGO.GetComponent<RectTransform>();
+        iconRT.anchorMin = new Vector2(0, 0.28f);
+        iconRT.anchorMax = new Vector2(1, 0.92f);
+        iconRT.offsetMin = iconRT.offsetMax = Vector2.zero;
+        var iconTMP = iconGO.AddComponent<TextMeshProUGUI>();
+        iconTMP.text      = iconText;
+        iconTMP.fontSize  = 72;
+        iconTMP.color     = Color.white;
+        iconTMP.alignment = TextAlignmentOptions.Center;
+        if (font != null) iconTMP.font = font;
+
+        var lblGO = MakeGO("Label", cardGO.transform);
+        var lblRT = lblGO.GetComponent<RectTransform>();
+        lblRT.anchorMin = new Vector2(0, 0);
+        lblRT.anchorMax = new Vector2(1, 0.30f);
+        lblRT.offsetMin = new Vector2(8, 4);
+        lblRT.offsetMax = new Vector2(-8, 0);
+        var lbl = lblGO.AddComponent<TextMeshProUGUI>();
+        lbl.text               = labelText;
+        lbl.fontSize           = 30;
+        lbl.color              = Color.white;
+        lbl.alignment          = TextAlignmentOptions.Center;
+        lbl.fontStyle          = FontStyles.Bold;
+        lbl.enableWordWrapping = false;
+        if (font != null) lbl.font = font;
+
+        return btn;
     }
 
     // Карточка с вертикальным слайдером громкости внутри

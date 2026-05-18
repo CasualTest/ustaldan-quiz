@@ -292,10 +292,32 @@ public static partial class GameSceneBuilder
         var toggleVibro = MakeSettingsCard("CardVibro", new Color(0.55f, 0.36f, 0.96f), sVibOn, sVibOff, "Вибрация", cardsGridGO.transform, font);
         var toggleLang  = MakeLangToggleCard("CardLang", sRuIcon, sSahIcon, "Язык", cardsGridGO.transform, font);
 
-        // ─── PanelGame (пустой) ──────────────────────────────────────────
+        var sliderMusic = MakeHSliderRow("SliderMusic", "Музыка", panelSettings.transform, font);
+        var sliderSound = MakeHSliderRow("SliderSound", "Звук",   panelSettings.transform, font);
+
+        // ─── PanelGame ───────────────────────────────────────────────────
         var panelGame = MakeGO("PanelGame", tabContent.transform);
         Stretch(panelGame);
         panelGame.AddComponent<Image>().color = Color.clear;
+        var panelGameVLG = panelGame.AddComponent<VerticalLayoutGroup>();
+        panelGameVLG.childAlignment         = TextAnchor.UpperCenter;
+        panelGameVLG.childForceExpandWidth  = true;
+        panelGameVLG.childForceExpandHeight = false;
+        panelGameVLG.childControlWidth = panelGameVLG.childControlHeight = true;
+        panelGameVLG.padding = new RectOffset(24, 24, 24, 24);
+        panelGameVLG.spacing = 16;
+
+        var gameCardsGO   = MakeGO("CardsGrid", panelGame.transform);
+        var gameCardsGrid = gameCardsGO.AddComponent<GridLayoutGroup>();
+        gameCardsGrid.cellSize        = new Vector2(480, 250);
+        gameCardsGrid.spacing         = new Vector2(16, 16);
+        gameCardsGrid.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
+        gameCardsGrid.constraintCount = 2;
+        gameCardsGrid.childAlignment  = TextAnchor.UpperCenter;
+        SetLE(gameCardsGO, minH: 250, prefH: 250);
+
+        var cardResetBtn   = MakeActionCard("CardReset",       new Color(0.85f, 0.27f, 0.22f), "↺", "Сбросить прогресс", gameCardsGO.transform, font);
+        var cardSuggestBtn = MakeActionCard("CardAddQuestion", new Color(0.18f, 0.55f, 0.34f), "+",       "Добавить вопрос",    gameCardsGO.transform, font);
         panelGame.SetActive(false);
 
         // ─── PanelSecurity (пустой) ──────────────────────────────────────
@@ -304,18 +326,95 @@ public static partial class GameSceneBuilder
         panelSecurity.AddComponent<Image>().color = Color.clear;
         panelSecurity.SetActive(false);
 
+        var suggestUIComp = BuildSuggestPanel(canvasGO.transform, font);
+
+        // ── Попап подтверждения сброса прогресса ──────────────────────────
+        const string popupsAtlas = "Assets/Images/Sprites/popups.png";
+        EnsureReadable(popupsAtlas);
+
+        var confirmOverlay = MakeGO("ConfirmResetPopup", canvasGO.transform);
+        Stretch(confirmOverlay);
+        confirmOverlay.AddComponent<Image>().color = C_OVERLAY;
+        var confirmOverlayCG = confirmOverlay.AddComponent<CanvasGroup>();
+        confirmOverlay.SetActive(false);
+
+        var confirmCard   = MakeGO("ConfirmCard", confirmOverlay.transform);
+        var confirmCardRT = confirmCard.GetComponent<RectTransform>();
+        confirmCardRT.anchorMin = new Vector2(0.5f, 0.5f);
+        confirmCardRT.anchorMax = new Vector2(0.5f, 0.5f);
+        confirmCardRT.pivot     = new Vector2(0.5f, 0.5f);
+        confirmCardRT.sizeDelta = new Vector2(900, 420);
+        confirmCardRT.anchoredPosition = Vector2.zero;
+        var confirmCardImg = confirmCard.AddComponent<Image>();
+        confirmCardImg.color  = Color.white;
+        confirmCardImg.sprite = LoadSprite(popupsAtlas, "popups_3");
+        confirmCardImg.type   = Image.Type.Sliced;
+        var confirmCardCG = confirmCard.AddComponent<CanvasGroup>();
+        var confirmCardVLG = confirmCard.AddComponent<VerticalLayoutGroup>();
+        confirmCardVLG.childAlignment         = TextAnchor.MiddleCenter;
+        confirmCardVLG.childForceExpandWidth  = true;
+        confirmCardVLG.childForceExpandHeight = false;
+        confirmCardVLG.childControlWidth = confirmCardVLG.childControlHeight = true;
+        confirmCardVLG.padding = new RectOffset(48, 48, 40, 40);
+        confirmCardVLG.spacing = 16;
+
+        var confirmTitleTMP = MakeTMP("ConfirmTitle", confirmCard.transform, "Вы уверены?", 48, C_TEXT, font, minH: 64, bold: true);
+        confirmTitleTMP.alignment = TextAlignmentOptions.Center;
+        AddLocKey(confirmTitleTMP.gameObject, "confirm_reset_title");
+
+        var confirmSubTMP = MakeTMP("ConfirmSub", confirmCard.transform, "Весь прогресс будет удалён", 32, C_TEXT2, font, minH: 44);
+        confirmSubTMP.alignment = TextAlignmentOptions.Center;
+        AddLocKey(confirmSubTMP.gameObject, "confirm_reset_sub");
+
+        var confirmBtnRow = MakeGO("BtnRow", confirmCard.transform);
+        SetLE(confirmBtnRow, minH: 100, prefH: 100);
+        var confirmBtnRowLE = confirmBtnRow.GetComponent<LayoutElement>();
+        confirmBtnRowLE.flexibleHeight = 0;
+        confirmBtnRowLE.layoutPriority = 2;
+        var confirmBtnHLG = confirmBtnRow.AddComponent<HorizontalLayoutGroup>();
+        confirmBtnHLG.childAlignment         = TextAnchor.MiddleCenter;
+        confirmBtnHLG.childForceExpandWidth  = true;
+        confirmBtnHLG.childForceExpandHeight = false;
+        confirmBtnHLG.childControlWidth = confirmBtnHLG.childControlHeight = true;
+        confirmBtnHLG.spacing = 24;
+
+        var btnNoGO  = MakePrimaryButton("BtnNo",  confirmBtnRow.transform, "Нет", font);
+        var btnYesGO = MakePrimaryButton("BtnYes", confirmBtnRow.transform, "Да",  font);
+        AddLocKey(btnNoGO,  "confirm_no");
+        AddLocKey(btnYesGO, "confirm_yes");
+        const string btnAtlasPath = "Assets/Images/Sprites/buttons.png";
+        EnsureReadable(btnAtlasPath);
+        ApplyHyperCasualButton(btnNoGO,  btnAtlasPath, "buttons_12", "buttons_13");
+        ApplyHyperCasualButton(btnYesGO, btnAtlasPath, "buttons_38", "buttons_39");
+
+        var confirmPopupComp = confirmOverlay.AddComponent<ConfirmPopup>();
+        var soConfirm = new UnityEditor.SerializedObject(confirmPopupComp);
+        Prop(soConfirm, "panel",        confirmOverlay);
+        Prop(soConfirm, "sheetRect",    confirmCardRT);
+        Prop(soConfirm, "sheetGroup",   confirmCardCG);
+        Prop(soConfirm, "overlayGroup", confirmOverlayCG);
+        Prop(soConfirm, "btnYes",       btnYesGO.GetComponent<Button>());
+        Prop(soConfirm, "btnNo",        btnNoGO.GetComponent<Button>());
+        soConfirm.ApplyModifiedProperties();
+
         var settingsPageUI = settingsPage.AddComponent<SettingsPageUI>();
         var soSetPage      = new UnityEditor.SerializedObject(settingsPageUI);
-        Prop(soSetPage, "toggleMusic",     toggleMusic);
-        Prop(soSetPage, "toggleSound",     toggleSound);
-        Prop(soSetPage, "toggleVibration", toggleVibro);
-        Prop(soSetPage, "toggleLang",      toggleLang);
-        Prop(soSetPage, "tabSettings",     tabSettingsBtn);
-        Prop(soSetPage, "tabGame",         tabGameBtn);
-        Prop(soSetPage, "tabSecurity",     tabSecurityBtn);
-        Prop(soSetPage, "panelSettings",   panelSettings);
-        Prop(soSetPage, "panelGame",       panelGame);
-        Prop(soSetPage, "panelSecurity",   panelSecurity);
+        Prop(soSetPage, "toggleMusic",        toggleMusic);
+        Prop(soSetPage, "sliderMusic",        sliderMusic);
+        Prop(soSetPage, "toggleSound",        toggleSound);
+        Prop(soSetPage, "sliderSound",        sliderSound);
+        Prop(soSetPage, "toggleVibration",    toggleVibro);
+        Prop(soSetPage, "toggleLang",         toggleLang);
+        Prop(soSetPage, "tabSettings",        tabSettingsBtn);
+        Prop(soSetPage, "tabGame",            tabGameBtn);
+        Prop(soSetPage, "tabSecurity",        tabSecurityBtn);
+        Prop(soSetPage, "panelSettings",      panelSettings);
+        Prop(soSetPage, "panelGame",          panelGame);
+        Prop(soSetPage, "panelSecurity",      panelSecurity);
+        Prop(soSetPage, "btnReset",           cardResetBtn);
+        Prop(soSetPage, "confirmResetPopup",  confirmPopupComp);
+        Prop(soSetPage, "btnSuggest",         cardSuggestBtn);
+        Prop(soSetPage, "suggestUI",          suggestUIComp);
         soSetPage.ApplyModifiedProperties();
         settingsPage.SetActive(false);
 
@@ -367,8 +466,6 @@ public static partial class GameSceneBuilder
 
         var aboutSuggestBtnGO = MakePrimaryButton("BtnSuggest", aboutContent.transform, "Предложить вопрос", font, minH: 104);
         AddLocKey(aboutSuggestBtnGO, "btn_suggest");
-
-        var suggestUIComp = BuildSuggestPanel(canvasGO.transform, font);
 
         var aboutPageUI = aboutPage.AddComponent<AboutPageUI>();
         var soAboutPage = new UnityEditor.SerializedObject(aboutPageUI);

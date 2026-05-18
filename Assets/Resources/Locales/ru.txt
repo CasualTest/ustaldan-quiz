@@ -64,3 +64,9 @@ suggest_email_subject=Предложение вопроса — викторин
 
 # ── Google Sheets ──────────────────────────────────────────────────────────
 btn_profile=Профиль
+nconfirm_reset_sub=Весь прогресс будет удалёнnconfirm_no=Нет
+
+confirm_reset_title=Вы уверены?
+confirm_reset_sub=Весь прогресс будет удалён
+confirm_yes=Да
+confirm_no=Нет
