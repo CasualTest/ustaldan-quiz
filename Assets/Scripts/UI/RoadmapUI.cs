@@ -21,8 +21,7 @@ namespace UstAldanQuiz.UI
         [SerializeField] private RectTransform linesContainer;
 
         [Header("Прогресс")]
-        [SerializeField] private RectTransform progressBarFill;
-        [SerializeField] private TMP_Text      progressText;
+        [SerializeField] private ProgressBarUI progressBar;
 
         [Header("Хедер")]
         [SerializeField] private Button btnBack;
@@ -205,18 +204,7 @@ namespace UstAldanQuiz.UI
         {
             int total    = _tiles.Count;
             int answered = _lockedCount + _answeredCount;
-
-            if (progressText != null)
-                progressText.text = $"{answered} / {total}";
-
-            if (progressBarFill != null)
-            {
-                var parentRT = (RectTransform)progressBarFill.parent;
-                float w = parentRT != null ? parentRT.rect.width : 800f;
-                if (w <= 0f) w = 800f;
-                float ratio = total > 0 ? Mathf.Clamp01((float)answered / total) : 0f;
-                progressBarFill.sizeDelta = new Vector2(w * ratio, progressBarFill.sizeDelta.y);
-            }
+            progressBar?.SetProgress(answered, total);
         }
 
         // ── Question window ────────────────────────────────────────────────

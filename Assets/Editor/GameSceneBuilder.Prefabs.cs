@@ -8,9 +8,10 @@ using UstAldanQuiz.Utils;
 
 public static partial class GameSceneBuilder
 {
-    const string PrefabsPath       = "Assets/Prefabs/UI";
+    const string PrefabsPath        = "Assets/Prefabs/UI";
     const string QuestionWindowPath = "Assets/Prefabs/UI/QuestionWindow.prefab";
     const string FactPopupPath      = "Assets/Prefabs/UI/FactPopup.prefab";
+    const string ProgressBarPath    = "Assets/Prefabs/UI/ProgressBar.prefab";
 
     // =====================================================================
     // МЕНЮ
@@ -23,6 +24,7 @@ public static partial class GameSceneBuilder
         EnsureAssetFolder(PrefabsPath);
         BuildQuestionWindowPrefab();
         BuildFactPopupPrefab();
+        BuildProgressBarPrefab();
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         Debug.Log("[GameSceneBuilder] ✓ UI Prefabs собраны.");
@@ -170,10 +172,33 @@ public static partial class GameSceneBuilder
         btnContinueGO.SetActive(false);
         ApplyHyperCasualButton(btnContinueGO, "Assets/Images/Sprites/buttons.png", "buttons_12", "buttons_13");
 
+        // BtnClose — верхний правый угол Sheet (абсолютное позиционирование внутри Overlay)
+        EnsureReadable("Assets/Images/Sprites/buttons.png");
+        var sClose     = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_10");
+        var btnCloseGO = MakeGO("BtnClose", overlay.transform);
+        var btnCloseRT = btnCloseGO.GetComponent<RectTransform>();
+        btnCloseRT.anchorMin        = new Vector2(0.96f, 0.88f);
+        btnCloseRT.anchorMax        = new Vector2(0.96f, 0.88f);
+        btnCloseRT.pivot            = new Vector2(0.5f, 0.5f);
+        btnCloseRT.anchoredPosition = Vector2.zero;
+        btnCloseRT.sizeDelta        = new Vector2(110f, 110f);
+        var btnCloseImg = btnCloseGO.AddComponent<Image>();
+        btnCloseImg.sprite          = sClose;
+        btnCloseImg.type            = Image.Type.Simple;
+        btnCloseImg.preserveAspect  = true;
+        btnCloseImg.color           = Color.white;
+        if (sClose != null) btnCloseImg.alphaHitTestMinimumThreshold = 0.1f;
+        var btnCloseBtn = btnCloseGO.AddComponent<Button>();
+        btnCloseBtn.targetGraphic = btnCloseImg;
+        btnCloseBtn.transition    = Selectable.Transition.None;
+        btnCloseGO.AddComponent<ButtonSFX>();
+        btnCloseGO.AddComponent<ButtonSpringAnim>();
+
         // Компонент
         var qWin = root.AddComponent<QuestionWindow>();
         var soQW = new SerializedObject(qWin);
         Prop(soQW, "panel",          overlay);
+        Prop(soQW, "btnClose",       btnCloseBtn);
         Prop(soQW, "sheetRect",      sheetRT);
         Prop(soQW, "sheetGroup",     sheetCG);
         Prop(soQW, "overlayGroup",   overlayCG);
@@ -189,6 +214,56 @@ public static partial class GameSceneBuilder
         PrefabUtility.SaveAsPrefabAsset(root, QuestionWindowPath);
         Object.DestroyImmediate(root);
         Debug.Log("[GameSceneBuilder] ✓ QuestionWindow.prefab");
+    }
+
+    // =====================================================================
+    // ProgressBar.prefab
+    // =====================================================================
+
+    static void BuildProgressBarPrefab()
+    {
+        var font = FindFont();
+        const string acAtlas = "Assets/Images/Sprites/additional controls.png";
+        EnsureReadable(acAtlas);
+        var sBg   = LoadSprite(acAtlas, "additional controls_2");
+        var sFill = LoadSprite(acAtlas, "additional controls_8");
+
+        var root = new GameObject("ProgressBar", typeof(RectTransform));
+
+        // Background
+        var bg = MakeGO("Background", root.transform);
+        Stretch(bg);
+        var bgImg = bg.AddComponent<Image>();
+        bgImg.sprite = sBg; bgImg.type = Image.Type.Simple; bgImg.color = Color.white;
+
+        // Fill — Image.Filled/Horizontal, fillAmount управляется из кода
+        var fill = MakeGO("Fill", root.transform);
+        Stretch(fill);
+        var fillImg = fill.AddComponent<Image>();
+        fillImg.sprite     = sFill;
+        fillImg.type       = Image.Type.Filled;
+        fillImg.fillMethod = Image.FillMethod.Horizontal;
+        fillImg.fillOrigin = (int)Image.OriginHorizontal.Left;
+        fillImg.fillAmount = 0f;
+        fillImg.color      = Color.white;
+
+        // Label — поверх бара, по центру
+        var labelTMP = MakeTMP("Label", root.transform, "0 / 0", 24, Color.white, font, bold: true);
+        var labelRT  = labelTMP.GetComponent<RectTransform>();
+        labelRT.anchorMin = Vector2.zero; labelRT.anchorMax = Vector2.one;
+        labelRT.offsetMin = labelRT.offsetMax = Vector2.zero;
+        labelTMP.alignment = TextAlignmentOptions.Center;
+
+        // Компонент
+        var pbComp = root.AddComponent<ProgressBarUI>();
+        var soPB   = new SerializedObject(pbComp);
+        Prop(soPB, "fillImage", fillImg);
+        Prop(soPB, "label",     labelTMP);
+        soPB.ApplyModifiedProperties();
+
+        PrefabUtility.SaveAsPrefabAsset(root, ProgressBarPath);
+        Object.DestroyImmediate(root);
+        Debug.Log("[GameSceneBuilder] ✓ ProgressBar.prefab");
     }
 
     // =====================================================================

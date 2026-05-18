@@ -124,24 +124,30 @@ public static partial class GameSceneBuilder
         pHLG.childControlWidth = pHLG.childControlHeight = true;
         pHLG.padding = new RectOffset(24, 24, 10, 10); pHLG.spacing = 12;
 
-        // BarContainer (background + fill)
-        var barContainerGO = MakeGO("ProgressBarContainer", progressRow.transform);
-        SetLE(barContainerGO, flexW: 1f, minH: 20);
-        barContainerGO.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.22f);
+        // ProgressBar из Prefab — высота по нативному размеру спрайта
+        const string acAtlas = "Assets/Images/Sprites/additional controls.png";
+        EnsureReadable(acAtlas);
+        var sBgBar    = LoadSprite(acAtlas, "additional controls_2");
+        float nativeH = sBgBar != null ? sBgBar.rect.height : 64f;
+        float barH    = nativeH / 2f;
+        float rowH    = nativeH + pHLG.padding.top + pHLG.padding.bottom;
 
-        var progressFillGO = MakeGO("ProgressFill", barContainerGO.transform);
-        var progressFillRT = progressFillGO.GetComponent<RectTransform>();
-        progressFillRT.anchorMin = new Vector2(0, 0);
-        progressFillRT.anchorMax = new Vector2(0, 1);
-        progressFillRT.pivot     = new Vector2(0, 0.5f);
-        progressFillRT.anchoredPosition = Vector2.zero;
-        progressFillRT.sizeDelta = new Vector2(0, 0);
-        progressFillGO.AddComponent<Image>().color = C_SECONDARY;
+        var rowLE = progressRow.GetComponent<LayoutElement>() ?? progressRow.AddComponent<LayoutElement>();
+        rowLE.minHeight = rowLE.preferredHeight = rowH;
 
-        // ProgressText (right of bar)
-        var progressTextTMP = MakeTMP("ProgressText", progressRow.transform, "0/0", 26, Color.white, font, minH: 32);
-        SetLE(progressTextTMP.gameObject, minW: 90);
-        progressTextTMP.alignment = TextAlignmentOptions.MidlineRight;
+        var pbPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ProgressBarPath);
+        if (pbPrefab == null) { Debug.LogError("[GameSceneBuilder] ProgressBar.prefab не найден. Запустите '0 — Build UI Prefabs'."); return; }
+
+        // Спейсеры по бокам → бар занимает 75% ширины (flex 6:1:1)
+        var leftSpacer = MakeGO("LeftSpacer", progressRow.transform);
+        SetLE(leftSpacer, flexW: 1f); leftSpacer.AddComponent<Image>().color = Color.clear;
+
+        var pbGO = (GameObject)PrefabUtility.InstantiatePrefab(pbPrefab, progressRow.transform);
+        SetLE(pbGO, flexW: 6f, minH: barH, prefH: barH);
+        var progressBarComp = pbGO.GetComponent<ProgressBarUI>();
+
+        var rightSpacer = MakeGO("RightSpacer", progressRow.transform);
+        SetLE(rightSpacer, flexW: 1f); rightSpacer.AddComponent<Image>().color = Color.clear;
 
         // ── MapScrollView ────────────────────────────────────────────────────
         var scrollGO = MakeGO("MapScrollView", safeArea.transform);
@@ -225,8 +231,7 @@ public static partial class GameSceneBuilder
         Prop(soMap, "tilePrefab",       tilePrefab?.GetComponent<RoadmapTileUI>());
         Prop(soMap, "mapContent",       mapContentRT);
         Prop(soMap, "linesContainer",   linesRT);
-        Prop(soMap, "progressBarFill",  progressFillRT);
-        Prop(soMap, "progressText",     progressTextTMP);
+        Prop(soMap, "progressBar",      progressBarComp);
         Prop(soMap, "btnBack",          btnBackGO.GetComponent<Button>());
         Prop(soMap, "btnReset",         btnResetGO.GetComponent<Button>());
         Prop(soMap, "btnFinish",        bfBtn);
