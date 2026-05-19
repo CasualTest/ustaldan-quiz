@@ -29,6 +29,8 @@ public static partial class GameSceneBuilder
         var bg = MakeGO("Background", canvasGO.transform);
         Stretch(bg); bg.AddComponent<Image>().color = C_BG;
 
+        AddStatusBarCover(canvasGO.transform);
+
         var safeArea = MakeGO("SafeArea", canvasGO.transform);
         Stretch(safeArea); safeArea.AddComponent<SafeArea>();
         var saVLG = safeArea.AddComponent<VerticalLayoutGroup>();

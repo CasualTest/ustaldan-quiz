@@ -1248,6 +1248,18 @@ public static partial class GameSceneBuilder
         sp.AddComponent<Image>().color = Color.clear;
     }
 
+    static void AddStatusBarCover(Transform canvasTransform)
+    {
+        var go = MakeGO("StatusBarCover", canvasTransform);
+        var rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0f, 1f);
+        rt.anchorMax = new Vector2(1f, 1f);
+        rt.pivot     = new Vector2(0.5f, 1f);
+        rt.sizeDelta = new Vector2(0f, 0f);
+        go.AddComponent<Image>().color = Color.black;
+        go.AddComponent<UstAldanQuiz.UI.StatusBarCover>();
+    }
+
     // =====================================================================
     // ЛОКАЛИЗАЦИЯ — добавить LocaleText на TMP_Text внутри GO
     // =====================================================================

@@ -54,15 +54,7 @@ public static partial class GameSceneBuilder
         soBgGrad.ApplyModifiedProperties();
 
         // ── Чёрная плашка статус-бара (выше SafeArea) ────────────────────
-        var statusBarCover = MakeGO("StatusBarCover", canvasGO.transform);
-        var sbRT = statusBarCover.GetComponent<RectTransform>();
-        sbRT.anchorMin = new Vector2(0f, 1f);
-        sbRT.anchorMax = new Vector2(1f, 1f);
-        sbRT.pivot     = new Vector2(0.5f, 1f);
-        sbRT.sizeDelta = new Vector2(0f, 0f); // высота устанавливается в рантайме
-        var sbImg = statusBarCover.AddComponent<Image>();
-        sbImg.color = Color.black;
-        statusBarCover.AddComponent<StatusBarCover>();
+        AddStatusBarCover(canvasGO.transform);
 
         // ── SafeArea (VLG: ContentArea + BottomNavBar) ────────────────────
         var safeArea = MakeGO("SafeArea", canvasGO.transform);
