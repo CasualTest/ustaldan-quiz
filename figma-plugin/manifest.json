@@ -1,0 +1,7 @@
+{
+  "name": "UstAldan Quiz — Generate UI",
+  "id": "ustaldan-quiz-ui-gen",
+  "api": "1.0.0",
+  "main": "code.js",
+  "editorType": ["figma"]
+}
