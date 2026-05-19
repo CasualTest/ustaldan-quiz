@@ -70,11 +70,11 @@ namespace UstAldanQuiz.UI
         {
             questionDatabase?.EnsureRuntimeQuestionsLoaded();
 
-            tabHome?.onClick.AddListener(() => SwitchTab(0));
+            tabProfile?.onClick.AddListener(() => SwitchTab(0));
             tabRecords?.onClick.AddListener(() => SwitchTab(1));
-            tabSettings?.onClick.AddListener(() => SwitchTab(2));
+            tabHome?.onClick.AddListener(() => SwitchTab(2));
             tabAbout?.onClick.AddListener(() => SwitchTab(3));
-            tabProfile?.onClick.AddListener(() => SwitchTab(4));
+            tabSettings?.onClick.AddListener(() => SwitchTab(4));
             btnPlay?.onClick.AddListener(HandlePlay);
             btnArcade?.onClick.AddListener(HandleArcade);
 
@@ -87,7 +87,7 @@ namespace UstAldanQuiz.UI
                 if (btn.Category?.categoryId == lastId) { toSelect = btn; break; }
             if (toSelect != null) HandleCategoryButtonClick(toSelect);
 
-            SwitchTabImmediate(0);
+            SwitchTabImmediate(2);
 
             LocaleManager.OnLanguageChanged += RefreshStats;
             LocaleManager.OnLanguageChanged += RefreshRecords;
@@ -114,11 +114,11 @@ namespace UstAldanQuiz.UI
         {
             if (_animating || index == _currentTab) return;
 
-            SetTabColor(iconHome,     labelHome,     index == 0);
+            SetTabColor(iconProfile,  labelProfile,  index == 0);
             SetTabColor(iconRecords,  labelRecords,  index == 1);
-            SetTabColor(iconSettings, labelSettings, index == 2);
+            SetTabColor(iconHome,     labelHome,     index == 2);
             SetTabColor(iconAbout,    labelAbout,    index == 3);
-            SetTabColor(iconProfile,  labelProfile,  index == 4);
+            SetTabColor(iconSettings, labelSettings, index == 4);
 
             int from = _currentTab;
             _currentTab = index;
@@ -128,24 +128,24 @@ namespace UstAldanQuiz.UI
         private void SwitchTabImmediate(int index)
         {
             _currentTab = index;
-            homePage?.SetActive(index == 0);
+            profilePage?.SetActive(index == 0);
             recordsPage?.SetActive(index == 1);
-            settingsPage?.SetActive(index == 2);
+            homePage?.SetActive(index == 2);
             aboutPage?.SetActive(index == 3);
-            profilePage?.SetActive(index == 4);
+            settingsPage?.SetActive(index == 4);
 
-            SetTabColor(iconHome,     labelHome,     index == 0);
+            SetTabColor(iconProfile,  labelProfile,  index == 0);
             SetTabColor(iconRecords,  labelRecords,  index == 1);
-            SetTabColor(iconSettings, labelSettings, index == 2);
+            SetTabColor(iconHome,     labelHome,     index == 2);
             SetTabColor(iconAbout,    labelAbout,    index == 3);
-            SetTabColor(iconProfile,  labelProfile,  index == 4);
+            SetTabColor(iconSettings, labelSettings, index == 4);
         }
 
         private IEnumerator AnimateTab(int from, int to)
         {
             _animating = true;
 
-            var pages = new[] { homePage, recordsPage, settingsPage, aboutPage, profilePage };
+            var pages = new[] { profilePage, recordsPage, homePage, aboutPage, settingsPage };
             var outPage = pages[from];
             var inPage  = pages[to];
 

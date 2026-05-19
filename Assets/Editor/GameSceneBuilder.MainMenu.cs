@@ -45,7 +45,24 @@ public static partial class GameSceneBuilder
         // ── Фон ──────────────────────────────────────────────────────────────
         var bg = MakeGO("Background", canvasGO.transform);
         Stretch(bg);
-        bg.AddComponent<Image>().color = C_BG;
+        var bgImg = bg.AddComponent<Image>();
+        bgImg.color = Color.white;
+        var bgGrad = bg.AddComponent<UIGradient>();
+        var soBgGrad = new UnityEditor.SerializedObject(bgGrad);
+        soBgGrad.FindProperty("topColor").colorValue    = new Color(0.06f, 0.16f, 0.38f);
+        soBgGrad.FindProperty("bottomColor").colorValue = new Color(0.18f, 0.52f, 0.82f);
+        soBgGrad.ApplyModifiedProperties();
+
+        // ── Чёрная плашка статус-бара (выше SafeArea) ────────────────────
+        var statusBarCover = MakeGO("StatusBarCover", canvasGO.transform);
+        var sbRT = statusBarCover.GetComponent<RectTransform>();
+        sbRT.anchorMin = new Vector2(0f, 1f);
+        sbRT.anchorMax = new Vector2(1f, 1f);
+        sbRT.pivot     = new Vector2(0.5f, 1f);
+        sbRT.sizeDelta = new Vector2(0f, 0f); // высота устанавливается в рантайме
+        var sbImg = statusBarCover.AddComponent<Image>();
+        sbImg.color = Color.black;
+        statusBarCover.AddComponent<StatusBarCover>();
 
         // ── SafeArea (VLG: ContentArea + BottomNavBar) ────────────────────
         var safeArea = MakeGO("SafeArea", canvasGO.transform);
@@ -69,13 +86,13 @@ public static partial class GameSceneBuilder
 
         var homePage = MakeGO("HomePage", contentArea.transform);
         Stretch(homePage);
-        homePage.AddComponent<Image>().color = C_BG;
+        homePage.AddComponent<Image>().color = Color.clear;
         var homeVLG = homePage.AddComponent<VerticalLayoutGroup>();
         homeVLG.childAlignment         = TextAnchor.UpperCenter;
         homeVLG.childForceExpandWidth  = true;
         homeVLG.childForceExpandHeight = false;
         homeVLG.childControlWidth = homeVLG.childControlHeight = true;
-        homeVLG.padding = new RectOffset(40, 40, 40, 100);
+        homeVLG.padding = new RectOffset(40, 40, 40, 196);
         homeVLG.spacing = 16;
 
         // LogoBlock
@@ -144,7 +161,7 @@ public static partial class GameSceneBuilder
         // ── Страница 1: Рекорды ───────────────────────────────────────────
         var recordsPage = MakeGO("RecordsPage", contentArea.transform);
         Stretch(recordsPage);
-        recordsPage.AddComponent<Image>().color = C_BG;
+        recordsPage.AddComponent<Image>().color = Color.clear;
         var recVLG = recordsPage.AddComponent<VerticalLayoutGroup>();
         recVLG.childAlignment = TextAnchor.UpperCenter;
         recVLG.childForceExpandWidth = true;
@@ -186,7 +203,7 @@ public static partial class GameSceneBuilder
         // ── Страница 2: Настройки ─────────────────────────────────────────
         var settingsPage = MakeGO("SettingsPage", contentArea.transform);
         Stretch(settingsPage);
-        settingsPage.AddComponent<Image>().color = C_BG;
+        settingsPage.AddComponent<Image>().color = Color.clear;
         var setVLG = settingsPage.AddComponent<VerticalLayoutGroup>();
         setVLG.childAlignment = TextAnchor.UpperCenter;
         setVLG.childForceExpandWidth = true;
@@ -421,7 +438,7 @@ public static partial class GameSceneBuilder
         // ── Страница 3: О приложении ──────────────────────────────────────
         var aboutPage = MakeGO("AboutPage", contentArea.transform);
         Stretch(aboutPage);
-        aboutPage.AddComponent<Image>().color = C_BG;
+        aboutPage.AddComponent<Image>().color = Color.clear;
         var aboutPageVLG = aboutPage.AddComponent<VerticalLayoutGroup>();
         aboutPageVLG.childAlignment = TextAnchor.UpperCenter;
         aboutPageVLG.childForceExpandWidth = true;
@@ -490,7 +507,7 @@ public static partial class GameSceneBuilder
         // ── Страница 4: Профиль ───────────────────────────────────────────
         var profilePage = MakeGO("ProfilePage", contentArea.transform);
         Stretch(profilePage);
-        profilePage.AddComponent<Image>().color = C_BG;
+        profilePage.AddComponent<Image>().color = Color.clear;
         var profVLG = profilePage.AddComponent<VerticalLayoutGroup>();
         profVLG.childAlignment = TextAnchor.UpperCenter;
         profVLG.childForceExpandWidth = true;
@@ -546,7 +563,7 @@ public static partial class GameSceneBuilder
         navBarRT.anchorMax        = new Vector2(1, 0);
         navBarRT.pivot            = new Vector2(0.5f, 0);
         navBarRT.anchoredPosition = Vector2.zero;
-        navBarRT.sizeDelta        = new Vector2(0, 80);
+        navBarRT.sizeDelta        = new Vector2(0, 200);
         navBar.AddComponent<Image>().color = C_BG;
 
         var navHLG = navBar.AddComponent<HorizontalLayoutGroup>();
@@ -554,14 +571,15 @@ public static partial class GameSceneBuilder
         navHLG.childForceExpandWidth  = true;
         navHLG.childForceExpandHeight = true;
         navHLG.childControlWidth = navHLG.childControlHeight = true;
+        navHLG.padding = new RectOffset(0, 0, 80, 40); // top=8 сдвигает табы вниз, bottom=40 под хоум-индикатор
 
+        var (tabProfBtn,  iconProfile,  labelProfile)  = MakeNavTab("TabProfile",  "btn_profile",  navBar.transform, font);
         var (tabRecsBtn,  iconRecords,  labelRecords)  = MakeNavTab("TabRecords",  "btn_records",  navBar.transform, font);
-        var (tabSetBtn,   iconSettings, labelSettings) = MakeNavTab("TabSettings", "btn_settings", navBar.transform, font);
         var (tabHomeBtn,  iconHome,     labelHome)     = MakeNavTab("TabHome",     "btn_play",     navBar.transform, font);
         var (tabAboutBtn, iconAbout,    labelAbout)    = MakeNavTab("TabAbout",    "btn_about",    navBar.transform, font);
-        var (tabProfBtn,  iconProfile,  labelProfile)  = MakeNavTab("TabProfile",  "btn_profile",  navBar.transform, font);
+        var (tabSetBtn,   iconSettings, labelSettings) = MakeNavTab("TabSettings", "btn_settings", navBar.transform, font);
 
-        // Иконка Home — спрайт buttons_41 + пружинная анимация
+        // Иконка Home — спрайт buttons_41 + пружинная анимация (+10%)
         var homeSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_41");
         if (homeSprite != null)
         {
@@ -569,15 +587,15 @@ public static partial class GameSceneBuilder
             iconHome.type           = Image.Type.Simple;
             iconHome.preserveAspect = true;
             iconHome.color          = Color.white;
-            var iconLE = iconHome.GetComponent<LayoutElement>();
-            iconLE.minWidth      = homeSprite.rect.width;
-            iconLE.minHeight     = homeSprite.rect.height;
-            iconLE.preferredWidth  = homeSprite.rect.width;
-            iconLE.preferredHeight = homeSprite.rect.height;
+            var iconLE             = iconHome.GetComponent<LayoutElement>();
+            iconLE.minWidth        = homeSprite.rect.width  * 1.1f;
+            iconLE.minHeight       = homeSprite.rect.height * 1.1f;
+            iconLE.preferredWidth  = homeSprite.rect.width  * 1.1f;
+            iconLE.preferredHeight = homeSprite.rect.height * 1.1f;
         }
         tabHomeBtn.gameObject.AddComponent<ButtonSpringAnim>();
 
-        // Иконка Settings — спрайт buttons_33
+        // Иконка Settings — спрайт buttons_33 (−10%)
         var settingsSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_33");
         if (settingsSprite != null)
         {
@@ -585,15 +603,15 @@ public static partial class GameSceneBuilder
             iconSettings.type           = Image.Type.Simple;
             iconSettings.preserveAspect = true;
             iconSettings.color          = Color.white;
-            var iconLE = iconSettings.GetComponent<LayoutElement>();
-            iconLE.minWidth      = settingsSprite.rect.width;
-            iconLE.minHeight     = settingsSprite.rect.height;
-            iconLE.preferredWidth  = settingsSprite.rect.width;
-            iconLE.preferredHeight = settingsSprite.rect.height;
+            var iconLE             = iconSettings.GetComponent<LayoutElement>();
+            iconLE.minWidth        = settingsSprite.rect.width  * 0.9f;
+            iconLE.minHeight       = settingsSprite.rect.height * 0.9f;
+            iconLE.preferredWidth  = settingsSprite.rect.width  * 0.9f;
+            iconLE.preferredHeight = settingsSprite.rect.height * 0.9f;
         }
         tabSetBtn.gameObject.AddComponent<ButtonSpringAnim>();
 
-        // Иконка About — спрайт buttons_34
+        // Иконка About — спрайт buttons_34 (−10%)
         var aboutSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_34");
         if (aboutSprite != null)
         {
@@ -601,15 +619,15 @@ public static partial class GameSceneBuilder
             iconAbout.type           = Image.Type.Simple;
             iconAbout.preserveAspect = true;
             iconAbout.color          = Color.white;
-            var iconLE = iconAbout.GetComponent<LayoutElement>();
-            iconLE.minWidth      = aboutSprite.rect.width;
-            iconLE.minHeight     = aboutSprite.rect.height;
-            iconLE.preferredWidth  = aboutSprite.rect.width;
-            iconLE.preferredHeight = aboutSprite.rect.height;
+            var iconLE             = iconAbout.GetComponent<LayoutElement>();
+            iconLE.minWidth        = aboutSprite.rect.width  * 0.9f;
+            iconLE.minHeight       = aboutSprite.rect.height * 0.9f;
+            iconLE.preferredWidth  = aboutSprite.rect.width  * 0.9f;
+            iconLE.preferredHeight = aboutSprite.rect.height * 0.9f;
         }
         tabAboutBtn.gameObject.AddComponent<ButtonSpringAnim>();
 
-        // Иконка Profile — спрайт buttons_34
+        // Иконка Profile — спрайт buttons_36 (−10%)
         var profileSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_36");
         if (profileSprite != null)
         {
@@ -617,15 +635,15 @@ public static partial class GameSceneBuilder
             iconProfile.type           = Image.Type.Simple;
             iconProfile.preserveAspect = true;
             iconProfile.color          = Color.white;
-            var iconLE = iconProfile.GetComponent<LayoutElement>();
-            iconLE.minWidth      = profileSprite.rect.width;
-            iconLE.minHeight     = profileSprite.rect.height;
-            iconLE.preferredWidth  = profileSprite.rect.width;
-            iconLE.preferredHeight = profileSprite.rect.height;
+            var iconLE             = iconProfile.GetComponent<LayoutElement>();
+            iconLE.minWidth        = profileSprite.rect.width  * 0.9f;
+            iconLE.minHeight       = profileSprite.rect.height * 0.9f;
+            iconLE.preferredWidth  = profileSprite.rect.width  * 0.9f;
+            iconLE.preferredHeight = profileSprite.rect.height * 0.9f;
         }
         tabProfBtn.gameObject.AddComponent<ButtonSpringAnim>();
 
-        // Иконка Records — спрайт buttons_42
+        // Иконка Records — спрайт buttons_42 (−10%)
         var recordsSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_42");
         if (recordsSprite != null)
         {
@@ -633,11 +651,11 @@ public static partial class GameSceneBuilder
             iconRecords.type           = Image.Type.Simple;
             iconRecords.preserveAspect = true;
             iconRecords.color          = Color.white;
-            var iconLE = iconRecords.GetComponent<LayoutElement>();
-            iconLE.minWidth      = recordsSprite.rect.width;
-            iconLE.minHeight     = recordsSprite.rect.height;
-            iconLE.preferredWidth  = recordsSprite.rect.width;
-            iconLE.preferredHeight = recordsSprite.rect.height;
+            var iconLE             = iconRecords.GetComponent<LayoutElement>();
+            iconLE.minWidth        = recordsSprite.rect.width  * 0.9f;
+            iconLE.minHeight       = recordsSprite.rect.height * 0.9f;
+            iconLE.preferredWidth  = recordsSprite.rect.width  * 0.9f;
+            iconLE.preferredHeight = recordsSprite.rect.height * 0.9f;
         }
         tabRecsBtn.gameObject.AddComponent<ButtonSpringAnim>();
 
