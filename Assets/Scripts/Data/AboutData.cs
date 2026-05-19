@@ -12,6 +12,7 @@ namespace UstAldanQuiz.Data
         public string       developer;
         public string       version;
         public string       year;
+        public string       websiteUrl;
         public List<Contact> contacts = new List<Contact>();
         public List<string>  partners = new List<string>();
 

@@ -467,11 +467,23 @@ public static partial class GameSceneBuilder
         var aboutSuggestBtnGO = MakePrimaryButton("BtnSuggest", aboutContent.transform, "Предложить вопрос", font, minH: 104);
         AddLocKey(aboutSuggestBtnGO, "btn_suggest");
 
+        var aboutWebsiteBtnGO = MakePrimaryButton("BtnWebsite", aboutContent.transform, "Посетить сайт", font, minH: 104);
+        AddLocKey(aboutWebsiteBtnGO, "btn_visit_site");
+
+        // ─── WebViewBridge — всегда активен (нужен для UnitySendMessage) ───
+        var webViewBridgeGO = MakeGO("WebViewBridge", canvasGO.transform);
+        var webViewUI       = webViewBridgeGO.AddComponent<WebViewUI>();
+        var soWebViewUI     = new UnityEditor.SerializedObject(webViewUI);
+        soWebViewUI.FindProperty("marginTop").intValue = 100;
+        soWebViewUI.ApplyModifiedProperties();
+
         var aboutPageUI = aboutPage.AddComponent<AboutPageUI>();
         var soAboutPage = new UnityEditor.SerializedObject(aboutPageUI);
-        Prop(soAboutPage, "bodyText",  aboutBodyTMP);
+        Prop(soAboutPage, "bodyText",   aboutBodyTMP);
         Prop(soAboutPage, "btnSuggest", aboutSuggestBtnGO.GetComponent<Button>());
         Prop(soAboutPage, "suggestUI",  suggestUIComp);
+        Prop(soAboutPage, "btnWebsite", aboutWebsiteBtnGO.GetComponent<Button>());
+        Prop(soAboutPage, "webViewUI",  webViewUI);
         soAboutPage.ApplyModifiedProperties();
         aboutPage.SetActive(false);
 

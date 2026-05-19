@@ -16,6 +16,10 @@ namespace UstAldanQuiz.UI
         [SerializeField] private Button            btnSuggest;
         [SerializeField] private SuggestQuestionUI suggestUI;
 
+        [Header("Посетить сайт")]
+        [SerializeField] private Button     btnWebsite;
+        [SerializeField] private WebViewUI  webViewUI;
+
         private AboutData _data;
 
         private void Start()
@@ -24,12 +28,14 @@ namespace UstAldanQuiz.UI
             Refresh();
             LocaleManager.OnLanguageChanged += Refresh;
             btnSuggest?.onClick.AddListener(() => suggestUI?.Open());
+            btnWebsite?.onClick.AddListener(() => webViewUI?.Open(_data?.websiteUrl ?? ""));
         }
 
         private void OnDestroy()
         {
             LocaleManager.OnLanguageChanged -= Refresh;
             btnSuggest?.onClick.RemoveAllListeners();
+            btnWebsite?.onClick.RemoveAllListeners();
         }
 
         private void Refresh()

@@ -70,3 +70,6 @@ confirm_reset_title=Вы уверены?
 confirm_reset_sub=Весь прогресс будет удалён
 confirm_yes=Да
 confirm_no=Нет
+
+# ── Google Sheets ──────────────────────────────────────────────────────────
+btn_visit_site=Посетить сайт
