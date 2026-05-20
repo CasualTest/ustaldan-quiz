@@ -7,8 +7,16 @@ using UstAldanQuiz.Utils;
 
 namespace UstAldanQuiz.UI
 {
-    public class QuestionWindow : BaseWindow
+    public class QuestionWindowFull : MonoBehaviour
     {
+        [Header("Панель")]
+        [SerializeField] private GameObject panel;
+        [SerializeField] private Button     btnClose;
+
+        [Header("Заголовок")]
+        [SerializeField] private TMP_Text headerTitle;
+        [SerializeField] private TMP_Text headerScore;
+
         [Header("Вопрос")]
         public TMP_Text questionText;
 
@@ -23,13 +31,45 @@ namespace UstAldanQuiz.UI
         public TMP_Text[] answerLabels  = new TMP_Text[4];
 
         [Header("Результат")]
-        public TMP_Text  resultFeedback;
-        public Button    btnContinue;
+        public TMP_Text resultFeedback;
+        public Button   btnContinue;
         public FactPopup factPopup;
 
         public event Action OnClosed;
 
         private Coroutine _spinRoutine;
+
+        // ── Unity lifecycle ────────────────────────────────────────────────
+        private void Start()
+        {
+            btnClose?.onClick.AddListener(Close);
+            btnContinue?.onClick.AddListener(Close);
+            if (panel != null) panel.SetActive(false);
+        }
+
+        private void OnDestroy()
+        {
+            btnClose?.onClick.RemoveAllListeners();
+            btnContinue?.onClick.RemoveAllListeners();
+        }
+
+        // ── Публичный API ─────────────────────────────────────────────────
+        public void Open()
+        {
+            if (panel != null) panel.SetActive(true);
+        }
+
+        public void Close()
+        {
+            if (panel != null) panel.SetActive(false);
+            OnClosed?.Invoke();
+        }
+
+        public void SetHeader(string title, string score)
+        {
+            if (headerTitle != null) headerTitle.text = title;
+            if (headerScore != null) headerScore.text = score;
+        }
 
         public void ShowImage(string url)
         {
@@ -56,6 +96,7 @@ namespace UstAldanQuiz.UI
             }));
         }
 
+        // ── Helpers ───────────────────────────────────────────────────────
         private void ShowSpinner(bool show)
         {
             if (spinnerImage == null) return;
@@ -79,22 +120,6 @@ namespace UstAldanQuiz.UI
                 spinnerImage.transform.Rotate(0f, 0f, -360f * Time.deltaTime);
                 yield return null;
             }
-        }
-
-        protected override void OnWindowStart()
-        {
-            btnContinue?.onClick.AddListener(Close);
-        }
-
-        protected override void OnWindowDestroy()
-        {
-            btnContinue?.onClick.RemoveAllListeners();
-        }
-
-        public override void Close()
-        {
-            base.Close();
-            OnClosed?.Invoke();
         }
     }
 }

@@ -59,6 +59,7 @@ namespace UstAldanQuiz.Data
                 q.difficulty      = entry.difficulty;
                 q.factAfterRu     = entry.factRu;
                 q.factAfterSah    = entry.factSah;
+                q.imageUrl        = entry.imageUrl;
                 catLookup.TryGetValue(entry.categoryId ?? "", out q.category);
                 allQuestions.Add(q);
             }
@@ -89,6 +90,7 @@ namespace UstAldanQuiz.Data
             public int      difficulty;
             public string   factRu;
             public string   factSah;
+            public string   imageUrl;
         }
 
         [Serializable]

@@ -164,6 +164,7 @@ namespace UstAldanQuiz.Editor
             int iDiff    = ColAny(hdr, "difficulty", "Difficulty");
             int iFactRu  = ColAny(hdr, "fact_after_ru", "Fact_After_RU", "fact_after", "Fact_After");
             int iFactSah = ColAny(hdr, "fact_after_sah", "Fact_After_SAH");
+            int iImgUrl  = ColAny(hdr, "imageurl", "image_url", "ImageURL", "imageURL");
 
             if (iQ < 0 || iA1 < 0)
             {
@@ -211,6 +212,7 @@ namespace UstAldanQuiz.Editor
                     difficulty  = diff,
                     factRu      = iFactRu  >= 0 ? V(row, iFactRu)  : "",
                     factSah     = iFactSah >= 0 ? V(row, iFactSah) : "",
+                    imageUrl    = iImgUrl  >= 0 ? V(row, iImgUrl)  : "",
                 });
             }
 

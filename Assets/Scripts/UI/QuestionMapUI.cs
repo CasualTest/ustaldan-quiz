@@ -22,7 +22,8 @@ namespace UstAldanQuiz.UI
         [SerializeField] private Button   btnBack;
 
         [Header("Панель вопроса")]
-        [SerializeField] private QuestionWindow questionWindow;
+        [SerializeField] private QuestionWindow     questionWindow;
+        [SerializeField] private QuestionWindowFull questionWindowFull;
 
         [Header("Завершение")]
         [SerializeField] private Button btnFinish;
@@ -43,13 +44,25 @@ namespace UstAldanQuiz.UI
 
         private static readonly string[] Prefixes = { "A", "B", "C", "D" };
 
+        private bool        UseFullWindow  => questionWindowFull != null;
+        private TMP_Text    WQuestionText  => UseFullWindow ? questionWindowFull.questionText  : questionWindow?.questionText;
+        private Button[]    WAnswerBtns    => UseFullWindow ? questionWindowFull.answerButtons : questionWindow?.answerButtons;
+        private TMP_Text[]  WAnswerLabels  => UseFullWindow ? questionWindowFull.answerLabels  : questionWindow?.answerLabels;
+        private TMP_Text    WFeedback      => UseFullWindow ? questionWindowFull.resultFeedback : questionWindow?.resultFeedback;
+        private Button      WBtnContinue   => UseFullWindow ? questionWindowFull.btnContinue   : questionWindow?.btnContinue;
+        private FactPopup   WFactPopup     => UseFullWindow ? questionWindowFull.factPopup      : questionWindow?.factPopup;
+
+        private void WOpen()  { if (UseFullWindow) questionWindowFull.Open();  else questionWindow?.Open(); }
+        private void WClose() { if (UseFullWindow) questionWindowFull.Close(); else questionWindow?.Close(); }
+        private void WShowImage(string url) { if (UseFullWindow) questionWindowFull.ShowImage(url); else questionWindow?.ShowImage(url); }
+
         private void Start()
         {
             btnBack?.onClick.AddListener(GoToMainMenu);
             btnFinish?.onClick.AddListener(GoToResults);
 
-            if (questionWindow != null)
-                questionWindow.OnClosed += HandleWindowClosed;
+            if (questionWindowFull != null) questionWindowFull.OnClosed += HandleWindowClosed;
+            else if (questionWindow != null) questionWindow.OnClosed   += HandleWindowClosed;
 
             if (btnFinish != null) btnFinish.gameObject.SetActive(false);
 
@@ -74,8 +87,8 @@ namespace UstAldanQuiz.UI
         {
             btnBack?.onClick.RemoveAllListeners();
             btnFinish?.onClick.RemoveAllListeners();
-            if (questionWindow != null)
-                questionWindow.OnClosed -= HandleWindowClosed;
+            if (questionWindowFull != null) questionWindowFull.OnClosed -= HandleWindowClosed;
+            else if (questionWindow != null) questionWindow.OnClosed   -= HandleWindowClosed;
         }
 
         // ── Плитки ────────────────────────────────────────────────────────
@@ -115,22 +128,23 @@ namespace UstAldanQuiz.UI
 
         private void ShowQuestion(QuestionData q)
         {
-            if (questionWindow == null) return;
+            if (!UseFullWindow && questionWindow == null) return;
 
             _shuffledIndices = new[] { 0, 1, 2, 3 };
             ShuffleArray(_shuffledIndices);
 
-            if (questionWindow.questionText != null)
-                questionWindow.questionText.text = GetLocalizedQuestion(q);
+            if (WQuestionText != null)
+                WQuestionText.text = GetLocalizedQuestion(q);
 
-            bool hasImage = q.questionImage != null;
-            if (questionWindow.mediaZone != null)
-                questionWindow.mediaZone.SetActive(hasImage);
-            if (hasImage && questionWindow.questionImage != null)
-                questionWindow.questionImage.sprite = q.questionImage;
+            WShowImage(q.imageUrl);
 
-            var btns   = questionWindow.answerButtons;
-            var labels = questionWindow.answerLabels;
+            if (UseFullWindow)
+                questionWindowFull.SetHeader(
+                    GameManager.Instance?.SelectedCategory?.displayName ?? "",
+                    scoreText != null ? scoreText.text : "");
+
+            var btns   = WAnswerBtns;
+            var labels = WAnswerLabels;
             for (int i = 0; i < btns.Length; i++)
             {
                 if (btns[i] == null) continue;
@@ -142,24 +156,22 @@ namespace UstAldanQuiz.UI
                 btns[i].onClick.AddListener(() => HandleAnswer(captured));
             }
 
-            if (questionWindow.resultFeedback != null)
-                questionWindow.resultFeedback.gameObject.SetActive(false);
-            if (questionWindow.btnContinue != null)
-                questionWindow.btnContinue.gameObject.SetActive(false);
+            WFeedback?.gameObject.SetActive(false);
+            WBtnContinue?.gameObject.SetActive(false);
 
-            questionWindow.Open();
+            WOpen();
         }
 
         // ── Ответ ─────────────────────────────────────────────────────────
 
         private void HandleAnswer(int displayedIndex)
         {
-            if (questionWindow == null) return;
+            if (!UseFullWindow && questionWindow == null) return;
 
             bool isCorrect      = _shuffledIndices[displayedIndex] == 0;
             int  correctDisplay = Array.IndexOf(_shuffledIndices, 0);
 
-            var btns = questionWindow.answerButtons;
+            var btns = WAnswerBtns;
             foreach (var btn in btns) if (btn != null) btn.interactable = false;
 
             if (btns[correctDisplay] != null)
@@ -167,11 +179,12 @@ namespace UstAldanQuiz.UI
             if (!isCorrect && btns[displayedIndex] != null)
                 btns[displayedIndex].image.color = colorWrong;
 
-            if (questionWindow.resultFeedback != null)
+            var feedback = WFeedback;
+            if (feedback != null)
             {
-                questionWindow.resultFeedback.gameObject.SetActive(true);
-                questionWindow.resultFeedback.text  = LocaleManager.Get(isCorrect ? "question_correct" : "question_wrong");
-                questionWindow.resultFeedback.color = isCorrect ? colorCorrect : colorWrong;
+                feedback.gameObject.SetActive(true);
+                feedback.text  = LocaleManager.Get(isCorrect ? "question_correct" : "question_wrong");
+                feedback.color = isCorrect ? colorCorrect : colorWrong;
             }
 
             if (isCorrect)
@@ -201,7 +214,7 @@ namespace UstAldanQuiz.UI
             string fact = sah && !string.IsNullOrWhiteSpace(qd?.factAfterSah)
                 ? qd.factAfterSah : qd?.factAfterRu;
 
-            if (!isCorrect && !string.IsNullOrWhiteSpace(fact) && questionWindow.factPopup != null)
+            if (!isCorrect && !string.IsNullOrWhiteSpace(fact) && WFactPopup != null)
                 StartCoroutine(ShowFactAfterDelay(fact, 0.8f));
             else
                 StartCoroutine(ShowContinueAfterDelay(1.5f));
@@ -210,22 +223,19 @@ namespace UstAldanQuiz.UI
         private IEnumerator ShowContinueAfterDelay(float delay)
         {
             yield return new WaitForSeconds(delay);
-            if (questionWindow?.btnContinue != null)
-                questionWindow.btnContinue.gameObject.SetActive(true);
+            WBtnContinue?.gameObject.SetActive(true);
         }
 
         private IEnumerator ShowFactAfterDelay(string fact, float delay)
         {
             yield return new WaitForSeconds(delay);
-            questionWindow?.factPopup?.Show(fact, onClosed: () =>
-            {
-                if (questionWindow?.btnContinue != null)
-                    questionWindow.btnContinue.gameObject.SetActive(true);
-            });
+            WFactPopup?.Show(fact, onClosed: () => WBtnContinue?.gameObject.SetActive(true));
         }
 
         private void HandleWindowClosed()
         {
+            if (_activeTile?.State == TileState.Active)
+                _activeTile.SetState(TileState.Closed);
             _activeTile = null;
             if (_answeredCount >= NewQuestionsTotal)
                 StartCoroutine(FinishAfterDelay(0.8f));
@@ -252,7 +262,6 @@ namespace UstAldanQuiz.UI
             var gm = GameManager.Instance;
             if (gm != null)
             {
-                SaveManager.SetBestScore(gm.SelectedCategory?.categoryId ?? "", _correctCount);
                 SaveManager.AddGameResult(_correctCount, _tiles.Count);
                 gm.LoadScene("Results");
             }

@@ -1,92 +1,132 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace UstAldanQuiz.Managers
 {
-    /// <summary>
-    /// Локальное сохранение прогресса через PlayerPrefs.
-    /// PlayerPrefs работает одинаково на Android и iOS — ничего доп. настраивать не нужно.
-    /// </summary>
     public static class SaveManager
     {
-        private const string KEY_BEST_SCORE    = "best_score_";   // + categoryId
+        private const string KEY_BEST_SCORE    = "best_score_";
         private const string KEY_TOTAL_PLAYED  = "total_played";
         private const string KEY_TOTAL_CORRECT = "total_correct";
         private const string KEY_LAST_CATEGORY = "last_category";
-        private const string KEY_Q_CORRECT     = "q_ok_";         // + categoryId → |name1|name2|
-        private const string KEY_Q_WRONG       = "q_ng_";         // + categoryId → |name1|name2|
+        private const string KEY_Q_CORRECT     = "q_ok_";
+        private const string KEY_Q_WRONG       = "q_ng_";
 
-        // ---- Лучший счёт по категории ----
-        public static int GetBestScore(string categoryId)
-        {
-            return PlayerPrefs.GetInt(KEY_BEST_SCORE + categoryId, 0);
-        }
+        // In-memory cache: prefKey → set of question names
+        private static readonly Dictionary<string, HashSet<string>> _cache =
+            new Dictionary<string, HashSet<string>>();
+
+        // ── Лучший счёт ───────────────────────────────────────────────────
+
+        public static int GetBestScore(string categoryId) =>
+            PlayerPrefs.GetInt(KEY_BEST_SCORE + categoryId, 0);
 
         public static void SetBestScore(string categoryId, int score)
         {
-            int current = GetBestScore(categoryId);
-            if (score > current)
+            if (score > GetBestScore(categoryId))
             {
                 PlayerPrefs.SetInt(KEY_BEST_SCORE + categoryId, score);
                 PlayerPrefs.Save();
             }
         }
 
-        // ---- Общая статистика ----
-        public static int TotalPlayed => PlayerPrefs.GetInt(KEY_TOTAL_PLAYED, 0);
+        // ── Общая статистика ──────────────────────────────────────────────
+
+        public static int TotalPlayed  => PlayerPrefs.GetInt(KEY_TOTAL_PLAYED,  0);
         public static int TotalCorrect => PlayerPrefs.GetInt(KEY_TOTAL_CORRECT, 0);
 
         public static void AddGameResult(int correctAnswers, int totalQuestions)
         {
-            PlayerPrefs.SetInt(KEY_TOTAL_PLAYED, TotalPlayed + totalQuestions);
+            PlayerPrefs.SetInt(KEY_TOTAL_PLAYED,  TotalPlayed  + totalQuestions);
             PlayerPrefs.SetInt(KEY_TOTAL_CORRECT, TotalCorrect + correctAnswers);
             PlayerPrefs.Save();
         }
 
-        // ---- Последняя выбранная категория (удобство UX) ----
+        // ── Последняя категория ───────────────────────────────────────────
+
         public static string LastCategory
         {
             get => PlayerPrefs.GetString(KEY_LAST_CATEGORY, string.Empty);
             set { PlayerPrefs.SetString(KEY_LAST_CATEGORY, value); PlayerPrefs.Save(); }
         }
 
-        // ---- Прогресс вопросов ----
+        // ── Прогресс вопросов ─────────────────────────────────────────────
 
         /// <summary>null = не отвечали, true = правильно, false = неправильно</summary>
         public static bool? GetQuestionResult(string categoryId, string questionName)
         {
-            if (InSet(KEY_Q_CORRECT + categoryId, questionName)) return true;
-            if (InSet(KEY_Q_WRONG   + categoryId, questionName)) return false;
+            if (GetSet(KEY_Q_CORRECT + categoryId).Contains(questionName)) return true;
+            if (GetSet(KEY_Q_WRONG   + categoryId).Contains(questionName)) return false;
             return null;
         }
 
         public static void MarkQuestionAnswered(string categoryId, string questionName, bool correct)
         {
             string key = (correct ? KEY_Q_CORRECT : KEY_Q_WRONG) + categoryId;
-            string raw = PlayerPrefs.GetString(key, "|");
-            if (!InSet(key, questionName))
-            {
-                PlayerPrefs.SetString(key, raw + questionName + "|");
-                PlayerPrefs.Save();
-            }
+            var set = GetSet(key);
+            if (set.Add(questionName))
+                SaveSet(key, set);
         }
 
         public static void ClearQuestionProgress(string categoryId)
         {
-            PlayerPrefs.DeleteKey(KEY_Q_CORRECT + categoryId);
-            PlayerPrefs.DeleteKey(KEY_Q_WRONG   + categoryId);
+            string okKey = KEY_Q_CORRECT + categoryId;
+            string ngKey = KEY_Q_WRONG   + categoryId;
+            _cache.Remove(okKey);
+            _cache.Remove(ngKey);
+            PlayerPrefs.DeleteKey(okKey);
+            PlayerPrefs.DeleteKey(ngKey);
             PlayerPrefs.Save();
-        }
-
-        private static bool InSet(string key, string name)
-        {
-            string raw = PlayerPrefs.GetString(key, "|");
-            return raw.Contains("|" + name + "|");
         }
 
         public static void ResetAll()
         {
+            _cache.Clear();
             PlayerPrefs.DeleteAll();
             PlayerPrefs.Save();
+        }
+
+        // ── Helpers ───────────────────────────────────────────────────────
+
+        private static HashSet<string> GetSet(string key)
+        {
+            if (_cache.TryGetValue(key, out var cached)) return cached;
+            string raw = PlayerPrefs.GetString(key, null);
+            var set = new HashSet<string>();
+            if (!string.IsNullOrEmpty(raw))
+            {
+                if (raw.StartsWith("{"))
+                {
+                    var wrapper = JsonUtility.FromJson<StringList>(raw);
+                    if (wrapper?.items != null)
+                        foreach (var item in wrapper.items) set.Add(item);
+                }
+                else
+                {
+                    // старый формат: |name1|name2|
+                    foreach (var part in raw.Split('|'))
+                        if (!string.IsNullOrEmpty(part)) set.Add(part);
+                    // сразу перезаписываем в новый формат
+                    SaveSet(key, set);
+                }
+            }
+            _cache[key] = set;
+            return set;
+        }
+
+        private static void SaveSet(string key, HashSet<string> set)
+        {
+            var wrapper = new StringList();
+            foreach (var item in set) wrapper.items.Add(item);
+            PlayerPrefs.SetString(key, JsonUtility.ToJson(wrapper));
+            PlayerPrefs.Save();
+        }
+
+        [Serializable]
+        private class StringList
+        {
+            public List<string> items = new List<string>();
         }
     }
 }

@@ -23,6 +23,7 @@ public static partial class GameSceneBuilder
         EnsureAssetFolder("Assets/Prefabs");
         EnsureAssetFolder(PrefabsPath);
         BuildQuestionWindowPrefab();
+        BuildQuestionWindowFullPrefab();
         BuildFactPopupPrefab();
         BuildProgressBarPrefab();
         AssetDatabase.SaveAssets();
@@ -66,6 +67,9 @@ public static partial class GameSceneBuilder
         const string popupsAtlas = "Assets/Images/Sprites/popups.png";
         EnsureReadable(popupsAtlas);
         var sPopup = LoadSprite(popupsAtlas, "popups_3");
+        const string acAtlas = "Assets/Images/Sprites/additional controls.png";
+        EnsureReadable(acAtlas);
+        var sSpinner = LoadSprite(acAtlas, "additional controls_12");
 
         // Root — контейнер без визуала, всегда активен (нужен для корутин MonoBehaviour)
         var root = new GameObject("QuestionWindow", typeof(RectTransform));
@@ -115,8 +119,20 @@ public static partial class GameSceneBuilder
         var qImgRT = qImgGO.GetComponent<RectTransform>();
         qImgRT.anchorMin = Vector2.zero; qImgRT.anchorMax = Vector2.one;
         qImgRT.offsetMin = qImgRT.offsetMax = Vector2.zero;
-        var qImg = qImgGO.AddComponent<Image>();
-        qImg.preserveAspect = true;
+        var qImg    = qImgGO.AddComponent<RawImage>();
+        var qImgARF = qImgGO.AddComponent<AspectRatioFitter>();
+        qImgARF.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+
+        var spinnerGO  = MakeGO("Spinner", zoneMedia.transform);
+        var spinnerRT  = spinnerGO.GetComponent<RectTransform>();
+        spinnerRT.anchorMin = new Vector2(0.5f, 0.5f);
+        spinnerRT.anchorMax = new Vector2(0.5f, 0.5f);
+        spinnerRT.pivot     = new Vector2(0.5f, 0.5f);
+        spinnerRT.anchoredPosition = Vector2.zero;
+        spinnerRT.sizeDelta        = new Vector2(80f, 80f);
+        var spinnerImg = spinnerGO.AddComponent<Image>();
+        spinnerImg.sprite = sSpinner; spinnerImg.type = Image.Type.Simple; spinnerImg.preserveAspect = true;
+        spinnerGO.SetActive(false);
 
         // Zone_Answers
         var zoneAnswers = MakeGO("Zone_Answers", sheet.transform);
@@ -204,7 +220,9 @@ public static partial class GameSceneBuilder
         Prop(soQW, "overlayGroup",   overlayCG);
         Prop(soQW, "questionText",   qTextTMP);
         Prop(soQW, "mediaZone",      zoneMedia);
-        Prop(soQW, "questionImage",  qImg);
+        Prop(soQW, "questionImage",      qImg);
+        Prop(soQW, "imageAspectFitter", qImgARF);
+        Prop(soQW, "spinnerImage",      spinnerImg);
         Prop(soQW, "resultFeedback", feedbackTMP);
         Prop(soQW, "btnContinue",    btnContinueGO.GetComponent<Button>());
         SetArr(soQW, "answerButtons", answerBtns);
@@ -214,6 +232,224 @@ public static partial class GameSceneBuilder
         PrefabUtility.SaveAsPrefabAsset(root, QuestionWindowPath);
         Object.DestroyImmediate(root);
         Debug.Log("[GameSceneBuilder] ✓ QuestionWindow.prefab");
+    }
+
+    // =====================================================================
+    // QuestionWindowFull.prefab
+    // =====================================================================
+
+    static void BuildQuestionWindowFullPrefab()
+    {
+        var font = FindFont();
+        const string popupsAtlas = "Assets/Images/Sprites/popups.png";
+        EnsureReadable(popupsAtlas);
+        var sPopup = LoadSprite(popupsAtlas, "popups_3");
+        const string btnsAtlas = "Assets/Images/Sprites/additional controls.png";
+        EnsureReadable(btnsAtlas);
+        var sBack = LoadSprite(btnsAtlas, "additional controls_4");
+
+        var root   = new GameObject("QuestionWindowFull", typeof(RectTransform));
+        var rootRT = root.GetComponent<RectTransform>();
+        rootRT.anchorMin = Vector2.zero;
+        rootRT.anchorMax = Vector2.one;
+        rootRT.offsetMin = rootRT.offsetMax = Vector2.zero;
+
+        // ── Panel (полный экран, активен только когда показывается) ───────
+        var panel = MakeGO("Panel", root.transform);
+        Stretch(panel);
+        panel.AddComponent<Image>().color = new Color(0.06f, 0.06f, 0.06f);
+        var panelVLG = panel.AddComponent<VerticalLayoutGroup>();
+        panelVLG.childAlignment         = TextAnchor.UpperCenter;
+        panelVLG.childForceExpandWidth  = true;
+        panelVLG.childForceExpandHeight = false;
+        panelVLG.childControlWidth = panelVLG.childControlHeight = true;
+        panelVLG.spacing = 0;
+        panel.SetActive(false);
+
+        // StatusBarCover
+        var sbGO = MakeGO("StatusBarCover", panel.transform);
+        SetLE(sbGO, minH: 0, prefH: 0);
+        sbGO.AddComponent<Image>().color = Color.black;
+        sbGO.AddComponent<UstAldanQuiz.UI.StatusBarCover>();
+
+        // ── Header (зелёный) ──────────────────────────────────────────────
+        var header = MakeGO("Header", panel.transform);
+        SetLE(header, minH: 140, prefH: 140);
+        header.AddComponent<Image>().color = C_PRIMARY;
+        var hHLG = header.AddComponent<HorizontalLayoutGroup>();
+        hHLG.childAlignment         = TextAnchor.MiddleCenter;
+        hHLG.childForceExpandWidth  = false;
+        hHLG.childForceExpandHeight = true;
+        hHLG.childControlWidth = hHLG.childControlHeight = true;
+        hHLG.padding  = new RectOffset(24, 24, 0, 0);
+        hHLG.spacing  = 16;
+
+        // Кнопка назад
+        int backW = sBack != null ? Mathf.RoundToInt(120f * sBack.rect.width / sBack.rect.height) : 120;
+        var btnBackGO  = MakeGO("BtnClose", header.transform);
+        SetLE(btnBackGO, minW: backW, minH: 120, flexW: 0);
+        var btnBackImg = btnBackGO.AddComponent<Image>();
+        if (sBack != null)
+        {
+            btnBackImg.sprite = sBack; btnBackImg.type = Image.Type.Simple;
+            btnBackImg.preserveAspect = true; btnBackImg.color = Color.white;
+            btnBackImg.alphaHitTestMinimumThreshold = 0.1f;
+        }
+        else btnBackImg.color = new Color(1f, 1f, 1f, 0.3f);
+        var btnBackBtn = btnBackGO.AddComponent<Button>();
+        btnBackBtn.targetGraphic = btnBackImg;
+        btnBackBtn.transition    = Selectable.Transition.None;
+        btnBackGO.AddComponent<ButtonSpringAnim>();
+
+        var titleTMP = MakeTMP("TitleText", header.transform, "", 36, Color.white, font, bold: true);
+        SetLE(titleTMP.gameObject, flexW: 1);
+        titleTMP.alignment = TextAlignmentOptions.Center;
+
+        var scoreTMP = MakeTMP("ScoreText", header.transform, "", 26, Color.white, font);
+        SetLE(scoreTMP.gameObject, minW: 220, flexW: 0);
+        scoreTMP.alignment      = TextAlignmentOptions.Right;
+        scoreTMP.enableWordWrapping = true;
+
+        // ── ImageZone (тёмный плейсхолдер, сюда грузится картинка) ────────
+        const string acAtlasFull = "Assets/Images/Sprites/additional controls.png";
+        EnsureReadable(acAtlasFull);
+        var sSpinnerFull = LoadSprite(acAtlasFull, "additional controls_12");
+
+        var imageZone = MakeGO("ImageZone", panel.transform);
+        SetLE(imageZone, minH: 300, flexH: 1f);
+        imageZone.AddComponent<Image>().color = new Color(0.14f, 0.14f, 0.14f);
+        var qImgGO = MakeGO("QuestionImage", imageZone.transform);
+        Stretch(qImgGO);
+        var qImg    = qImgGO.AddComponent<RawImage>();
+        var qImgARF = qImgGO.AddComponent<AspectRatioFitter>();
+        qImgARF.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+
+        var spinnerFullGO  = MakeGO("Spinner", imageZone.transform);
+        var spinnerFullRT  = spinnerFullGO.GetComponent<RectTransform>();
+        spinnerFullRT.anchorMin        = new Vector2(0.5f, 0.5f);
+        spinnerFullRT.anchorMax        = new Vector2(0.5f, 0.5f);
+        spinnerFullRT.pivot            = new Vector2(0.5f, 0.5f);
+        spinnerFullRT.anchoredPosition = Vector2.zero;
+        spinnerFullRT.sizeDelta        = new Vector2(80f, 80f);
+        var spinnerFullImg = spinnerFullGO.AddComponent<Image>();
+        spinnerFullImg.sprite = sSpinnerFull; spinnerFullImg.type = Image.Type.Simple; spinnerFullImg.preserveAspect = true;
+        spinnerFullGO.SetActive(false);
+
+        // ── ContentSheet (белый, скруглённый сверху) ──────────────────────
+        var contentSheet = MakeGO("ContentSheet", panel.transform);
+        SetLE(contentSheet, minH: 880, prefH: 960);
+        var csImg = contentSheet.AddComponent<Image>();
+        csImg.sprite = sPopup; csImg.type = Image.Type.Sliced; csImg.color = Color.white;
+        var csVLG = contentSheet.AddComponent<VerticalLayoutGroup>();
+        csVLG.childAlignment         = TextAnchor.UpperCenter;
+        csVLG.childForceExpandWidth  = true;
+        csVLG.childForceExpandHeight = false;
+        csVLG.childControlWidth = csVLG.childControlHeight = true;
+        csVLG.padding  = new RectOffset(32, 32, 40, 40);
+        csVLG.spacing  = 20;
+
+        // Question Card
+        var qCard = MakeGO("QuestionCard", contentSheet.transform);
+        SetLE(qCard, minH: 140, prefH: 180, flexH: 0.3f);
+        var qCardImg = qCard.AddComponent<Image>();
+        qCardImg.sprite = sPopup; qCardImg.type = Image.Type.Sliced;
+        qCardImg.color  = new Color(0.96f, 0.96f, 0.96f);
+        var qCardVLG = qCard.AddComponent<VerticalLayoutGroup>();
+        qCardVLG.childAlignment         = TextAnchor.MiddleCenter;
+        qCardVLG.childForceExpandWidth  = true;
+        qCardVLG.childForceExpandHeight = false;
+        qCardVLG.childControlWidth = qCardVLG.childControlHeight = true;
+        qCardVLG.padding = new RectOffset(40, 40, 28, 28);
+        var qTMP = MakeTMP("QuestionText", qCard.transform, "Текст вопроса...", 34, C_TEXT, font);
+        qTMP.enableWordWrapping = true;
+        qTMP.alignment          = TextAlignmentOptions.MidlineLeft;
+        SetLE(qTMP.gameObject, flexH: 1f);
+
+        // Answers Zone
+        var answersZone = MakeGO("AnswersZone", contentSheet.transform);
+        SetLE(answersZone, minH: 420);
+        var aVLG = answersZone.AddComponent<VerticalLayoutGroup>();
+        aVLG.childAlignment         = TextAnchor.UpperCenter;
+        aVLG.childForceExpandWidth  = true;
+        aVLG.childForceExpandHeight = false;
+        aVLG.childControlWidth = aVLG.childControlHeight = true;
+        aVLG.spacing = 16;
+
+        string[] abcd = { "A", "B", "C", "D" };
+        var answerBtns   = new Button[4];
+        var answerLabels = new TMP_Text[4];
+        for (int i = 0; i < 4; i++)
+        {
+            var aBtnGO  = MakeGO($"AnswerBtn_{abcd[i]}", answersZone.transform);
+            SetLE(aBtnGO, minH: 88, prefH: 92);
+            var aBtnImg = aBtnGO.AddComponent<Image>();
+            aBtnImg.sprite = sPopup; aBtnImg.type = Image.Type.Sliced;
+            aBtnImg.color  = new Color(0.93f, 0.93f, 0.93f);
+            var aBtn = aBtnGO.AddComponent<Button>();
+            aBtn.targetGraphic = aBtnImg; aBtn.transition = Selectable.Transition.None;
+            aBtnGO.AddComponent<ButtonSpringAnim>();
+            var aLbl = MakeTMP($"Label_{abcd[i]}", aBtnGO.transform, $"Вариант {abcd[i]}", 34, C_TEXT, font, bold: true);
+            aLbl.enableWordWrapping = true;
+            aLbl.alignment          = TextAlignmentOptions.Center;
+            var aLblRT = aLbl.GetComponent<RectTransform>();
+            aLblRT.anchorMin = Vector2.zero; aLblRT.anchorMax = Vector2.one;
+            aLblRT.offsetMin = new Vector2(24, 8); aLblRT.offsetMax = new Vector2(-24, -8);
+            answerBtns[i]   = aBtn;
+            answerLabels[i] = aLbl;
+        }
+
+        // Zone_Bottom (feedback + continue)
+        var zoneBottom = MakeGO("Zone_Bottom", contentSheet.transform);
+        SetLE(zoneBottom, minH: 240, prefH: 240);
+        var zbVLG = zoneBottom.AddComponent<VerticalLayoutGroup>();
+        zbVLG.childAlignment         = TextAnchor.LowerCenter;
+        zbVLG.childForceExpandWidth  = true;
+        zbVLG.childForceExpandHeight = false;
+        zbVLG.childControlWidth = zbVLG.childControlHeight = true;
+        zbVLG.spacing = 12;
+
+        // ResultFeedback
+        var feedbackGO = MakeGO("ResultFeedback_Panel", zoneBottom.transform);
+        SetLE(feedbackGO, minH: 80, prefH: 80);
+        var feedbackPanelImg = feedbackGO.AddComponent<Image>();
+        feedbackPanelImg.sprite = sPopup; feedbackPanelImg.type = Image.Type.Sliced;
+        feedbackPanelImg.color  = new Color(0.30f, 0.69f, 0.31f, 0.18f);
+        var feedbackTMP = MakeTMP("FeedbackText", feedbackGO.transform, "✓  Правильно!", 34, C_CORRECT, font, bold: true);
+        var feedbackTMPRT = feedbackTMP.GetComponent<RectTransform>();
+        feedbackTMPRT.anchorMin = Vector2.zero; feedbackTMPRT.anchorMax = Vector2.one;
+        feedbackTMPRT.offsetMin = feedbackTMPRT.offsetMax = Vector2.zero;
+        feedbackTMP.alignment = TextAlignmentOptions.Center;
+        feedbackGO.SetActive(false);
+
+        // BtnContinue
+        var btnContinueGO = MakePrimaryButton("BtnContinue", zoneBottom.transform, "Продолжить", font);
+        AddLocKey(btnContinueGO, "btn_continue");
+        SetLE(btnContinueGO, minH: 120, prefH: 120);
+        ApplyHyperCasualButton(btnContinueGO, "Assets/Images/Sprites/buttons.png", "buttons_12", "buttons_13");
+        btnContinueGO.SetActive(false);
+
+        // ── Компонент ─────────────────────────────────────────────────────
+        var qWinFull = root.AddComponent<UstAldanQuiz.UI.QuestionWindowFull>();
+        var soQWF    = new UnityEditor.SerializedObject(qWinFull);
+        Prop(soQWF, "panel",             panel);
+        Prop(soQWF, "btnClose",          btnBackBtn);
+        Prop(soQWF, "headerTitle",       titleTMP);
+        Prop(soQWF, "headerScore",       scoreTMP);
+        Prop(soQWF, "questionText",      qTMP);
+        Prop(soQWF, "mediaZone",         imageZone);
+        Prop(soQWF, "questionImage",     qImg);
+        Prop(soQWF, "imageAspectFitter", qImgARF);
+        Prop(soQWF, "spinnerImage",      spinnerFullImg);
+        Prop(soQWF, "resultFeedback",    feedbackTMP);
+        Prop(soQWF, "btnContinue",       btnContinueGO.GetComponent<Button>());
+        SetArr(soQWF, "answerButtons", answerBtns);
+        SetArr(soQWF, "answerLabels",  answerLabels);
+        soQWF.ApplyModifiedProperties();
+
+        const string path = "Assets/Prefabs/UI/QuestionWindowFull.prefab";
+        PrefabUtility.SaveAsPrefabAsset(root, path);
+        Object.DestroyImmediate(root);
+        Debug.Log("[GameSceneBuilder] ✓ QuestionWindowFull.prefab");
     }
 
     // =====================================================================

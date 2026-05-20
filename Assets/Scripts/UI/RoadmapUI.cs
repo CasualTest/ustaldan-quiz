@@ -226,11 +226,7 @@ namespace UstAldanQuiz.UI
             if (questionWindow.questionText != null)
                 questionWindow.questionText.text = GetLocalizedQuestion(q);
 
-            bool hasImage = q.questionImage != null;
-            if (questionWindow.mediaZone != null)
-                questionWindow.mediaZone.SetActive(hasImage);
-            if (hasImage && questionWindow.questionImage != null)
-                questionWindow.questionImage.sprite = q.questionImage;
+            questionWindow.ShowImage(q.imageUrl);
 
             var btns   = questionWindow.answerButtons;
             var labels = questionWindow.answerLabels;
@@ -317,6 +313,8 @@ namespace UstAldanQuiz.UI
 
         private void HandleWindowClosed()
         {
+            if (_activeTile?.State == TileState.Active)
+                _activeTile.SetState(TileState.Closed);
             _activeTile = null;
             if (_answeredCount >= NewQuestionsTotal && btnFinish != null)
                 btnFinish.gameObject.SetActive(true);

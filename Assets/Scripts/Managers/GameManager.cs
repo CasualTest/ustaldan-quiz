@@ -44,9 +44,7 @@ namespace UstAldanQuiz.Managers
             CorrectAnswers   = 0;
 
             database.EnsureRuntimeQuestionsLoaded();
-            var pool = database.GetQuestionsByCategory(category);
-            Shuffle(pool);
-            SessionQuestions = pool;
+            SessionQuestions = database.GetQuestionsByCategory(category);
 
             SaveManager.LastCategory = category.categoryId;
         }

@@ -24,8 +24,8 @@ namespace UstAldanQuiz.Data
         [TextArea(2, 5)]
         public string questionTextSah;
 
-        [Tooltip("Изображение к вопросу (опционально)")]
-        public Sprite questionImage;
+        [Tooltip("URL картинки к вопросу (загружается с сервера)")]
+        public string imageUrl;
 
         [Header("Ответы (индекс 0 — всегда правильный)")]
         [Tooltip("Ровно 4 варианта ответа. ПЕРВЫЙ — правильный, остальные будут перемешаны при показе.")]
