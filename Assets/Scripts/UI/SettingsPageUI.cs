@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -40,6 +41,15 @@ namespace UstAldanQuiz.UI
         private static readonly Color ColorTabOff = new Color(1f, 1f, 1f, 0.5f);
         private static readonly Color ColorIndOn  = new Color(0.78f, 0.66f, 0.29f);
 
+        private const float TabAnimDuration = 0.18f;
+        private const float TabSlideOffset  = 60f;
+
+        private int            _activeTab = -1;
+        private Coroutine      _tabAnim;
+        private GameObject[]   _panels;
+        private CanvasGroup[]  _panelGroups;
+        private RectTransform[] _panelRects;
+
         private void Start()
         {
             Bind(toggleMusic,     () => SettingsManager.MusicEnabled,
@@ -58,6 +68,18 @@ namespace UstAldanQuiz.UI
 
             btnReset?.onClick.AddListener(() => confirmResetPopup?.Show(SaveManager.ResetAll));
             btnSuggest?.onClick.AddListener(() => suggestUI?.Open());
+
+            _panels = new[] { panelSettings, panelGame, panelSecurity };
+            _panelGroups = new CanvasGroup[_panels.Length];
+            _panelRects  = new RectTransform[_panels.Length];
+            for (int i = 0; i < _panels.Length; i++)
+            {
+                if (_panels[i] == null) continue;
+                _panels[i].SetActive(false);
+                var cg = _panels[i].GetComponent<CanvasGroup>();
+                _panelGroups[i] = cg != null ? cg : _panels[i].AddComponent<CanvasGroup>();
+                _panelRects[i]  = _panels[i].GetComponent<RectTransform>();
+            }
 
             tabSettings?.onClick.AddListener(() => ShowTab(0));
             tabGame?.onClick.AddListener(()     => ShowTab(1));
@@ -90,12 +112,70 @@ namespace UstAldanQuiz.UI
 
         private void ShowTab(int index)
         {
-            if (panelSettings != null) panelSettings.SetActive(index == 0);
-            if (panelGame     != null) panelGame.SetActive(index == 1);
-            if (panelSecurity != null) panelSecurity.SetActive(index == 2);
+            if (index == _activeTab) return;
+
             RefreshTab(tabSettings, index == 0);
             RefreshTab(tabGame,     index == 1);
             RefreshTab(tabSecurity, index == 2);
+
+            int prev = _activeTab;
+            int dir  = (prev < 0 || index > prev) ? 1 : -1;
+            _activeTab = index;
+
+            if (_tabAnim != null) StopCoroutine(_tabAnim);
+
+            if (prev < 0)
+            {
+                if (_panels[index] != null) _panels[index].SetActive(true);
+                return;
+            }
+
+            _tabAnim = StartCoroutine(AnimateTabs(prev, index, dir));
+        }
+
+        private IEnumerator AnimateTabs(int from, int to, int dir)
+        {
+            if (_panels[to] != null)
+            {
+                _panels[to].SetActive(true);
+                _panelGroups[to].alpha = 0f;
+                if (_panelRects[to] != null)
+                    _panelRects[to].anchoredPosition = new Vector2(TabSlideOffset * dir, 0f);
+            }
+
+            for (float t = 0f; t < TabAnimDuration; t += Time.unscaledDeltaTime)
+            {
+                float e = Mathf.SmoothStep(0f, 1f, t / TabAnimDuration);
+
+                if (_panels[from] != null)
+                {
+                    _panelGroups[from].alpha = 1f - e;
+                    if (_panelRects[from] != null)
+                        _panelRects[from].anchoredPosition = new Vector2(-TabSlideOffset * dir * e, 0f);
+                }
+                if (_panels[to] != null)
+                {
+                    _panelGroups[to].alpha = e;
+                    if (_panelRects[to] != null)
+                        _panelRects[to].anchoredPosition = new Vector2(TabSlideOffset * dir * (1f - e), 0f);
+                }
+
+                yield return null;
+            }
+
+            if (_panels[from] != null)
+            {
+                _panels[from].SetActive(false);
+                _panelGroups[from].alpha = 1f;
+                if (_panelRects[from] != null)
+                    _panelRects[from].anchoredPosition = Vector2.zero;
+            }
+            if (_panels[to] != null)
+            {
+                _panelGroups[to].alpha = 1f;
+                if (_panelRects[to] != null)
+                    _panelRects[to].anchoredPosition = Vector2.zero;
+            }
         }
 
         private void RefreshTab(Button btn, bool active)
