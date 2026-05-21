@@ -91,7 +91,7 @@ public static partial class GameSceneBuilder
         var badgeGO = MakeGO("NewBestBadge", safeArea.transform);
         SetLE(badgeGO, minH: 80, prefH: 80);
         badgeGO.AddComponent<Image>().color = C_SECONDARY;
-        var badgeTMP = MakeTMP("BadgeText", badgeGO.transform, "Новый рекорд!", 34, Color.white, font);
+        var badgeTMP = MakeTMP("BadgeText", badgeGO.transform, "Новый рекорд!", 40, Color.white, font);
         var badgeTMPRT = badgeTMP.GetComponent<RectTransform>();
         badgeTMPRT.anchorMin = Vector2.zero; badgeTMPRT.anchorMax = Vector2.one;
         badgeTMPRT.offsetMin = badgeTMPRT.offsetMax = Vector2.zero;

@@ -204,7 +204,7 @@ public static partial class GameSceneBuilder
         hlg.padding = new RectOffset(48, 48, 0, 0);
         hlg.spacing = 24;
 
-        var nameTMP = MakeTMP("Label", row.transform, label, 34, C_TEXT, font);
+        var nameTMP = MakeTMP("Label", row.transform, label, 40, C_TEXT, font);
         SetLE(nameTMP.gameObject, flexW: 1f);
         if (locKey != null) AddLocKey(nameTMP.gameObject, locKey);
 
@@ -221,7 +221,7 @@ public static partial class GameSceneBuilder
         toggle.graphic       = null;
         toggle.isOn          = true;
 
-        var pillLbl = MakeTMP("Label", pill.transform, "Вкл", 26, Color.white, font, bold: true);
+        var pillLbl = MakeTMP("Label", pill.transform, "Вкл", 32, Color.white, font, bold: true);
         var pillRT  = pillLbl.GetComponent<RectTransform>();
         pillRT.anchorMin = Vector2.zero; pillRT.anchorMax = Vector2.one;
         pillRT.offsetMin = pillRT.offsetMax = Vector2.zero;
@@ -353,7 +353,7 @@ public static partial class GameSceneBuilder
         hlg.padding = new RectOffset(16, 16, 0, 0);
         hlg.spacing = 20;
 
-        var lbl = MakeTMP("Label", row.transform, labelText, 30, C_TEXT, font, minH: 36);
+        var lbl = MakeTMP("Label", row.transform, labelText, 36, C_TEXT, font, minH: 36);
         SetLE(lbl.gameObject, minW: 160);
         lbl.alignment = TextAlignmentOptions.MidlineLeft;
 
@@ -792,7 +792,7 @@ public static partial class GameSceneBuilder
         vlg.padding = new RectOffset(0, 0, 8, 0);
         vlg.spacing = 4;
 
-        var lbl = MakeTMP("Label", go.transform, labelText, 28, Color.white, font, minH: 36, bold: true);
+        var lbl = MakeTMP("Label", go.transform, labelText, 34, Color.white, font, minH: 36, bold: true);
         lbl.alignment = TextAlignmentOptions.Center;
         SetLE(lbl.gameObject, flexH: 1f);
 
@@ -824,7 +824,7 @@ public static partial class GameSceneBuilder
         hlg.padding = new RectOffset(48, 48, 0, 0);
         hlg.spacing = 24;
 
-        var labelTMP = MakeTMP("Label", row.transform, "Язык", 34, C_TEXT, font);
+        var labelTMP = MakeTMP("Label", row.transform, "Язык", 40, C_TEXT, font);
         SetLE(labelTMP.gameObject, flexW: 1f);
         AddLocKey(labelTMP.gameObject, "settings_language");
 
@@ -883,7 +883,7 @@ public static partial class GameSceneBuilder
         hlg.padding = new RectOffset(48, 48, 0, 0);
         hlg.spacing = 20;
 
-        var lbl = MakeTMP("Label", row.transform, "Громкость", 26, C_TEXT2, font);
+        var lbl = MakeTMP("Label", row.transform, "Громкость", 32, C_TEXT2, font);
         SetLE(lbl.gameObject, minW: 170);
 
         // Контейнер слайдера
@@ -970,7 +970,7 @@ public static partial class GameSceneBuilder
         iconImg.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
         iconImg.type   = Image.Type.Sliced;
 
-        var lbl = MakeTMP("Label", go.transform, labelKey, 22,
+        var lbl = MakeTMP("Label", go.transform, labelKey, 28,
                           new Color(0.60f, 0.60f, 0.60f), font, minH: 28);
         AddLocKey(lbl.gameObject, labelKey);
         lbl.alignment = TextAlignmentOptions.Center;
@@ -1182,7 +1182,7 @@ public static partial class GameSceneBuilder
         vlg.padding = new RectOffset(40, 40, 8, 8);
         vlg.spacing = 6;
 
-        var lbl = MakeTMP("Label", row.transform, locKey, 26, C_TEXT2, font, minH: 36);
+        var lbl = MakeTMP("Label", row.transform, locKey, 32, C_TEXT2, font, minH: 36);
         AddLocKey(lbl.gameObject, locKey);
 
         return MakeInputField(rowName + "Field", row.transform, font, multiline);

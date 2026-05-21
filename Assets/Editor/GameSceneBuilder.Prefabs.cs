@@ -8,10 +8,11 @@ using UstAldanQuiz.Utils;
 
 public static partial class GameSceneBuilder
 {
-    const string PrefabsPath        = "Assets/Prefabs/UI";
-    const string QuestionWindowPath = "Assets/Prefabs/UI/QuestionWindow.prefab";
-    const string FactPopupPath      = "Assets/Prefabs/UI/FactPopup.prefab";
-    const string ProgressBarPath    = "Assets/Prefabs/UI/ProgressBar.prefab";
+    const string PrefabsPath           = "Assets/Prefabs/UI";
+    const string QuestionWindowPath    = "Assets/Prefabs/UI/QuestionWindow.prefab";
+    const string FactPopupPath         = "Assets/Prefabs/UI/FactPopup.prefab";
+    const string ProgressBarPath       = "Assets/Prefabs/UI/ProgressBar.prefab";
+    const string AnswerButtonPath      = "Assets/Prefabs/UI/AnswerButton.prefab";
 
     // =====================================================================
     // МЕНЮ
@@ -22,6 +23,7 @@ public static partial class GameSceneBuilder
     {
         EnsureAssetFolder("Assets/Prefabs");
         EnsureAssetFolder(PrefabsPath);
+        BuildAnswerButtonPrefab();
         BuildQuestionWindowPrefab();
         BuildQuestionWindowFullPrefab();
         BuildFactPopupPrefab();
@@ -55,6 +57,46 @@ public static partial class GameSceneBuilder
         var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
         Stretch(go);
         return go;
+    }
+
+    // =====================================================================
+    // AnswerButton.prefab
+    // =====================================================================
+
+    static void BuildAnswerButtonPrefab()
+    {
+        var font = FindFont();
+        const string popupsAtlas = "Assets/Images/Sprites/popups.png";
+        EnsureReadable(popupsAtlas);
+        var sPopup = LoadSprite(popupsAtlas, "popups_3");
+
+        var root   = new GameObject("AnswerButton", typeof(RectTransform));
+        var btnImg = root.AddComponent<Image>();
+        btnImg.sprite = sPopup; btnImg.type = Image.Type.Sliced; btnImg.color = Color.white;
+        var btn = root.AddComponent<Button>();
+        btn.targetGraphic = btnImg; btn.transition = Selectable.Transition.None;
+        root.AddComponent<ButtonSpringAnim>();
+
+        var lbl = MakeTMP("Label", root.transform, "Вариант ответа", 38, C_TEXT, font);
+        lbl.enableWordWrapping = true;
+        lbl.alignment          = TextAlignmentOptions.MidlineLeft;
+        var lblRT = lbl.GetComponent<RectTransform>();
+        lblRT.anchorMin = Vector2.zero; lblRT.anchorMax = Vector2.one;
+        lblRT.offsetMin = new Vector2(40, 8); lblRT.offsetMax = new Vector2(-40, -8);
+
+        PrefabUtility.SaveAsPrefabAsset(root, AnswerButtonPath);
+        Object.DestroyImmediate(root);
+        Debug.Log("[GameSceneBuilder] ✓ AnswerButton.prefab");
+    }
+
+    static (Button btn, Image img, TMP_Text lbl) SpawnAnswerButton(Transform parent, string name)
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AnswerButtonPath);
+        var go     = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
+        go.name    = name;
+        return (go.GetComponent<Button>(),
+                go.GetComponent<Image>(),
+                go.GetComponentInChildren<TMP_Text>());
     }
 
     // =====================================================================
@@ -95,25 +137,22 @@ public static partial class GameSceneBuilder
         sheetVLG.childControlWidth = sheetVLG.childControlHeight = true;
         sheetVLG.spacing = 20;
 
-        // Zone_Question
+        // Zone_Question (содержит изображение + текст)
         var zoneQ    = MakeGO("Zone_Question", sheet.transform);
-        SetLE(zoneQ, minH: 180, prefH: 220, flexH: 1f);
+        SetLE(zoneQ, minH: 180, prefH: 380, flexH: 1f);
         var zoneQImg = zoneQ.AddComponent<Image>();
         zoneQImg.sprite = sPopup; zoneQImg.type = Image.Type.Sliced; zoneQImg.color = Color.white;
         var zoneQVLG = zoneQ.AddComponent<VerticalLayoutGroup>();
-        zoneQVLG.childAlignment         = TextAnchor.MiddleCenter;
+        zoneQVLG.childAlignment         = TextAnchor.UpperCenter;
         zoneQVLG.childForceExpandWidth  = true;
         zoneQVLG.childForceExpandHeight = false;
         zoneQVLG.childControlWidth = zoneQVLG.childControlHeight = true;
-        zoneQVLG.padding = new RectOffset(48, 48, 36, 36);
-        var qTextTMP = MakeTMP("QuestionText", zoneQ.transform, "Текст вопроса...", 34, C_TEXT, font);
-        qTextTMP.enableWordWrapping = true;
-        qTextTMP.alignment          = TextAlignmentOptions.Center;
-        SetLE(qTextTMP.gameObject, flexH: 1f);
+        zoneQVLG.padding = new RectOffset(0, 0, 0, 0);
+        zoneQVLG.spacing = 0;
 
-        // Zone_Media
-        var zoneMedia = MakeGO("Zone_Media", sheet.transform);
-        SetLE(zoneMedia, minH: 200, prefH: 260);
+        // Zone_Media внутри Zone_Question
+        var zoneMedia = MakeGO("Zone_Media", zoneQ.transform);
+        SetLE(zoneMedia, minH: 200, prefH: 220, flexH: 1f);
         zoneMedia.SetActive(false);
         var qImgGO = MakeGO("QuestionImage", zoneMedia.transform);
         var qImgRT = qImgGO.GetComponent<RectTransform>();
@@ -134,6 +173,13 @@ public static partial class GameSceneBuilder
         spinnerImg.sprite = sSpinner; spinnerImg.type = Image.Type.Simple; spinnerImg.preserveAspect = true;
         spinnerGO.SetActive(false);
 
+        // Текст вопроса под изображением
+        zoneQVLG.padding = new RectOffset(48, 48, 24, 24);
+        var qTextTMP = MakeTMP("QuestionText", zoneQ.transform, "Текст вопроса...", 48, C_TEXT, font);
+        qTextTMP.enableWordWrapping = true;
+        qTextTMP.alignment          = TextAlignmentOptions.Center;
+        SetLE(qTextTMP.gameObject, minH: 80, prefH: 120, flexH: 1f);
+
         // Zone_Answers
         var zoneAnswers = MakeGO("Zone_Answers", sheet.transform);
         SetLE(zoneAnswers, minH: 340, prefH: 360);
@@ -149,19 +195,9 @@ public static partial class GameSceneBuilder
         var answerLabels = new TMP_Text[4];
         for (int i = 0; i < 4; i++)
         {
-            var aBtnGO  = MakeGO($"AnswerBtn_{abcd[i]}", zoneAnswers.transform);
-            SetLE(aBtnGO, minH: 92, prefH: 96);
-            var aBtnImg = aBtnGO.AddComponent<Image>();
-            aBtnImg.sprite = sPopup; aBtnImg.type = Image.Type.Sliced; aBtnImg.color = Color.white;
-            var aBtn = aBtnGO.AddComponent<Button>();
-            aBtn.targetGraphic = aBtnImg; aBtn.transition = Selectable.Transition.None;
-            aBtnGO.AddComponent<ButtonSpringAnim>();
-            var aLbl   = MakeTMP($"Label_{abcd[i]}", aBtnGO.transform, $"{abcd[i]}: Вариант ответа", 30, C_TEXT, font);
-            aLbl.enableWordWrapping = true;
-            aLbl.alignment          = TextAlignmentOptions.MidlineLeft;
-            var aLblRT = aLbl.GetComponent<RectTransform>();
-            aLblRT.anchorMin = Vector2.zero; aLblRT.anchorMax = Vector2.one;
-            aLblRT.offsetMin = new Vector2(40, 8); aLblRT.offsetMax = new Vector2(-40, -8);
+            var (aBtn, aBtnImg, aLbl) = SpawnAnswerButton(zoneAnswers.transform, $"AnswerBtn_{abcd[i]}");
+            SetLE(aBtn.gameObject, minH: 92, prefH: 96);
+            aLbl.text = $"{abcd[i]}: Вариант ответа";
             answerBtns[i]   = aBtn;
             answerLabels[i] = aLbl;
         }
@@ -170,7 +206,7 @@ public static partial class GameSceneBuilder
         var zoneBottom = MakeGO("Zone_Bottom", sheet.transform);
         SetLE(zoneBottom, minH: 260, prefH: 260);
 
-        var feedbackTMP = MakeTMP("ResultFeedback", zoneBottom.transform, "Правильно!", 38, C_CORRECT, font);
+        var feedbackTMP = MakeTMP("ResultFeedback", zoneBottom.transform, "Правильно!", 44, C_CORRECT, font);
         var feedbackRT  = feedbackTMP.GetComponent<RectTransform>();
         feedbackRT.anchorMin = new Vector2(0f, 0.55f); feedbackRT.anchorMax = Vector2.one;
         feedbackRT.offsetMin = feedbackRT.offsetMax = Vector2.zero;
@@ -301,11 +337,11 @@ public static partial class GameSceneBuilder
         btnBackBtn.transition    = Selectable.Transition.None;
         btnBackGO.AddComponent<ButtonSpringAnim>();
 
-        var titleTMP = MakeTMP("TitleText", header.transform, "", 36, Color.white, font, bold: true);
+        var titleTMP = MakeTMP("TitleText", header.transform, "", 42, Color.white, font, bold: true);
         SetLE(titleTMP.gameObject, flexW: 1);
         titleTMP.alignment = TextAlignmentOptions.Center;
 
-        var scoreTMP = MakeTMP("ScoreText", header.transform, "", 26, Color.white, font);
+        var scoreTMP = MakeTMP("ScoreText", header.transform, "", 32, Color.white, font);
         SetLE(scoreTMP.gameObject, minW: 220, flexW: 0);
         scoreTMP.alignment      = TextAlignmentOptions.Right;
         scoreTMP.enableWordWrapping = true;
@@ -360,7 +396,7 @@ public static partial class GameSceneBuilder
         qCardVLG.childForceExpandHeight = false;
         qCardVLG.childControlWidth = qCardVLG.childControlHeight = true;
         qCardVLG.padding = new RectOffset(40, 40, 28, 28);
-        var qTMP = MakeTMP("QuestionText", qCard.transform, "Текст вопроса...", 34, C_TEXT, font);
+        var qTMP = MakeTMP("QuestionText", qCard.transform, "Текст вопроса...", 42, C_TEXT, font);
         qTMP.enableWordWrapping = true;
         qTMP.alignment          = TextAlignmentOptions.MidlineLeft;
         SetLE(qTMP.gameObject, flexH: 1f);
@@ -380,22 +416,18 @@ public static partial class GameSceneBuilder
         var answerLabels = new TMP_Text[4];
         for (int i = 0; i < 4; i++)
         {
-            var aBtnGO  = MakeGO($"AnswerBtn_{abcd[i]}", answersZone.transform);
-            SetLE(aBtnGO, minH: 88, prefH: 92);
-            var aBtnImg = aBtnGO.AddComponent<Image>();
-            aBtnImg.sprite = sPopup; aBtnImg.type = Image.Type.Sliced;
-            aBtnImg.color  = new Color(0.93f, 0.93f, 0.93f);
-            var aBtn = aBtnGO.AddComponent<Button>();
-            aBtn.targetGraphic = aBtnImg; aBtn.transition = Selectable.Transition.None;
-            aBtnGO.AddComponent<ButtonSpringAnim>();
-            var aLbl = MakeTMP($"Label_{abcd[i]}", aBtnGO.transform, $"Вариант {abcd[i]}", 34, C_TEXT, font, bold: true);
-            aLbl.enableWordWrapping = true;
-            aLbl.alignment          = TextAlignmentOptions.Center;
+            var (aBtn, aBtnImg, aLbl) = SpawnAnswerButton(answersZone.transform, $"AnswerBtn_{abcd[i]}");
+            SetLE(aBtn.gameObject, minH: 88, prefH: 92);
+            aBtnImg.color     = new Color(0.93f, 0.93f, 0.93f);
+            aLbl.text         = $"Вариант {abcd[i]}";
+            aLbl.fontSize     = 40;
+            aLbl.fontStyle    = FontStyles.Bold;
+            aLbl.alignment    = TextAlignmentOptions.Center;
             var aLblRT = aLbl.GetComponent<RectTransform>();
-            aLblRT.anchorMin = Vector2.zero; aLblRT.anchorMax = Vector2.one;
-            aLblRT.offsetMin = new Vector2(24, 8); aLblRT.offsetMax = new Vector2(-24, -8);
-            answerBtns[i]   = aBtn;
-            answerLabels[i] = aLbl;
+            aLblRT.offsetMin  = new Vector2(24, 8);
+            aLblRT.offsetMax  = new Vector2(-24, -8);
+            answerBtns[i]     = aBtn;
+            answerLabels[i]   = aLbl;
         }
 
         // Zone_Bottom (feedback + continue)
@@ -414,7 +446,7 @@ public static partial class GameSceneBuilder
         var feedbackPanelImg = feedbackGO.AddComponent<Image>();
         feedbackPanelImg.sprite = sPopup; feedbackPanelImg.type = Image.Type.Sliced;
         feedbackPanelImg.color  = new Color(0.30f, 0.69f, 0.31f, 0.18f);
-        var feedbackTMP = MakeTMP("FeedbackText", feedbackGO.transform, "✓  Правильно!", 34, C_CORRECT, font, bold: true);
+        var feedbackTMP = MakeTMP("FeedbackText", feedbackGO.transform, "✓  Правильно!", 40, C_CORRECT, font, bold: true);
         var feedbackTMPRT = feedbackTMP.GetComponent<RectTransform>();
         feedbackTMPRT.anchorMin = Vector2.zero; feedbackTMPRT.anchorMax = Vector2.one;
         feedbackTMPRT.offsetMin = feedbackTMPRT.offsetMax = Vector2.zero;
@@ -484,7 +516,7 @@ public static partial class GameSceneBuilder
         fillImg.color      = Color.white;
 
         // Label — поверх бара, по центру
-        var labelTMP = MakeTMP("Label", root.transform, "0 / 0", 24, Color.white, font, bold: true);
+        var labelTMP = MakeTMP("Label", root.transform, "0 / 0", 30, Color.white, font, bold: true);
         var labelRT  = labelTMP.GetComponent<RectTransform>();
         labelRT.anchorMin = Vector2.zero; labelRT.anchorMax = Vector2.one;
         labelRT.offsetMin = labelRT.offsetMax = Vector2.zero;
@@ -539,7 +571,7 @@ public static partial class GameSceneBuilder
         cardVLG.padding = new RectOffset(48, 48, 48, 48);
         cardVLG.spacing = 32;
 
-        var factTextTMP = MakeTMP("FactText", card.transform, "", 34, C_TEXT, font);
+        var factTextTMP = MakeTMP("FactText", card.transform, "", 40, C_TEXT, font);
         factTextTMP.alignment          = TextAlignmentOptions.Center;
         factTextTMP.enableWordWrapping = true;
         SetLE(factTextTMP.gameObject);

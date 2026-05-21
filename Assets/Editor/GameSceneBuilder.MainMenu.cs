@@ -95,9 +95,6 @@ public static partial class GameSceneBuilder
         logoVLG.childForceExpandWidth = true;
         logoVLG.childControlWidth = logoVLG.childControlHeight = true;
         logoVLG.spacing = 4;
-        AddLocKey(MakeTMP("BadgeText", logo.transform, "Усть-Алданский улус", 24, C_TEXT2,    font, minH: 36).gameObject, "app_badge");
-        AddLocKey(MakeTMP("TitleMain", logo.transform, "Викторина",           64, C_TEXT,     font, minH: 80, bold: true).gameObject, "app_title");
-        AddLocKey(MakeTMP("TitleYear", logo.transform, "100 лет",             48, C_SECONDARY, font, minH: 60, bold: true).gameObject, "app_year");
 
         // CategoryGrid
         var gridGO = MakeGO("CategoryGrid", homePage.transform);
@@ -112,7 +109,7 @@ public static partial class GameSceneBuilder
         // StatsBar
         var statsGO  = MakeGO("StatsBar", homePage.transform);
         SetLE(statsGO, minH: 44, prefH: 44);
-        var statsTMP = MakeTMP("StatsText", statsGO.transform, "", 22, C_TEXT2, font);
+        var statsTMP = MakeTMP("StatsText", statsGO.transform, "", 28, C_TEXT2, font);
         var statsRT  = statsTMP.GetComponent<RectTransform>();
         statsRT.anchorMin = Vector2.zero; statsRT.anchorMax = Vector2.one;
         statsRT.offsetMin = statsRT.offsetMax = Vector2.zero;
@@ -371,7 +368,7 @@ public static partial class GameSceneBuilder
         confirmTitleTMP.alignment = TextAlignmentOptions.Center;
         AddLocKey(confirmTitleTMP.gameObject, "confirm_reset_title");
 
-        var confirmSubTMP = MakeTMP("ConfirmSub", confirmCard.transform, "Весь прогресс будет удалён", 32, C_TEXT2, font, minH: 44);
+        var confirmSubTMP = MakeTMP("ConfirmSub", confirmCard.transform, "Весь прогресс будет удалён", 38, C_TEXT2, font, minH: 44);
         confirmSubTMP.alignment = TextAlignmentOptions.Center;
         AddLocKey(confirmSubTMP.gameObject, "confirm_reset_sub");
 
@@ -469,7 +466,7 @@ public static partial class GameSceneBuilder
         aboutContentVLG.spacing = 24;
         aboutScroll.content = aboutContentRT;
 
-        var aboutBodyTMP = MakeTMP("AboutBodyText", aboutContent.transform, "", 32, C_TEXT, font);
+        var aboutBodyTMP = MakeTMP("AboutBodyText", aboutContent.transform, "", 38, C_TEXT, font);
         aboutBodyTMP.alignment         = TextAlignmentOptions.TopLeft;
         aboutBodyTMP.enableWordWrapping = true;
 
@@ -538,7 +535,7 @@ public static partial class GameSceneBuilder
         profContentVLG.spacing = 24;
         profScroll.content = profContentRT;
 
-        var profBodyTMP = MakeTMP("ProfileBodyText", profContent.transform, "", 32, C_TEXT, font);
+        var profBodyTMP = MakeTMP("ProfileBodyText", profContent.transform, "", 38, C_TEXT, font);
         profBodyTMP.alignment         = TextAlignmentOptions.TopLeft;
         profBodyTMP.enableWordWrapping = true;
 
@@ -678,7 +675,7 @@ public static partial class GameSceneBuilder
         var popupTitle = MakeTMP("PopupTitle", card.transform, "Нет вопросов", 44, C_TEXT, font, minH: 60, bold: true);
         popupTitle.alignment = TextAlignmentOptions.Center;
         AddLocKey(popupTitle.gameObject, "no_questions_title");
-        var popupMsg = MakeTMP("PopupMessage", card.transform, "", 34, C_TEXT2, font, minH: 80);
+        var popupMsg = MakeTMP("PopupMessage", card.transform, "", 40, C_TEXT2, font, minH: 80);
         popupMsg.alignment = TextAlignmentOptions.Center;
         popupMsg.enableWordWrapping = true;
         var btnCloseGO = MakePrimaryButton("BtnClosePopup", card.transform, "Понятно", font, minH: 110);

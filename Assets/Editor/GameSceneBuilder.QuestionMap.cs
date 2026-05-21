@@ -99,11 +99,11 @@ public static partial class GameSceneBuilder
         if (backText != null) backText.gameObject.SetActive(false);
         AddLocKey(btnBackGO, "btn_back");
 
-        var catNameTMP = MakeTMP("CategoryName", header.transform, "История", 36, Color.white, font);
+        var catNameTMP = MakeTMP("CategoryName", header.transform, "История", 42, Color.white, font);
         SetLE(catNameTMP.gameObject, flexW: 1);
         catNameTMP.alignment = TextAlignmentOptions.Center;
 
-        var scoreTMP = MakeTMP("ScoreText", header.transform, "Правильных: 0/15", 28, Color.white, font);
+        var scoreTMP = MakeTMP("ScoreText", header.transform, "Правильных: 0/15", 34, Color.white, font);
         SetLE(scoreTMP.gameObject, minW: sideSlotW, flexW: 0);
         scoreTMP.alignment = TextAlignmentOptions.Right;
 

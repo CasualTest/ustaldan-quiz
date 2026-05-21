@@ -285,7 +285,7 @@ namespace UstAldanQuiz.UI
                 nameLE.flexibleWidth = 1;
                 var nameTMP = nameGO.AddComponent<TextMeshProUGUI>();
                 nameTMP.text      = cat.displayName;
-                nameTMP.fontSize  = 30;
+                nameTMP.fontSize  = 38;
                 nameTMP.color     = RowText;
                 nameTMP.alignment = TextAlignmentOptions.MidlineLeft;
 
@@ -295,7 +295,7 @@ namespace UstAldanQuiz.UI
                 scoreLE.minWidth = 120;
                 var scoreTMP = scoreGO.AddComponent<TextMeshProUGUI>();
                 scoreTMP.text      = $"{best} / {total}";
-                scoreTMP.fontSize  = 30;
+                scoreTMP.fontSize  = 38;
                 scoreTMP.color     = RowScore;
                 scoreTMP.alignment = TextAlignmentOptions.MidlineRight;
                 scoreTMP.fontStyle = FontStyles.Bold;
