@@ -26,6 +26,12 @@ namespace UstAldanQuiz.UI
                 iconImage.sprite = category.icon;
                 iconImage.gameObject.SetActive(category.icon != null);
             }
+            if (background != null && category.backgroundSprite != null)
+            {
+                background.sprite = category.backgroundSprite;
+                background.color  = Color.white;
+                background.type   = Image.Type.Simple;
+            }
             button?.onClick.AddListener(() => OnClicked?.Invoke(this));
         }
 

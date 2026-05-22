@@ -243,6 +243,7 @@ public static partial class GameSceneBuilder
         soTile.ApplyModifiedProperties();
 
         var prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+        Selection.activeGameObject = null;
         Object.DestroyImmediate(root);
         AssetDatabase.Refresh();
         Debug.Log($"[GameSceneBuilder] QuestionTile prefab сохранён: {prefabPath}");

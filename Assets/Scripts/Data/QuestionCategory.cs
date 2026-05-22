@@ -25,6 +25,9 @@ namespace UstAldanQuiz.Data
         [Tooltip("Иконка категории (опционально)")]
         public Sprite icon;
 
+        [Tooltip("Фоновый спрайт тайла (опционально)")]
+        public Sprite backgroundSprite;
+
         [Tooltip("Цвет категории для UI (опционально)")]
         public Color themeColor = Color.white;
     }

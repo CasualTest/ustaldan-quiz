@@ -46,12 +46,10 @@ public static partial class GameSceneBuilder
         var bg = MakeGO("Background", canvasGO.transform);
         Stretch(bg);
         var bgImg = bg.AddComponent<Image>();
-        bgImg.color = Color.white;
-        var bgGrad = bg.AddComponent<UIGradient>();
-        var soBgGrad = new UnityEditor.SerializedObject(bgGrad);
-        soBgGrad.FindProperty("topColor").colorValue    = new Color(0.06f, 0.16f, 0.38f);
-        soBgGrad.FindProperty("bottomColor").colorValue = new Color(0.18f, 0.52f, 0.82f);
-        soBgGrad.ApplyModifiedProperties();
+        bgImg.sprite          = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/background.jpg");
+        bgImg.color           = Color.white;
+        bgImg.type            = Image.Type.Simple;
+        bgImg.preserveAspect  = false;
 
         // ── Чёрная плашка статус-бара (выше SafeArea) ────────────────────
         AddStatusBarCover(canvasGO.transform);
@@ -89,18 +87,55 @@ public static partial class GameSceneBuilder
 
         // LogoBlock
         var logo = MakeGO("LogoBlock", homePage.transform);
-        SetLE(logo, minH: 180, prefH: 200);
+        SetLE(logo, minH: 200, prefH: 220);
         var logoVLG = logo.AddComponent<VerticalLayoutGroup>();
-        logoVLG.childAlignment = TextAnchor.MiddleCenter;
+        logoVLG.childAlignment        = TextAnchor.MiddleCenter;
         logoVLG.childForceExpandWidth = true;
-        logoVLG.childControlWidth = logoVLG.childControlHeight = true;
-        logoVLG.spacing = 4;
+        logoVLG.childControlWidth     = logoVLG.childControlHeight = true;
+        logoVLG.spacing               = 8;
+
+        AssetDatabase.ImportAsset("Assets/Images/Icons/bg_title.png",  ImportAssetOptions.ForceSynchronousImport);
+        AssetDatabase.ImportAsset("Assets/Images/Icons/bg_title2.png", ImportAssetOptions.ForceSynchronousImport);
+
+        // bg_title — "Усть-Алданский"
+        var t1GO  = MakeGO("Title_Main", logo.transform);
+        SetLE(t1GO, minH: 110, prefH: 120);
+        var t1Img  = t1GO.AddComponent<Image>();
+        t1Img.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/bg_title.png");
+        t1Img.color  = Color.white;
+        t1Img.type   = Image.Type.Simple;
+        var t1LblGO = new GameObject("Text", typeof(RectTransform));
+        t1LblGO.transform.SetParent(t1GO.transform, false);
+        ((RectTransform)t1LblGO.transform).anchorMin = Vector2.zero;
+        ((RectTransform)t1LblGO.transform).anchorMax = Vector2.one;
+        ((RectTransform)t1LblGO.transform).offsetMin = ((RectTransform)t1LblGO.transform).offsetMax = Vector2.zero;
+        var t1TMP = t1LblGO.AddComponent<TextMeshProUGUI>();
+        t1TMP.text = "Усть-Алданский"; t1TMP.fontSize = 44; t1TMP.color = Color.white;
+        t1TMP.fontStyle = FontStyles.Bold; t1TMP.alignment = TextAlignmentOptions.Center;
+        if (font != null) t1TMP.font = font;
+
+        // bg_title2 — "❖ Район ❖"
+        var t2GO  = MakeGO("Title_Sub", logo.transform);
+        SetLE(t2GO, minH: 62, prefH: 68);
+        var t2Img  = t2GO.AddComponent<Image>();
+        t2Img.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/bg_title2.png");
+        t2Img.color  = Color.white;
+        t2Img.type   = Image.Type.Simple;
+        var t2LblGO = new GameObject("Text", typeof(RectTransform));
+        t2LblGO.transform.SetParent(t2GO.transform, false);
+        ((RectTransform)t2LblGO.transform).anchorMin = Vector2.zero;
+        ((RectTransform)t2LblGO.transform).anchorMax = Vector2.one;
+        ((RectTransform)t2LblGO.transform).offsetMin = ((RectTransform)t2LblGO.transform).offsetMax = Vector2.zero;
+        var t2TMP = t2LblGO.AddComponent<TextMeshProUGUI>();
+        t2TMP.text = "❖ Район ❖"; t2TMP.fontSize = 30; t2TMP.color = Color.white;
+        t2TMP.alignment = TextAlignmentOptions.Center;
+        if (font != null) t2TMP.font = font;
 
         // CategoryGrid
         var gridGO = MakeGO("CategoryGrid", homePage.transform);
-        SetLE(gridGO, minH: 160, prefH: 260, flexH: 1f);
+        SetLE(gridGO, minH: 380, prefH: 772, flexH: 1f);
         var grid = gridGO.AddComponent<GridLayoutGroup>();
-        grid.cellSize        = new Vector2(440, 150);
+        grid.cellSize        = new Vector2(380, 380);
         grid.spacing         = new Vector2(16, 12);
         grid.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
         grid.constraintCount = 2;
@@ -127,9 +162,15 @@ public static partial class GameSceneBuilder
         var btnPlayGO = MakePrimaryButton("BtnPlay", btnPlayWrapper.transform, "Начать игру", font, minH: 166);
         SetLE(btnPlayGO, minW: 520, flexW: 0);
         AddLocKey(btnPlayGO, "btn_play");
-        ApplyHyperCasualButton(btnPlayGO,
-            "Assets/Images/Sprites/buttons.png",
-            normalName: "buttons_12", pressedName: "buttons_13");
+        {
+            var img = btnPlayGO.GetComponent<Image>();
+            img.sprite        = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/btn_play.png");
+            img.type          = Image.Type.Simple;
+            img.color         = Color.white;
+            img.preserveAspect = true;
+            btnPlayGO.AddComponent<ButtonDragReset>();
+            btnPlayGO.AddComponent<ButtonSpringAnim>();
+        }
 
         // Кнопка «Аркада» — переход на Roadmap
         var btnArcadeWrapper = MakeGO("BtnArcadeWrapper", homePage.transform);
@@ -143,9 +184,15 @@ public static partial class GameSceneBuilder
         var btnArcadeGO = MakePrimaryButton("BtnArcade", btnArcadeWrapper.transform, "Аркада", font, minH: 166);
         SetLE(btnArcadeGO, minW: 520, flexW: 0);
         AddLocKey(btnArcadeGO, "btn_arcade");
-        ApplyHyperCasualButton(btnArcadeGO,
-            "Assets/Images/Sprites/buttons.png",
-            normalName: "buttons_12", pressedName: "buttons_13");
+        {
+            var img = btnArcadeGO.GetComponent<Image>();
+            img.sprite         = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/arcade.png");
+            img.type           = Image.Type.Simple;
+            img.color          = Color.white;
+            img.preserveAspect = true;
+            btnArcadeGO.AddComponent<ButtonDragReset>();
+            btnArcadeGO.AddComponent<ButtonSpringAnim>();
+        }
 
         // ── Страница 1: Рекорды ───────────────────────────────────────────
         var recordsPage = MakeGO("RecordsPage", contentArea.transform);
@@ -862,6 +909,7 @@ public static partial class GameSceneBuilder
         soCat.ApplyModifiedProperties();
 
         var prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+        Selection.activeGameObject = null;
         Object.DestroyImmediate(root);
         AssetDatabase.Refresh();
         Debug.Log($"[GameSceneBuilder] CategoryButton prefab сохранён: {prefabPath}");

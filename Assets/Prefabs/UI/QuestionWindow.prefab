@@ -894,12 +894,12 @@ MonoBehaviour:
   spinnerImage: {fileID: 5890364416422083991}
   answerButtons:
   - {fileID: 4971824667117594037}
-  - {fileID: 2482040771537105320}
+  - {fileID: 2726778795195513030}
   - {fileID: 7950113696122459269}
   - {fileID: 9088381239840573886}
   answerLabels:
   - {fileID: 5249857831587080731}
-  - {fileID: 2482040771537105321}
+  - {fileID: 3022815912679929704}
   - {fileID: 7093239350632487723}
   - {fileID: 8215743601080583696}
   resultFeedback: {fileID: 4647818920526170679}
@@ -1440,7 +1440,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3975244423491841217}
-  - {fileID: 2482040771537105319}
+  - {fileID: 6197772572662624690}
   - {fileID: 2126233130445315569}
   - {fileID: 1005979581464789194}
   m_Father: {fileID: 5467721149616306671}
@@ -1600,7 +1600,34 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 9166490800124412193}
   m_SourcePrefab: {fileID: 100100000, guid: ed845beb81f441b4491560b4b60ec8df, type: 3}
---- !u!1 &2482040771537105318 stripped
+--- !u!114 &2726778795195513030 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 551282157573851491, guid: ed845beb81f441b4491560b4b60ec8df, type: 3}
+  m_PrefabInstance: {fileID: 2482040771537105317}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8016894729087630535}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &3022815912679929704 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 829447249345775309, guid: ed845beb81f441b4491560b4b60ec8df, type: 3}
+  m_PrefabInstance: {fileID: 2482040771537105317}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!224 &6197772572662624690 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 8391072242749374487, guid: ed845beb81f441b4491560b4b60ec8df, type: 3}
+  m_PrefabInstance: {fileID: 2482040771537105317}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &8016894729087630535 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5562017736214269282, guid: ed845beb81f441b4491560b4b60ec8df, type: 3}
   m_PrefabInstance: {fileID: 2482040771537105317}
@@ -1611,7 +1638,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2482040771537105318}
+  m_GameObject: {fileID: 8016894729087630535}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
@@ -1625,33 +1652,6 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
---- !u!224 &2482040771537105319 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 8391072242749374487, guid: ed845beb81f441b4491560b4b60ec8df, type: 3}
-  m_PrefabInstance: {fileID: 2482040771537105317}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &2482040771537105320 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 551282157573851491, guid: ed845beb81f441b4491560b4b60ec8df, type: 3}
-  m_PrefabInstance: {fileID: 2482040771537105317}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2482040771537105318}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &2482040771537105321 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 829447249345775309, guid: ed845beb81f441b4491560b4b60ec8df, type: 3}
-  m_PrefabInstance: {fileID: 2482040771537105317}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &4853178366991461590
 PrefabInstance:
   m_ObjectHideFlags: 0

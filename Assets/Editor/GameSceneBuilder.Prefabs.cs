@@ -85,6 +85,7 @@ public static partial class GameSceneBuilder
         lblRT.offsetMin = new Vector2(40, 8); lblRT.offsetMax = new Vector2(-40, -8);
 
         PrefabUtility.SaveAsPrefabAsset(root, AnswerButtonPath);
+        Selection.activeGameObject = null;
         Object.DestroyImmediate(root);
         Debug.Log("[GameSceneBuilder] ✓ AnswerButton.prefab");
     }
@@ -266,6 +267,7 @@ public static partial class GameSceneBuilder
         soQW.ApplyModifiedProperties();
 
         PrefabUtility.SaveAsPrefabAsset(root, QuestionWindowPath);
+        Selection.activeGameObject = null;
         Object.DestroyImmediate(root);
         Debug.Log("[GameSceneBuilder] ✓ QuestionWindow.prefab");
     }
@@ -480,6 +482,7 @@ public static partial class GameSceneBuilder
 
         const string path = "Assets/Prefabs/UI/QuestionWindowFull.prefab";
         PrefabUtility.SaveAsPrefabAsset(root, path);
+        Selection.activeGameObject = null;
         Object.DestroyImmediate(root);
         Debug.Log("[GameSceneBuilder] ✓ QuestionWindowFull.prefab");
     }
@@ -530,6 +533,7 @@ public static partial class GameSceneBuilder
         soPB.ApplyModifiedProperties();
 
         PrefabUtility.SaveAsPrefabAsset(root, ProgressBarPath);
+        Selection.activeGameObject = null;
         Object.DestroyImmediate(root);
         Debug.Log("[GameSceneBuilder] ✓ ProgressBar.prefab");
     }
@@ -602,6 +606,7 @@ public static partial class GameSceneBuilder
         soFact.ApplyModifiedProperties();
 
         PrefabUtility.SaveAsPrefabAsset(root, FactPopupPath);
+        Selection.activeGameObject = null;
         Object.DestroyImmediate(root);
         Debug.Log("[GameSceneBuilder] ✓ FactPopup.prefab");
     }

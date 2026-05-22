@@ -15,5 +15,6 @@ MonoBehaviour:
   categoryId: history
   displayName: "\u0418\u0441\u0442\u043E\u0440\u0438\u044F"
   description: 
-  icon: {fileID: 21300000, guid: 6c6ecb8670e30ed4786fc5186e688e15, type: 3}
+  icon: {fileID: 21300000, guid: 9bf1cd16adc2277438f98c23e1beaea7, type: 3}
+  backgroundSprite: {fileID: 21300000, guid: 805f1f7bde6c34948b740a7cc261176c, type: 3}
   themeColor: {r: 1, g: 1, b: 1, a: 1}
