@@ -22,6 +22,8 @@ public static partial class GameSceneBuilder
             EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
         }
 
+        Selection.objects = new Object[0];
+
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
         var newScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);

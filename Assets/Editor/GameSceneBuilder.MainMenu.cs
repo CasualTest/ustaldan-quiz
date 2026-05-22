@@ -127,7 +127,7 @@ public static partial class GameSceneBuilder
         ((RectTransform)t2LblGO.transform).anchorMax = Vector2.one;
         ((RectTransform)t2LblGO.transform).offsetMin = ((RectTransform)t2LblGO.transform).offsetMax = Vector2.zero;
         var t2TMP = t2LblGO.AddComponent<TextMeshProUGUI>();
-        t2TMP.text = "❖ Район ❖"; t2TMP.fontSize = 30; t2TMP.color = Color.white;
+        t2TMP.text = "* Район *"; t2TMP.fontSize = 30; t2TMP.color = Color.white;
         t2TMP.alignment = TextAlignmentOptions.Center;
         if (font != null) t2TMP.font = font;
 
