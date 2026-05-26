@@ -111,7 +111,7 @@ namespace UstAldanQuiz.UI
                 bool? prev = SaveManager.GetQuestionResult(catId, questions[i].name);
                 if (prev.HasValue)
                 {
-                    tile.SetState(prev.Value ? TileState.Correct : TileState.Wrong);
+                    tile.SetState(prev.Value ? TileState.Correct : TileState.Wrong, animate: false);
                     _lockedCount++;
                 }
             }

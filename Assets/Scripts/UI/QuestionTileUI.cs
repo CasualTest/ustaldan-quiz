@@ -70,7 +70,7 @@ namespace UstAldanQuiz.UI
             SetState(TileState.Closed);
         }
 
-        public void SetState(TileState state)
+        public void SetState(TileState state, bool animate = true)
         {
             State = state;
 
@@ -86,14 +86,14 @@ namespace UstAldanQuiz.UI
                     ApplySprite(spriteCorrect, colorCorrect);
                     button.interactable = false;
                     ShowCheckmark(correct: true);
-                    StartCoroutine(BounceScale());
+                    if (animate) StartCoroutine(BounceScale());
                     break;
 
                 case TileState.Wrong:
                     ApplySprite(spriteWrong, colorWrong);
                     button.interactable = false;
                     ShowCheckmark(correct: false);
-                    StartCoroutine(BounceScale());
+                    if (animate) StartCoroutine(BounceScale());
                     break;
 
                 case TileState.Active:

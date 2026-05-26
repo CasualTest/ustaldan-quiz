@@ -255,24 +255,16 @@ public static partial class GameSceneBuilder
         Directory.CreateDirectory("Assets/Prefabs");
         if (File.Exists(prefabPath)) AssetDatabase.DeleteAsset(prefabPath);
 
-        var sDefault = LoadSprite(atlas, "buttons_3");
-        var sCorrect = LoadSprite(atlas, "buttons_4");
-        var sWrong   = LoadSprite(atlas, "buttons_5");
+        var sDefault = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/bg_yellow.png");
+        var sCorrect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/bg_green_success.png");
+        var sWrong   = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/bg_red.png");
 
         var root    = new GameObject("RoadmapTile", typeof(RectTransform));
         var rootImg = root.AddComponent<Image>();
-        if (sDefault != null)
-        {
-            rootImg.sprite = sDefault;
-            rootImg.type   = Image.Type.Sliced;
-            rootImg.color  = Color.white;
-        }
-        else
-        {
-            rootImg.color  = Hex("E8E0D0");
-            rootImg.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-            rootImg.type   = Image.Type.Sliced;
-        }
+        rootImg.sprite = sDefault != null ? sDefault
+                       : AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        rootImg.type  = Image.Type.Simple;
+        rootImg.color = Color.white;
 
         var btn = root.AddComponent<Button>();
         btn.targetGraphic = rootImg;

@@ -154,7 +154,7 @@ namespace UstAldanQuiz.UI
                 var prev = SaveManager.GetQuestionResult(catId, q.name);
                 if (prev.HasValue)
                 {
-                    tile.SetState(prev.Value ? TileState.Correct : TileState.Wrong);
+                    tile.SetState(prev.Value ? TileState.Correct : TileState.Wrong, animate: false);
                     _lockedCount++;
                 }
             }

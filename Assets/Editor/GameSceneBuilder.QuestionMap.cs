@@ -127,10 +127,7 @@ public static partial class GameSceneBuilder
         content.AddComponent<Image>().color = Color.clear;
         content.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-        var tileSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_3");
-        var tileCell   = tileSprite != null
-            ? new Vector2(tileSprite.rect.width, tileSprite.rect.height)
-            : new Vector2(300, 200);
+        var tileCell = new Vector2(300, 200);
 
         var gridLG = content.AddComponent<GridLayoutGroup>();
         gridLG.cellSize        = tileCell;
@@ -194,16 +191,15 @@ public static partial class GameSceneBuilder
 
         var root = new GameObject("QuestionTile", typeof(RectTransform));
 
-        const string atlas = "Assets/Images/Sprites/buttons.png";
-        var sDefault = LoadSprite(atlas, "buttons_3");
-        var sCorrect = LoadSprite(atlas, "buttons_4");
-        var sWrong   = LoadSprite(atlas, "buttons_5");
+        var sDefault = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/bg_yellow.png");
+        var sCorrect = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/bg_green_success.png");
+        var sWrong   = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/bg_red.png");
 
         var rootImg = root.AddComponent<Image>();
         rootImg.sprite = sDefault != null ? sDefault
                        : AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
-        rootImg.type  = Image.Type.Sliced;
-        rootImg.color = sDefault != null ? Color.white : C_TILE_DEF;
+        rootImg.type  = Image.Type.Simple;
+        rootImg.color = Color.white;
 
         var btn = root.AddComponent<Button>();
         btn.targetGraphic = rootImg;

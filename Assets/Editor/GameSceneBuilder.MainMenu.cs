@@ -87,7 +87,7 @@ public static partial class GameSceneBuilder
 
         // LogoBlock
         var logo = MakeGO("LogoBlock", homePage.transform);
-        SetLE(logo, minH: 200, prefH: 220);
+        SetLE(logo, minH: 230, prefH: 250);
         var logoVLG = logo.AddComponent<VerticalLayoutGroup>();
         logoVLG.childAlignment        = TextAnchor.MiddleCenter;
         logoVLG.childForceExpandWidth = true;
@@ -97,9 +97,9 @@ public static partial class GameSceneBuilder
         AssetDatabase.ImportAsset("Assets/Images/Icons/bg_title.png",  ImportAssetOptions.ForceSynchronousImport);
         AssetDatabase.ImportAsset("Assets/Images/Icons/bg_title2.png", ImportAssetOptions.ForceSynchronousImport);
 
-        // bg_title — "Усть-Алданский"
+        // bg_title — "УСТЬ-АЛДАНСКИЙ"
         var t1GO  = MakeGO("Title_Main", logo.transform);
-        SetLE(t1GO, minH: 110, prefH: 120);
+        SetLE(t1GO, minH: 130, prefH: 140);
         var t1Img  = t1GO.AddComponent<Image>();
         t1Img.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/bg_title.png");
         t1Img.color  = Color.white;
@@ -110,13 +110,19 @@ public static partial class GameSceneBuilder
         ((RectTransform)t1LblGO.transform).anchorMax = Vector2.one;
         ((RectTransform)t1LblGO.transform).offsetMin = ((RectTransform)t1LblGO.transform).offsetMax = Vector2.zero;
         var t1TMP = t1LblGO.AddComponent<TextMeshProUGUI>();
-        t1TMP.text = "Усть-Алданский"; t1TMP.fontSize = 44; t1TMP.color = Color.white;
-        t1TMP.fontStyle = FontStyles.Bold; t1TMP.alignment = TextAlignmentOptions.Center;
+        t1TMP.text      = "УСТЬ-АЛДАНСКИЙ";
+        t1TMP.fontSize  = 60;
+        t1TMP.color     = Color.white;
+        t1TMP.fontStyle = FontStyles.Bold;
+        t1TMP.alignment = TextAlignmentOptions.Center;
         if (font != null) t1TMP.font = font;
+        ShaderUtilities.GetShaderPropertyIDs();
+        t1TMP.fontMaterial.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.22f);
+        t1TMP.fontMaterial.SetColor(ShaderUtilities.ID_OutlineColor, new Color(0.04f, 0.12f, 0.40f, 1f));
 
-        // bg_title2 — "❖ Район ❖"
+        // bg_title2 — "◆ РАЙОН ◆"
         var t2GO  = MakeGO("Title_Sub", logo.transform);
-        SetLE(t2GO, minH: 62, prefH: 68);
+        SetLE(t2GO, minH: 72, prefH: 80);
         var t2Img  = t2GO.AddComponent<Image>();
         t2Img.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/bg_title2.png");
         t2Img.color  = Color.white;
@@ -127,9 +133,14 @@ public static partial class GameSceneBuilder
         ((RectTransform)t2LblGO.transform).anchorMax = Vector2.one;
         ((RectTransform)t2LblGO.transform).offsetMin = ((RectTransform)t2LblGO.transform).offsetMax = Vector2.zero;
         var t2TMP = t2LblGO.AddComponent<TextMeshProUGUI>();
-        t2TMP.text = "* Район *"; t2TMP.fontSize = 30; t2TMP.color = Color.white;
+        t2TMP.text      = "◆ РАЙОН ◆";
+        t2TMP.fontSize  = 40;
+        t2TMP.color     = Color.white;
+        t2TMP.fontStyle = FontStyles.Bold;
         t2TMP.alignment = TextAlignmentOptions.Center;
         if (font != null) t2TMP.font = font;
+        t2TMP.fontMaterial.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.22f);
+        t2TMP.fontMaterial.SetColor(ShaderUtilities.ID_OutlineColor, new Color(0.04f, 0.22f, 0.06f, 1f));
 
         // CategoryGrid
         var gridGO = MakeGO("CategoryGrid", homePage.transform);
@@ -615,85 +626,29 @@ public static partial class GameSceneBuilder
         var (tabAboutBtn, iconAbout,    labelAbout)    = MakeNavTab("TabAbout",    "btn_about",    navBar.transform, font);
         var (tabSetBtn,   iconSettings, labelSettings) = MakeNavTab("TabSettings", "btn_settings", navBar.transform, font);
 
-        // Иконка Home — спрайт buttons_41 + пружинная анимация (+10%)
-        var homeSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_41");
-        if (homeSprite != null)
-        {
-            iconHome.sprite         = homeSprite;
-            iconHome.type           = Image.Type.Simple;
-            iconHome.preserveAspect = true;
-            iconHome.color          = Color.white;
-            var iconLE             = iconHome.GetComponent<LayoutElement>();
-            iconLE.minWidth        = homeSprite.rect.width  * 1.1f;
-            iconLE.minHeight       = homeSprite.rect.height * 1.1f;
-            iconLE.preferredWidth  = homeSprite.rect.width  * 1.1f;
-            iconLE.preferredHeight = homeSprite.rect.height * 1.1f;
-        }
-        tabHomeBtn.gameObject.AddComponent<ButtonSpringAnim>();
+        const string iconsPath = "Assets/Images/Icons/";
+        const float  iconSize  = 160f;
 
-        // Иконка Settings — спрайт buttons_33 (−10%)
-        var settingsSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_33");
-        if (settingsSprite != null)
+        void ApplyNavIcon(Image icon, string fileName)
         {
-            iconSettings.sprite         = settingsSprite;
-            iconSettings.type           = Image.Type.Simple;
-            iconSettings.preserveAspect = true;
-            iconSettings.color          = Color.white;
-            var iconLE             = iconSettings.GetComponent<LayoutElement>();
-            iconLE.minWidth        = settingsSprite.rect.width  * 0.9f;
-            iconLE.minHeight       = settingsSprite.rect.height * 0.9f;
-            iconLE.preferredWidth  = settingsSprite.rect.width  * 0.9f;
-            iconLE.preferredHeight = settingsSprite.rect.height * 0.9f;
+            var s = AssetDatabase.LoadAssetAtPath<Sprite>(iconsPath + fileName + ".png");
+            if (s == null) return;
+            icon.sprite         = s;
+            icon.type           = Image.Type.Simple;
+            icon.preserveAspect = true;
+            icon.color          = Color.white;
+            var le             = icon.GetComponent<LayoutElement>();
+            le.minWidth        = iconSize;
+            le.minHeight       = iconSize;
+            le.preferredWidth  = iconSize;
+            le.preferredHeight = iconSize;
         }
-        tabSetBtn.gameObject.AddComponent<ButtonSpringAnim>();
 
-        // Иконка About — спрайт buttons_34 (−10%)
-        var aboutSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_34");
-        if (aboutSprite != null)
-        {
-            iconAbout.sprite         = aboutSprite;
-            iconAbout.type           = Image.Type.Simple;
-            iconAbout.preserveAspect = true;
-            iconAbout.color          = Color.white;
-            var iconLE             = iconAbout.GetComponent<LayoutElement>();
-            iconLE.minWidth        = aboutSprite.rect.width  * 0.9f;
-            iconLE.minHeight       = aboutSprite.rect.height * 0.9f;
-            iconLE.preferredWidth  = aboutSprite.rect.width  * 0.9f;
-            iconLE.preferredHeight = aboutSprite.rect.height * 0.9f;
-        }
-        tabAboutBtn.gameObject.AddComponent<ButtonSpringAnim>();
-
-        // Иконка Profile — спрайт buttons_36 (−10%)
-        var profileSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_36");
-        if (profileSprite != null)
-        {
-            iconProfile.sprite         = profileSprite;
-            iconProfile.type           = Image.Type.Simple;
-            iconProfile.preserveAspect = true;
-            iconProfile.color          = Color.white;
-            var iconLE             = iconProfile.GetComponent<LayoutElement>();
-            iconLE.minWidth        = profileSprite.rect.width  * 0.9f;
-            iconLE.minHeight       = profileSprite.rect.height * 0.9f;
-            iconLE.preferredWidth  = profileSprite.rect.width  * 0.9f;
-            iconLE.preferredHeight = profileSprite.rect.height * 0.9f;
-        }
-        tabProfBtn.gameObject.AddComponent<ButtonSpringAnim>();
-
-        // Иконка Records — спрайт buttons_42 (−10%)
-        var recordsSprite = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_42");
-        if (recordsSprite != null)
-        {
-            iconRecords.sprite         = recordsSprite;
-            iconRecords.type           = Image.Type.Simple;
-            iconRecords.preserveAspect = true;
-            iconRecords.color          = Color.white;
-            var iconLE             = iconRecords.GetComponent<LayoutElement>();
-            iconLE.minWidth        = recordsSprite.rect.width  * 0.9f;
-            iconLE.minHeight       = recordsSprite.rect.height * 0.9f;
-            iconLE.preferredWidth  = recordsSprite.rect.width  * 0.9f;
-            iconLE.preferredHeight = recordsSprite.rect.height * 0.9f;
-        }
-        tabRecsBtn.gameObject.AddComponent<ButtonSpringAnim>();
+        ApplyNavIcon(iconHome,     "btn_home");     tabHomeBtn.gameObject.AddComponent<ButtonSpringAnim>();
+        ApplyNavIcon(iconSettings, "btn_settings"); tabSetBtn.gameObject.AddComponent<ButtonSpringAnim>();
+        ApplyNavIcon(iconAbout,    "btn_about");    tabAboutBtn.gameObject.AddComponent<ButtonSpringAnim>();
+        ApplyNavIcon(iconProfile,  "btn_profile");  tabProfBtn.gameObject.AddComponent<ButtonSpringAnim>();
+        ApplyNavIcon(iconRecords,  "btn_records"); tabRecsBtn.gameObject.AddComponent<ButtonSpringAnim>();
 
         // ── Попап «нет вопросов» ─────────────────────────────────────────
         var popup = MakeGO("NoQuestionsPopup", canvasGO.transform);
