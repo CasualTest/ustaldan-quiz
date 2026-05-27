@@ -60,6 +60,13 @@ namespace UstAldanQuiz.Data
                 q.factAfterRu     = entry.factRu;
                 q.factAfterSah    = entry.factSah;
                 q.imageUrl        = entry.imageUrl;
+                q.questionType    = entry.questionType == "word_builder" ? QuestionType.WordBuilder : QuestionType.Standard;
+                q.wordAnswer      = entry.wordAnswer;
+                q.wordAnswerSah   = entry.wordAnswerSah;
+                q.extraLetters    = entry.extraLetters;
+                q.imageUrl2       = entry.imageUrl2;
+                q.imageUrl3       = entry.imageUrl3;
+                q.imageUrl4       = entry.imageUrl4;
                 catLookup.TryGetValue(entry.categoryId ?? "", out q.category);
                 allQuestions.Add(q);
             }
@@ -91,6 +98,13 @@ namespace UstAldanQuiz.Data
             public string   factRu;
             public string   factSah;
             public string   imageUrl;
+            public string   questionType;
+            public string   wordAnswer;
+            public string   wordAnswerSah;
+            public string   extraLetters;
+            public string   imageUrl2;
+            public string   imageUrl3;
+            public string   imageUrl4;
         }
 
         [Serializable]

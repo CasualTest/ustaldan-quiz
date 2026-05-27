@@ -36,6 +36,21 @@ namespace UstAldanQuiz.Data
         [Tooltip("1 = лёгкий, 2 = средний, 3 = сложный")]
         public int difficulty = 1;
 
+        [Header("Составь слово")]
+        public QuestionType questionType = QuestionType.Standard;
+        [Tooltip("Слово для составления (русский)")]
+        public string wordAnswer;
+        [Tooltip("Слово для составления (саха)")]
+        public string wordAnswerSah;
+        [Tooltip("Буквы-дистракторы строкой, напр. «АОИЕ»")]
+        public string extraLetters;
+        [Tooltip("URL 2-й картинки (режим «4 фото — 1 слово»)")]
+        public string imageUrl2;
+        [Tooltip("URL 3-й картинки")]
+        public string imageUrl3;
+        [Tooltip("URL 4-й картинки")]
+        public string imageUrl4;
+
         [Header("Факт")]
         [Tooltip("Показывается если игрок ответил неправильно (русский)")]
         [TextArea(2, 4)]

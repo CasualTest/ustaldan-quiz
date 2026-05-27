@@ -62,20 +62,22 @@ namespace UstAldanQuiz.Utils
 
         // ── Helpers ───────────────────────────────────────────────────────────
 
-        // https://.../Questions/History/hist_001.jpg → Questions/History/hist_001
+        // https://.../bucket/WordBuilder%2FW001%2F1.jpg → WordBuilder/W001/1
         private static string GetResourceName(string url)
         {
             var uri = new Uri(url);
-            string path = uri.AbsolutePath.TrimStart('/');
+            string path = Uri.UnescapeDataString(uri.AbsolutePath).TrimStart('/');
             int slash = path.IndexOf('/');
             if (slash >= 0) path = path.Substring(slash + 1);
             return Path.ChangeExtension(path, null);
         }
 
+        // Уникальный путь в кэше — заменяем слэши на _, чтобы не было коллизий
         private static string GetDiskPath(string url)
         {
-            string fileName = Path.GetFileName(new Uri(url).LocalPath);
-            return Path.Combine(CacheDir, fileName);
+            string path = Uri.UnescapeDataString(new Uri(url).AbsolutePath).TrimStart('/');
+            string safe = path.Replace('/', '_').Replace('\\', '_');
+            return Path.Combine(CacheDir, safe);
         }
 
         private static Texture2D LoadFromDisk(string path)

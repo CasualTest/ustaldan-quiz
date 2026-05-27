@@ -31,7 +31,26 @@ namespace UstAldanQuiz.UI
                 background.sprite = category.backgroundSprite;
                 background.color  = Color.white;
                 background.type   = Image.Type.Simple;
+
+                // Передаём тот же спрайт в Highlight, чтобы рамка выделения
+                // повторяла форму кнопки (закруглённые углы)
+                if (highlight != null)
+                {
+                    var hlImg = highlight.GetComponent<Image>();
+                    if (hlImg != null)
+                    {
+                        hlImg.sprite = category.backgroundSprite;
+                        hlImg.type   = Image.Type.Simple;
+                    }
+                }
             }
+
+            // Отключаем ColorTint на кнопке — цвет управляем вручную через Highlight
+            if (button != null)
+            {
+                button.transition = Selectable.Transition.None;
+            }
+
             button?.onClick.AddListener(() => OnClicked?.Invoke(this));
         }
 

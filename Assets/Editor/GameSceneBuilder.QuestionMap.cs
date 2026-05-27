@@ -161,18 +161,29 @@ public static partial class GameSceneBuilder
         Prop(soQW, "factPopup", factPopupComp);
         soQW.ApplyModifiedProperties();
 
+        // --- WordBuilderWindow из Prefab ---
+        var wbWinGO = InstantiateUIPrefab(WordBuilderWindowPath, canvasGO.transform);
+        if (wbWinGO == null) return;
+        var wbWin = wbWinGO.GetComponent<WordBuilderWindow>();
+
+        // Переиспользуем тот же FactPopup и для WordBuilderWindow
+        var soWBW = new UnityEditor.SerializedObject(wbWin);
+        Prop(soWBW, "factPopup", factPopupComp);
+        soWBW.ApplyModifiedProperties();
+
         // --- QuestionMapUI ---
         var mapManagerGO = MakeRootGO("QuestionMapManager");
         var mapUI        = mapManagerGO.AddComponent<QuestionMapUI>();
         var soMap        = new UnityEditor.SerializedObject(mapUI);
 
-        Prop(soMap, "tilePrefab",       tilePrefab?.GetComponent<QuestionTileUI>());
-        Prop(soMap, "mapContent",       content.transform);
-        Prop(soMap, "categoryNameText", catNameTMP);
-        Prop(soMap, "scoreText",        scoreTMP);
-        Prop(soMap, "btnBack",          btnBackGO.GetComponent<Button>());
-        Prop(soMap, "questionWindow",   qWin);
-        Prop(soMap, "btnFinish",        btnFinishGO.GetComponent<Button>());
+        Prop(soMap, "tilePrefab",          tilePrefab?.GetComponent<QuestionTileUI>());
+        Prop(soMap, "mapContent",          content.transform);
+        Prop(soMap, "categoryNameText",    catNameTMP);
+        Prop(soMap, "scoreText",           scoreTMP);
+        Prop(soMap, "btnBack",             btnBackGO.GetComponent<Button>());
+        Prop(soMap, "questionWindow",      qWin);
+        Prop(soMap, "wordBuilderWindow",   wbWin);
+        Prop(soMap, "btnFinish",           btnFinishGO.GetComponent<Button>());
         soMap.ApplyModifiedProperties();
 
         SaveScene("Assets/Scenes/QuestionMap.unity");

@@ -29,7 +29,8 @@ namespace UstAldanQuiz.UI
         [SerializeField] private Button btnFinish;
 
         [Header("Панель вопроса")]
-        [SerializeField] private QuestionWindow questionWindow;
+        [SerializeField] private QuestionWindow    questionWindow;
+        [SerializeField] private WordBuilderWindow wordBuilderWindow;
 
         [Header("Цвета")]
         [SerializeField] private Color colorDefault = Color.white;
@@ -63,6 +64,12 @@ namespace UstAldanQuiz.UI
 
             if (questionWindow != null)
                 questionWindow.OnClosed += HandleWindowClosed;
+
+            if (wordBuilderWindow != null)
+            {
+                wordBuilderWindow.OnAnswered += HandleWordBuilderAnswer;
+                wordBuilderWindow.OnClosed   += HandleWindowClosed;
+            }
 
             if (btnFinish != null) btnFinish.gameObject.SetActive(false);
 
@@ -108,6 +115,12 @@ namespace UstAldanQuiz.UI
             btnFinish?.onClick.RemoveAllListeners();
             if (questionWindow != null)
                 questionWindow.OnClosed -= HandleWindowClosed;
+
+            if (wordBuilderWindow != null)
+            {
+                wordBuilderWindow.OnAnswered -= HandleWordBuilderAnswer;
+                wordBuilderWindow.OnClosed   -= HandleWindowClosed;
+            }
         }
 
         // ── Map building ───────────────────────────────────────────────────
@@ -218,6 +231,14 @@ namespace UstAldanQuiz.UI
 
         private void ShowQuestion(QuestionData q)
         {
+            if (q.questionType == QuestionType.WordBuilder)
+            {
+                if (wordBuilderWindow == null) return;
+                wordBuilderWindow.Setup(q);
+                wordBuilderWindow.Open();
+                return;
+            }
+
             if (questionWindow == null) return;
 
             _shuffledIndices = new[] { 0, 1, 2, 3 };
@@ -309,6 +330,56 @@ namespace UstAldanQuiz.UI
                 if (questionWindow?.btnContinue != null)
                     questionWindow.btnContinue.gameObject.SetActive(true);
             });
+        }
+
+        // ── Составь слово ─────────────────────────────────────────────────
+
+        private void HandleWordBuilderAnswer(bool isCorrect)
+        {
+            if (wordBuilderWindow == null) return;
+
+            var feedback = wordBuilderWindow.resultFeedback;
+            if (feedback != null)
+            {
+                feedback.gameObject.SetActive(true);
+                feedback.text  = LocaleManager.Get(isCorrect ? "question_correct" : "question_wrong");
+                feedback.color = isCorrect ? colorCorrect : colorWrong;
+            }
+
+            if (isCorrect) { _correctCount++; AudioManager.Instance?.PlayCorrect(); HapticManager.Correct(); }
+            else           { AudioManager.Instance?.PlayWrong(); HapticManager.Wrong(); }
+
+            _answeredCount++;
+            _activeTile?.SetState(isCorrect ? TileState.Correct : TileState.Wrong);
+
+            string catId = _activeTile?.Question?.category?.categoryId ?? "";
+            if (_activeTile != null)
+                SaveManager.MarkQuestionAnswered(catId, _activeTile.Question.name, isCorrect);
+
+            UpdateProgress();
+
+            var    qd   = _activeTile?.Question;
+            bool   sah  = LocaleManager.CurrentLanguage == LocaleManager.LangSah;
+            string fact = sah && !string.IsNullOrWhiteSpace(qd?.factAfterSah)
+                ? qd.factAfterSah : qd?.factAfterRu;
+
+            if (!isCorrect && !string.IsNullOrWhiteSpace(fact) && wordBuilderWindow.factPopup != null)
+                StartCoroutine(ShowWBFactAfterDelay(fact, 0.8f));
+            else
+                StartCoroutine(ShowWBContinueAfterDelay(1.5f));
+        }
+
+        private IEnumerator ShowWBContinueAfterDelay(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            wordBuilderWindow?.btnContinue?.gameObject.SetActive(true);
+        }
+
+        private IEnumerator ShowWBFactAfterDelay(string fact, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            wordBuilderWindow?.factPopup?.Show(fact,
+                onClosed: () => wordBuilderWindow?.btnContinue?.gameObject.SetActive(true));
         }
 
         private void HandleWindowClosed()

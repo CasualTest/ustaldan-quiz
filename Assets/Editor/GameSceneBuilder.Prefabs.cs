@@ -8,11 +8,13 @@ using UstAldanQuiz.Utils;
 
 public static partial class GameSceneBuilder
 {
-    const string PrefabsPath           = "Assets/Prefabs/UI";
-    const string QuestionWindowPath    = "Assets/Prefabs/UI/QuestionWindow.prefab";
-    const string FactPopupPath         = "Assets/Prefabs/UI/FactPopup.prefab";
-    const string ProgressBarPath       = "Assets/Prefabs/UI/ProgressBar.prefab";
-    const string AnswerButtonPath      = "Assets/Prefabs/UI/AnswerButton.prefab";
+    const string PrefabsPath              = "Assets/Prefabs/UI";
+    const string QuestionWindowPath       = "Assets/Prefabs/UI/QuestionWindow.prefab";
+    const string FactPopupPath            = "Assets/Prefabs/UI/FactPopup.prefab";
+    const string ProgressBarPath          = "Assets/Prefabs/UI/ProgressBar.prefab";
+    const string AnswerButtonPath         = "Assets/Prefabs/UI/AnswerButton.prefab";
+    const string LetterTilePath           = "Assets/Prefabs/UI/LetterTile.prefab";
+    const string WordBuilderWindowPath    = "Assets/Prefabs/UI/WordBuilderWindow.prefab";
 
     // =====================================================================
     // МЕНЮ
@@ -24,8 +26,10 @@ public static partial class GameSceneBuilder
         EnsureAssetFolder("Assets/Prefabs");
         EnsureAssetFolder(PrefabsPath);
         BuildAnswerButtonPrefab();
+        BuildLetterTilePrefab();
         BuildQuestionWindowPrefab();
         BuildQuestionWindowFullPrefab();
+        BuildWordBuilderWindowPrefab();
         BuildFactPopupPrefab();
         BuildProgressBarPrefab();
         AssetDatabase.SaveAssets();
@@ -536,6 +540,242 @@ public static partial class GameSceneBuilder
         Selection.activeGameObject = null;
         Object.DestroyImmediate(root);
         Debug.Log("[GameSceneBuilder] ✓ ProgressBar.prefab");
+    }
+
+    // =====================================================================
+    // LetterTile.prefab  (буква в банке для режима «Составь слово»)
+    // =====================================================================
+
+    static void BuildLetterTilePrefab()
+    {
+        var font = FindFont();
+
+        var root = new GameObject("LetterTile", typeof(RectTransform));
+        root.AddComponent<CanvasGroup>();
+
+        var bg  = root.AddComponent<Image>();
+        bg.color = new Color(0.94f, 0.90f, 0.80f);
+
+        var btn = root.AddComponent<Button>();
+        btn.targetGraphic = bg;
+        btn.transition    = Selectable.Transition.None;
+        root.AddComponent<ButtonSpringAnim>();
+
+        var textGO = new GameObject("Label", typeof(RectTransform));
+        textGO.transform.SetParent(root.transform, false);
+        var textRT = textGO.GetComponent<RectTransform>();
+        textRT.anchorMin = Vector2.zero; textRT.anchorMax = Vector2.one;
+        textRT.offsetMin = textRT.offsetMax = Vector2.zero;
+        var tmp = textGO.AddComponent<TextMeshProUGUI>();
+        tmp.text      = "А";
+        tmp.fontSize  = 52;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color     = Hex("1A2A1A");
+        tmp.fontStyle = FontStyles.Bold;
+        if (font != null) tmp.font = font;
+
+        var tileUI = root.AddComponent<UstAldanQuiz.UI.LetterTileUI>();
+        var soTile = new UnityEditor.SerializedObject(tileUI);
+        Prop(soTile, "button",     btn);
+        Prop(soTile, "label",      tmp);
+        Prop(soTile, "background", bg);
+        soTile.ApplyModifiedProperties();
+
+        PrefabUtility.SaveAsPrefabAsset(root, LetterTilePath);
+        Selection.activeGameObject = null;
+        Object.DestroyImmediate(root);
+        Debug.Log("[GameSceneBuilder] ✓ LetterTile.prefab");
+    }
+
+    // =====================================================================
+    // WordBuilderWindow.prefab
+    // =====================================================================
+
+    static void BuildWordBuilderWindowPrefab()
+    {
+        var font = FindFont();
+        const string popupsAtlas = "Assets/Images/Sprites/popups.png";
+        EnsureReadable(popupsAtlas);
+        var sPopup = LoadSprite(popupsAtlas, "popups_3");
+        const string acAtlas = "Assets/Images/Sprites/additional controls.png";
+        EnsureReadable(acAtlas);
+        var sSpinner = LoadSprite(acAtlas, "additional controls_12");
+        EnsureReadable("Assets/Images/Sprites/buttons.png");
+        var sClose = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_10");
+
+        var letterTilePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(LetterTilePath);
+
+        // Root (no visual — MonoBehaviour корутины работают всегда)
+        var root = new GameObject("WordBuilderWindow", typeof(RectTransform));
+
+        // Overlay = panel
+        var overlay = MakeGO("Overlay", root.transform);
+        Stretch(overlay);
+        overlay.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.55f);
+        var overlayCG = overlay.AddComponent<CanvasGroup>();
+        overlay.SetActive(false);
+
+        // Sheet
+        var sheet   = MakeGO("Sheet", overlay.transform);
+        var sheetRT = sheet.GetComponent<RectTransform>();
+        sheetRT.anchorMin = new Vector2(0.03f, 0.04f);
+        sheetRT.anchorMax = new Vector2(0.97f, 0.94f);
+        sheetRT.offsetMin = sheetRT.offsetMax = Vector2.zero;
+        var sheetCG  = sheet.AddComponent<CanvasGroup>();
+        var sheetImg = sheet.AddComponent<Image>();
+        sheetImg.sprite = sPopup; sheetImg.type = Image.Type.Sliced; sheetImg.color = Color.white;
+        var sheetVLG = sheet.AddComponent<VerticalLayoutGroup>();
+        sheetVLG.childAlignment         = TextAnchor.UpperCenter;
+        sheetVLG.childForceExpandWidth  = true;
+        sheetVLG.childForceExpandHeight = false;
+        sheetVLG.childControlWidth = sheetVLG.childControlHeight = true;
+        sheetVLG.padding = new RectOffset(24, 24, 28, 28);
+        sheetVLG.spacing = 16;
+
+        // Zone_4Photo — 2×2 сетка для режима «4 фото»
+        var zone4 = MakeGO("Zone_4Photo", sheet.transform);
+        SetLE(zone4, minH: 340, prefH: 420);
+        var zone4Grid = zone4.AddComponent<GridLayoutGroup>();
+        zone4Grid.cellSize        = new Vector2(440, 165);
+        zone4Grid.spacing         = new Vector2(8, 8);
+        zone4Grid.padding         = new RectOffset(0, 0, 0, 0);
+        zone4Grid.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
+        zone4Grid.constraintCount = 2;
+        zone4Grid.childAlignment  = TextAnchor.MiddleCenter;
+        zone4.SetActive(false);
+
+        var photoImages = new RawImage[4];
+        for (int i = 0; i < 4; i++)
+        {
+            var phGO  = MakeGO($"Photo_{i}", zone4.transform);
+            phGO.AddComponent<Image>().color = new Color(0.14f, 0.14f, 0.14f);
+            var rawImg = MakeGO("RawImage", phGO.transform);
+            Stretch(rawImg);
+            photoImages[i] = rawImg.AddComponent<RawImage>();
+            var arf = rawImg.AddComponent<AspectRatioFitter>();
+            arf.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+        }
+
+        // Zone_Media — 1 фото (текстовый вопрос с картинкой)
+        var zoneMedia = MakeGO("Zone_Media", sheet.transform);
+        SetLE(zoneMedia, minH: 200, prefH: 220, flexH: 0.4f);
+        zoneMedia.SetActive(false);
+        var qImgGO = MakeGO("QuestionImage", zoneMedia.transform);
+        Stretch(qImgGO);
+        var qImg    = qImgGO.AddComponent<RawImage>();
+        var qImgARF = qImgGO.AddComponent<AspectRatioFitter>();
+        qImgARF.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+
+        var spinnerGO = MakeGO("Spinner", zoneMedia.transform);
+        var spinRT    = spinnerGO.GetComponent<RectTransform>();
+        spinRT.anchorMin        = new Vector2(0.5f, 0.5f);
+        spinRT.anchorMax        = new Vector2(0.5f, 0.5f);
+        spinRT.pivot            = new Vector2(0.5f, 0.5f);
+        spinRT.anchoredPosition = Vector2.zero;
+        spinRT.sizeDelta        = new Vector2(80f, 80f);
+        var spinImg = spinnerGO.AddComponent<Image>();
+        spinImg.sprite = sSpinner; spinImg.type = Image.Type.Simple; spinImg.preserveAspect = true;
+        spinnerGO.SetActive(false);
+
+        // Zone_Question — текст вопроса
+        var zoneQ   = MakeGO("Zone_Question", sheet.transform);
+        SetLE(zoneQ, minH: 80, prefH: 140, flexH: 0.3f);
+        var qTMP = MakeTMP("QuestionText", zoneQ.transform, "Составь слово...", 46, C_TEXT, font);
+        qTMP.enableWordWrapping = true;
+        qTMP.alignment          = TextAlignmentOptions.Center;
+        var qTMPRT = qTMP.GetComponent<RectTransform>();
+        qTMPRT.anchorMin = Vector2.zero; qTMPRT.anchorMax = Vector2.one;
+        qTMPRT.offsetMin = qTMPRT.offsetMax = Vector2.zero;
+
+        // Zone_Slots — слоты для введённых букв
+        var zoneSlots   = MakeGO("Zone_Slots", sheet.transform);
+        SetLE(zoneSlots, minH: 100, prefH: 110);
+        var slotsCSF = zoneSlots.AddComponent<ContentSizeFitter>();
+        slotsCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        var slotsGrid = zoneSlots.AddComponent<GridLayoutGroup>();
+        slotsGrid.cellSize        = new Vector2(88, 88);
+        slotsGrid.spacing         = new Vector2(10, 10);
+        slotsGrid.childAlignment  = TextAnchor.MiddleCenter;
+        slotsGrid.constraint      = GridLayoutGroup.Constraint.Flexible;
+
+        // Zone_Letters — банк букв
+        var zoneLetters   = MakeGO("Zone_Letters", sheet.transform);
+        SetLE(zoneLetters, minH: 100, prefH: 210, flexH: 0.5f);
+        var lettersCSF = zoneLetters.AddComponent<ContentSizeFitter>();
+        lettersCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        var lettersGrid = zoneLetters.AddComponent<GridLayoutGroup>();
+        lettersGrid.cellSize        = new Vector2(96, 96);
+        lettersGrid.spacing         = new Vector2(12, 12);
+        lettersGrid.childAlignment  = TextAnchor.MiddleCenter;
+        lettersGrid.constraint      = GridLayoutGroup.Constraint.Flexible;
+
+        // Zone_Bottom — фидбек + кнопка
+        var zoneBottom = MakeGO("Zone_Bottom", sheet.transform);
+        SetLE(zoneBottom, minH: 240, prefH: 240);
+
+        var feedbackTMP = MakeTMP("ResultFeedback", zoneBottom.transform, "Правильно!", 44, C_CORRECT, font);
+        var feedbackRT  = feedbackTMP.GetComponent<RectTransform>();
+        feedbackRT.anchorMin = new Vector2(0f, 0.55f); feedbackRT.anchorMax = Vector2.one;
+        feedbackRT.offsetMin = feedbackRT.offsetMax = Vector2.zero;
+        feedbackTMP.alignment = TextAlignmentOptions.Center;
+        feedbackTMP.gameObject.SetActive(false);
+
+        var btnContGO = MakePrimaryButton("BtnContinue", zoneBottom.transform, "Продолжить", font);
+        AddLocKey(btnContGO, "btn_continue");
+        var bcRT = btnContGO.GetComponent<RectTransform>();
+        bcRT.anchorMin        = new Vector2(0.5f, 0f);
+        bcRT.anchorMax        = new Vector2(0.5f, 0f);
+        bcRT.pivot            = new Vector2(0.5f, 0f);
+        bcRT.anchoredPosition = new Vector2(0f, 8f);
+        bcRT.sizeDelta        = new Vector2(520f, 150f);
+        btnContGO.SetActive(false);
+        ApplyHyperCasualButton(btnContGO, "Assets/Images/Sprites/buttons.png", "buttons_12", "buttons_13");
+
+        // BtnClose
+        var btnCloseGO = MakeGO("BtnClose", overlay.transform);
+        var btnCloseRT = btnCloseGO.GetComponent<RectTransform>();
+        btnCloseRT.anchorMin        = new Vector2(0.97f, 0.94f);
+        btnCloseRT.anchorMax        = new Vector2(0.97f, 0.94f);
+        btnCloseRT.pivot            = new Vector2(0.5f, 0.5f);
+        btnCloseRT.anchoredPosition = Vector2.zero;
+        btnCloseRT.sizeDelta        = new Vector2(110f, 110f);
+        var btnCloseImg = btnCloseGO.AddComponent<Image>();
+        btnCloseImg.sprite = sClose; btnCloseImg.type = Image.Type.Simple;
+        btnCloseImg.preserveAspect = true; btnCloseImg.color = Color.white;
+        if (sClose != null) btnCloseImg.alphaHitTestMinimumThreshold = 0.1f;
+        var btnCloseBtn = btnCloseGO.AddComponent<Button>();
+        btnCloseBtn.targetGraphic = btnCloseImg;
+        btnCloseBtn.transition    = Selectable.Transition.None;
+        btnCloseGO.AddComponent<ButtonSFX>();
+        btnCloseGO.AddComponent<ButtonSpringAnim>();
+
+        // Компонент WordBuilderWindow
+        var wbw  = root.AddComponent<UstAldanQuiz.UI.WordBuilderWindow>();
+        var soWB = new UnityEditor.SerializedObject(wbw);
+        Prop(soWB, "panel",              overlay);
+        Prop(soWB, "btnClose",           btnCloseBtn);
+        Prop(soWB, "sheetRect",          sheetRT);
+        Prop(soWB, "sheetGroup",         sheetCG);
+        Prop(soWB, "overlayGroup",       overlayCG);
+        Prop(soWB, "questionText",       qTMP);
+        Prop(soWB, "zone4Photo",         zone4);
+        Prop(soWB, "mediaZone",          zoneMedia);
+        Prop(soWB, "questionImage",      qImg);
+        Prop(soWB, "imageAspectFitter",  qImgARF);
+        Prop(soWB, "spinnerImage",       spinImg);
+        Prop(soWB, "slotsContainer",     zoneSlots.GetComponent<RectTransform>());
+        Prop(soWB, "lettersContainer",   zoneLetters.GetComponent<RectTransform>());
+        if (letterTilePrefab != null)
+            Prop(soWB, "letterTilePrefab", letterTilePrefab.GetComponent<UstAldanQuiz.UI.LetterTileUI>());
+        Prop(soWB, "resultFeedback",     feedbackTMP);
+        Prop(soWB, "btnContinue",        btnContGO.GetComponent<Button>());
+        SetArr(soWB, "photoImages", photoImages);
+        soWB.ApplyModifiedProperties();
+
+        PrefabUtility.SaveAsPrefabAsset(root, WordBuilderWindowPath);
+        Selection.activeGameObject = null;
+        Object.DestroyImmediate(root);
+        Debug.Log("[GameSceneBuilder] ✓ WordBuilderWindow.prefab");
     }
 
     // =====================================================================

@@ -219,6 +219,15 @@ public static partial class GameSceneBuilder
         Prop(soQW, "factPopup", factPopupComp);
         soQW.ApplyModifiedProperties();
 
+        // ── WordBuilderWindow из Prefab ──────────────────────────────────────
+        var wbWinGO = InstantiateUIPrefab(WordBuilderWindowPath, canvasGO.transform);
+        if (wbWinGO == null) return;
+        var wbWin = wbWinGO.GetComponent<WordBuilderWindow>();
+
+        var soWBW = new UnityEditor.SerializedObject(wbWin);
+        Prop(soWBW, "factPopup", factPopupComp);
+        soWBW.ApplyModifiedProperties();
+
         // ── RoadmapTile Prefab ───────────────────────────────────────────────
         var tilePrefab = CreateRoadmapTilePrefab(font);
 
@@ -229,15 +238,16 @@ public static partial class GameSceneBuilder
         var roadmapUI = mgrGO.AddComponent<RoadmapUI>();
         var soMap    = new UnityEditor.SerializedObject(roadmapUI);
 
-        Prop(soMap, "questionDatabase", db);
-        Prop(soMap, "tilePrefab",       tilePrefab?.GetComponent<RoadmapTileUI>());
-        Prop(soMap, "mapContent",       mapContentRT);
-        Prop(soMap, "linesContainer",   linesRT);
-        Prop(soMap, "progressBar",      progressBarComp);
-        Prop(soMap, "btnBack",          btnBackGO.GetComponent<Button>());
-        Prop(soMap, "btnReset",         btnResetGO.GetComponent<Button>());
-        Prop(soMap, "btnFinish",        bfBtn);
-        Prop(soMap, "questionWindow",   qWin);
+        Prop(soMap, "questionDatabase",  db);
+        Prop(soMap, "tilePrefab",        tilePrefab?.GetComponent<RoadmapTileUI>());
+        Prop(soMap, "mapContent",        mapContentRT);
+        Prop(soMap, "linesContainer",    linesRT);
+        Prop(soMap, "progressBar",       progressBarComp);
+        Prop(soMap, "btnBack",           btnBackGO.GetComponent<Button>());
+        Prop(soMap, "btnReset",          btnResetGO.GetComponent<Button>());
+        Prop(soMap, "btnFinish",         bfBtn);
+        Prop(soMap, "questionWindow",    qWin);
+        Prop(soMap, "wordBuilderWindow", wbWin);
         soMap.ApplyModifiedProperties();
 
         SaveScene("Assets/Scenes/Roadmap.unity");
