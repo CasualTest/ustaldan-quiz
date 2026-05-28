@@ -32,7 +32,6 @@ namespace UstAldanQuiz.UI
         public TMP_Text[] answerLabels  = new TMP_Text[4];
 
         [Header("Результат")]
-        public TMP_Text  resultFeedback;
         public Button    btnContinue;
         public FactPopup factPopup;
 

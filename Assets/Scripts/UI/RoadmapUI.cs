@@ -262,8 +262,6 @@ namespace UstAldanQuiz.UI
                 btns[i].onClick.AddListener(() => HandleAnswer(captured));
             }
 
-            if (questionWindowFull.resultFeedback != null)
-                questionWindowFull.resultFeedback.gameObject.SetActive(false);
             if (questionWindowFull.btnContinue != null)
                 questionWindowFull.btnContinue.gameObject.SetActive(false);
 
@@ -284,13 +282,6 @@ namespace UstAldanQuiz.UI
                 btns[correctDisplay].image.color = colorCorrect;
             if (!isCorrect && btns[displayedIndex] != null)
                 btns[displayedIndex].image.color = colorWrong;
-
-            if (questionWindowFull.resultFeedback != null)
-            {
-                questionWindowFull.resultFeedback.gameObject.SetActive(true);
-                questionWindowFull.resultFeedback.text  = LocaleManager.Get(isCorrect ? "question_correct" : "question_wrong");
-                questionWindowFull.resultFeedback.color = isCorrect ? colorCorrect : colorWrong;
-            }
 
             if (isCorrect) { _correctCount++; AudioManager.Instance?.PlayCorrect(); HapticManager.Correct(); }
             else           { AudioManager.Instance?.PlayWrong(); HapticManager.Wrong(); }
@@ -337,14 +328,6 @@ namespace UstAldanQuiz.UI
         private void HandleWordBuilderAnswer(bool isCorrect)
         {
             if (wordBuilderWindow == null) return;
-
-            var feedback = wordBuilderWindow.resultFeedback;
-            if (feedback != null)
-            {
-                feedback.gameObject.SetActive(true);
-                feedback.text  = LocaleManager.Get(isCorrect ? "question_correct" : "question_wrong");
-                feedback.color = isCorrect ? colorCorrect : colorWrong;
-            }
 
             if (isCorrect) { _correctCount++; AudioManager.Instance?.PlayCorrect(); HapticManager.Correct(); }
             else           { AudioManager.Instance?.PlayWrong(); HapticManager.Wrong(); }

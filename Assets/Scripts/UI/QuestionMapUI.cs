@@ -163,7 +163,6 @@ namespace UstAldanQuiz.UI
                 btns[i].onClick.AddListener(() => HandleAnswer(captured));
             }
 
-            questionWindowFull.resultFeedback?.gameObject.SetActive(false);
             questionWindowFull.btnContinue?.gameObject.SetActive(false);
 
             questionWindowFull.Open();
@@ -185,14 +184,6 @@ namespace UstAldanQuiz.UI
                 btns[correctDisplay].image.color = colorCorrect;
             if (!isCorrect && btns[displayedIndex] != null)
                 btns[displayedIndex].image.color = colorWrong;
-
-            var feedback = questionWindowFull.resultFeedback;
-            if (feedback != null)
-            {
-                feedback.gameObject.SetActive(true);
-                feedback.text  = LocaleManager.Get(isCorrect ? "question_correct" : "question_wrong");
-                feedback.color = isCorrect ? colorCorrect : colorWrong;
-            }
 
             if (isCorrect)
             {
@@ -244,14 +235,6 @@ namespace UstAldanQuiz.UI
         private void HandleWordBuilderAnswer(bool isCorrect)
         {
             if (wordBuilderWindow == null) return;
-
-            var feedback = wordBuilderWindow.resultFeedback;
-            if (feedback != null)
-            {
-                feedback.gameObject.SetActive(true);
-                feedback.text  = LocaleManager.Get(isCorrect ? "question_correct" : "question_wrong");
-                feedback.color = isCorrect ? colorCorrect : colorWrong;
-            }
 
             if (isCorrect)
             {

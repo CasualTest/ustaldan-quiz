@@ -10,8 +10,19 @@ using UstAldanQuiz.Utils;
 
 namespace UstAldanQuiz.UI
 {
-    public class WordBuilderWindow : BaseWindow
+    public class WordBuilderWindow : MonoBehaviour
     {
+        [Header("Панель")]
+        [SerializeField] private GameObject  panel;
+        [SerializeField] private CanvasGroup panelGroup;
+        [SerializeField] private Button      btnClose;
+
+        [Header("Зум фото")]
+        [SerializeField] private GameObject        imageZoomOverlay;
+        [SerializeField] private CanvasGroup       zoomOverlayGroup;
+        [SerializeField] private RawImage          zoomedImage;
+        [SerializeField] private AspectRatioFitter zoomedImageFitter;
+
         [Header("Вопрос")]
         public TMP_Text questionText;
 
@@ -24,6 +35,7 @@ namespace UstAldanQuiz.UI
         public RawImage          questionImage;
         public AspectRatioFitter imageAspectFitter;
         public Image             spinnerImage;
+        public Button            questionImageButton;
 
         [Header("Слоты ответа")]
         public RectTransform slotsContainer;
@@ -35,15 +47,14 @@ namespace UstAldanQuiz.UI
         public LetterTileUI  letterTilePrefab;
 
         [Header("Результат")]
-        public TMP_Text  resultFeedback;
         public Button    btnContinue;
         public FactPopup factPopup;
 
-        // ── Events ────────────────────────────────────────────────────────────
         public event Action<bool> OnAnswered;
         public event Action       OnClosed;
 
-        // ── State ─────────────────────────────────────────────────────────────
+        private Coroutine          _anim;
+        private Coroutine          _zoomAnim;
         private string             _targetWord;
         private List<LetterTileUI> _bankTiles    = new();
         private int[]              _slotBankIdx;
@@ -53,27 +64,46 @@ namespace UstAldanQuiz.UI
         private bool               _answered;
         private Coroutine          _spinRoutine;
 
+        private const float DurationOpen  = 0.20f;
+        private const float DurationClose = 0.15f;
         private static readonly Color C_SLOT_TEXT = new Color(0.10f, 0.16f, 0.10f);
 
-        // ── BaseWindow hooks ──────────────────────────────────────────────────
+        // ── Unity lifecycle ────────────────────────────────────────────────────
 
-        protected override void OnWindowStart()
+        private void Start()
         {
+            btnClose?.onClick.AddListener(Close);
             btnContinue?.onClick.AddListener(Close);
+            imageZoomOverlay?.GetComponent<Button>()?.onClick.AddListener(HideZoom);
+            questionImageButton?.onClick.AddListener(
+                () => { var t = questionImage?.texture; if (t != null) ShowZoom(t); });
+            if (panel != null) panel.SetActive(false);
+            if (imageZoomOverlay != null) imageZoomOverlay.SetActive(false);
         }
 
-        protected override void OnWindowDestroy()
+        private void OnDestroy()
         {
+            btnClose?.onClick.RemoveAllListeners();
             btnContinue?.onClick.RemoveAllListeners();
-        }
-
-        public override void Close()
-        {
-            base.Close();
-            OnClosed?.Invoke();
+            imageZoomOverlay?.GetComponent<Button>()?.onClick.RemoveAllListeners();
+            questionImageButton?.onClick.RemoveAllListeners();
         }
 
         // ── Public API ────────────────────────────────────────────────────────
+
+        public void Open()
+        {
+            panel?.SetActive(true);
+            if (_anim != null) StopCoroutine(_anim);
+            _anim = StartCoroutine(AnimateOpen());
+        }
+
+        public void Close()
+        {
+            if (panel != null && !panel.activeSelf) return;
+            if (_anim != null) StopCoroutine(_anim);
+            _anim = StartCoroutine(AnimateClose());
+        }
 
         public void Setup(QuestionData q)
         {
@@ -85,7 +115,6 @@ namespace UstAldanQuiz.UI
 
             bool is4Photo = !string.IsNullOrEmpty(q.imageUrl2);
 
-            // Question text
             if (questionText != null)
             {
                 string text = is4Photo ? "" : GetLocalizedQuestion(q);
@@ -93,7 +122,6 @@ namespace UstAldanQuiz.UI
                 questionText.gameObject.SetActive(!string.IsNullOrWhiteSpace(text));
             }
 
-            // Media zones
             if (zone4Photo != null) zone4Photo.SetActive(is4Photo);
             if (mediaZone  != null) mediaZone.SetActive(!is4Photo && !string.IsNullOrEmpty(q.imageUrl));
 
@@ -103,6 +131,17 @@ namespace UstAldanQuiz.UI
                 LoadPhoto(q.imageUrl2, 1);
                 LoadPhoto(q.imageUrl3, 2);
                 LoadPhoto(q.imageUrl4, 3);
+
+                for (int pi = 0; pi < photoImages.Length; pi++)
+                {
+                    int idx = pi;
+                    var btn = photoImages[pi]?.GetComponentInParent<Button>(true);
+                    if (btn != null)
+                    {
+                        btn.onClick.RemoveAllListeners();
+                        btn.onClick.AddListener(() => { var t = photoImages[idx]?.texture; if (t != null) ShowZoom(t); });
+                    }
+                }
             }
             else if (!string.IsNullOrEmpty(q.imageUrl))
             {
@@ -112,8 +151,56 @@ namespace UstAldanQuiz.UI
             BuildLetterBank(q, sah);
             BuildSlots(_targetWord.Length);
 
-            if (resultFeedback != null) resultFeedback.gameObject.SetActive(false);
-            if (btnContinue    != null) btnContinue.gameObject.SetActive(false);
+            if (btnContinue != null) btnContinue.gameObject.SetActive(false);
+        }
+
+        // ── Zoom ──────────────────────────────────────────────────────────────
+
+        private void ShowZoom(Texture texture)
+        {
+            if (imageZoomOverlay == null || zoomedImage == null) return;
+            zoomedImage.texture = texture;
+            if (zoomedImageFitter != null && texture.width > 0 && texture.height > 0)
+                zoomedImageFitter.aspectRatio = (float)texture.width / texture.height;
+            if (_zoomAnim != null) StopCoroutine(_zoomAnim);
+            _zoomAnim = StartCoroutine(AnimateZoomIn());
+        }
+
+        private void HideZoom()
+        {
+            if (imageZoomOverlay == null || !imageZoomOverlay.activeSelf) return;
+            if (_zoomAnim != null) StopCoroutine(_zoomAnim);
+            _zoomAnim = StartCoroutine(AnimateZoomOut());
+        }
+
+        private IEnumerator AnimateZoomIn()
+        {
+            imageZoomOverlay.SetActive(true);
+            if (zoomOverlayGroup != null)
+            {
+                zoomOverlayGroup.alpha = 0f;
+                for (float t = 0f; t < 0.18f; t += Time.unscaledDeltaTime)
+                {
+                    zoomOverlayGroup.alpha = EaseOutCubic(t / 0.18f);
+                    yield return null;
+                }
+                zoomOverlayGroup.alpha = 1f;
+            }
+        }
+
+        private IEnumerator AnimateZoomOut()
+        {
+            if (zoomOverlayGroup != null)
+            {
+                float a0 = zoomOverlayGroup.alpha;
+                for (float t = 0f; t < 0.12f; t += Time.unscaledDeltaTime)
+                {
+                    zoomOverlayGroup.alpha = Mathf.Lerp(a0, 0f, t / 0.12f);
+                    yield return null;
+                }
+                zoomOverlayGroup.alpha = 0f;
+            }
+            imageZoomOverlay.SetActive(false);
         }
 
         // ── Letter bank ───────────────────────────────────────────────────────
@@ -136,7 +223,6 @@ namespace UstAldanQuiz.UI
             foreach (char c in (q.extraLetters?.ToUpper() ?? ""))
                 if (char.IsLetter(c)) letters.Add(c);
 
-            // Fisher-Yates shuffle
             for (int i = letters.Count - 1; i > 0; i--)
             {
                 int j = UnityEngine.Random.Range(0, i + 1);
@@ -209,9 +295,9 @@ namespace UstAldanQuiz.UI
             if (emptySlot < 0) return;
 
             _bankTiles[bankIdx].SetUsed(true);
-            _slotBankIdx[emptySlot]          = bankIdx;
-            _slotTexts[emptySlot].text       = _bankTiles[bankIdx].Letter.ToString();
-            _slotBgImages[emptySlot].color   = slotFilledColor;
+            _slotBankIdx[emptySlot]        = bankIdx;
+            _slotTexts[emptySlot].text     = _bankTiles[bankIdx].Letter.ToString();
+            _slotBgImages[emptySlot].color = slotFilledColor;
 
             CheckIfComplete();
         }
@@ -331,11 +417,34 @@ namespace UstAldanQuiz.UI
 
         private IEnumerator SpinLoop()
         {
-            while (true)
+            while (true) { spinnerImage.transform.Rotate(0f, 0f, -360f * Time.deltaTime); yield return null; }
+        }
+
+        // ── Анимации ──────────────────────────────────────────────────────────
+
+        private IEnumerator AnimateOpen()
+        {
+            if (panelGroup != null) panelGroup.alpha = 0f;
+            for (float t = 0f; t < DurationOpen; t += Time.unscaledDeltaTime)
             {
-                spinnerImage.transform.Rotate(0f, 0f, -360f * Time.deltaTime);
+                if (panelGroup != null) panelGroup.alpha = EaseOutCubic(t / DurationOpen);
                 yield return null;
             }
+            if (panelGroup != null) panelGroup.alpha = 1f;
+        }
+
+        private IEnumerator AnimateClose()
+        {
+            float a0 = panelGroup != null ? panelGroup.alpha : 1f;
+            for (float t = 0f; t < DurationClose; t += Time.unscaledDeltaTime)
+            {
+                if (panelGroup != null)
+                    panelGroup.alpha = Mathf.Lerp(a0, 0f, t / DurationClose);
+                yield return null;
+            }
+            if (panelGroup != null) panelGroup.alpha = 0f;
+            panel?.SetActive(false);
+            OnClosed?.Invoke();
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────
@@ -346,5 +455,8 @@ namespace UstAldanQuiz.UI
             if (useSah && !string.IsNullOrWhiteSpace(q.questionTextSah)) return q.questionTextSah;
             return q.questionText;
         }
+
+        private static float EaseOutCubic(float x) =>
+            1f - Mathf.Pow(1f - Mathf.Clamp01(x), 3f);
     }
 }
