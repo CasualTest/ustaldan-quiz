@@ -166,7 +166,6 @@ public static partial class GameSceneBuilder
         if (wbWinGO == null) return;
         var wbWin = wbWinGO.GetComponent<WordBuilderWindow>();
 
-        // Переиспользуем тот же FactPopup и для WordBuilderWindow
         var soWBW = new UnityEditor.SerializedObject(wbWin);
         Prop(soWBW, "factPopup", factPopupComp);
         soWBW.ApplyModifiedProperties();
@@ -181,9 +180,14 @@ public static partial class GameSceneBuilder
         Prop(soMap, "categoryNameText",    catNameTMP);
         Prop(soMap, "scoreText",           scoreTMP);
         Prop(soMap, "btnBack",             btnBackGO.GetComponent<Button>());
-        Prop(soMap, "questionWindow",      qWin);
+        Prop(soMap, "questionWindowFull",  qWin);
         Prop(soMap, "wordBuilderWindow",   wbWin);
         Prop(soMap, "btnFinish",           btnFinishGO.GetComponent<Button>());
+
+        // colorDefault = белый (цвет Image при сбросе; серость даёт спрайт bg_gray)
+        var colorProp = soMap.FindProperty("colorDefault");
+        if (colorProp != null) colorProp.colorValue = Color.white;
+
         soMap.ApplyModifiedProperties();
 
         SaveScene("Assets/Scenes/QuestionMap.unity");

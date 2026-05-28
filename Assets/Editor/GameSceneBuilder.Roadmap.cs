@@ -206,7 +206,7 @@ public static partial class GameSceneBuilder
         AddLocKey(btnFinishGO, "btn_main_menu");
         btnFinishGO.SetActive(false);
 
-        // ── QuestionWindow + FactPopup из Prefab ────────────────────────────
+        // ── QuestionWindow + FactPopup из Prefab ────────────────────────
         var qWinGO = InstantiateUIPrefab(QuestionWindowPath, canvasGO.transform);
         if (qWinGO == null) return;
         var qWin = qWinGO.GetComponent<QuestionWindow>();
@@ -246,7 +246,7 @@ public static partial class GameSceneBuilder
         Prop(soMap, "btnBack",           btnBackGO.GetComponent<Button>());
         Prop(soMap, "btnReset",          btnResetGO.GetComponent<Button>());
         Prop(soMap, "btnFinish",         bfBtn);
-        Prop(soMap, "questionWindow",    qWin);
+        Prop(soMap, "questionWindowFull", qWin);
         Prop(soMap, "wordBuilderWindow", wbWin);
         soMap.ApplyModifiedProperties();
 

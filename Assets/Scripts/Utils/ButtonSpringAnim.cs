@@ -32,7 +32,7 @@ namespace UstAldanQuiz.Utils
         private IEnumerator SquishDown()
         {
             float start = transform.localScale.x;
-            const float target   = 0.90f;
+            const float target   = 0.95f;
             const float duration = 0.08f;
             for (float t = 0; t < duration; t += Time.unscaledDeltaTime)
             {
@@ -48,9 +48,9 @@ namespace UstAldanQuiz.Utils
         {
             // A = startScale - 1 (обычно −0.10 после сжатия до 0.90)
             float amp = transform.localScale.x - 1f;
-            const float damping  = 8f;  // затухание
-            const float omega    = 22f; // угловая частота (рад/с)
-            const float duration = 0.6f;
+            const float damping  = 14f; // затухание
+            const float omega    = 14f; // угловая частота (рад/с)
+            const float duration = 0.4f;
             for (float t = 0; t < duration; t += Time.unscaledDeltaTime)
             {
                 float s = 1f + amp * Mathf.Exp(-damping * t) * Mathf.Cos(omega * t);

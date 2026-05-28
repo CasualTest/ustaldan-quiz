@@ -22,8 +22,7 @@ namespace UstAldanQuiz.UI
         [SerializeField] private Button   btnBack;
 
         [Header("Панель вопроса")]
-        [SerializeField] private QuestionWindow     questionWindow;
-        [SerializeField] private QuestionWindowFull questionWindowFull;
+        [SerializeField] private QuestionWindow questionWindowFull;
 
         [Header("Составь слово")]
         [SerializeField] private WordBuilderWindow wordBuilderWindow;
@@ -47,25 +46,12 @@ namespace UstAldanQuiz.UI
 
         private static readonly string[] Prefixes = { "A", "B", "C", "D" };
 
-        private bool        UseFullWindow  => questionWindowFull != null;
-        private TMP_Text    WQuestionText  => UseFullWindow ? questionWindowFull.questionText  : questionWindow?.questionText;
-        private Button[]    WAnswerBtns    => UseFullWindow ? questionWindowFull.answerButtons : questionWindow?.answerButtons;
-        private TMP_Text[]  WAnswerLabels  => UseFullWindow ? questionWindowFull.answerLabels  : questionWindow?.answerLabels;
-        private TMP_Text    WFeedback      => UseFullWindow ? questionWindowFull.resultFeedback : questionWindow?.resultFeedback;
-        private Button      WBtnContinue   => UseFullWindow ? questionWindowFull.btnContinue   : questionWindow?.btnContinue;
-        private FactPopup   WFactPopup     => UseFullWindow ? questionWindowFull.factPopup      : questionWindow?.factPopup;
-
-        private void WOpen()  { if (UseFullWindow) questionWindowFull.Open();  else questionWindow?.Open(); }
-        private void WClose() { if (UseFullWindow) questionWindowFull.Close(); else questionWindow?.Close(); }
-        private void WShowImage(string url) { if (UseFullWindow) questionWindowFull.ShowImage(url); else questionWindow?.ShowImage(url); }
-
         private void Start()
         {
             btnBack?.onClick.AddListener(GoToMainMenu);
             btnFinish?.onClick.AddListener(GoToResults);
 
             if (questionWindowFull != null) questionWindowFull.OnClosed += HandleWindowClosed;
-            else if (questionWindow != null) questionWindow.OnClosed   += HandleWindowClosed;
 
             if (wordBuilderWindow != null)
             {
@@ -97,7 +83,6 @@ namespace UstAldanQuiz.UI
             btnBack?.onClick.RemoveAllListeners();
             btnFinish?.onClick.RemoveAllListeners();
             if (questionWindowFull != null) questionWindowFull.OnClosed -= HandleWindowClosed;
-            else if (questionWindow != null) questionWindow.OnClosed   -= HandleWindowClosed;
 
             if (wordBuilderWindow != null)
             {
@@ -151,23 +136,22 @@ namespace UstAldanQuiz.UI
                 return;
             }
 
-            if (!UseFullWindow && questionWindow == null) return;
+            if (questionWindowFull == null) return;
 
             _shuffledIndices = new[] { 0, 1, 2, 3 };
             ShuffleArray(_shuffledIndices);
 
-            if (WQuestionText != null)
-                WQuestionText.text = GetLocalizedQuestion(q);
+            if (questionWindowFull.questionText != null)
+                questionWindowFull.questionText.text = GetLocalizedQuestion(q);
 
-            WShowImage(q.imageUrl);
+            questionWindowFull.ShowImage(q.imageUrl);
 
-            if (UseFullWindow)
-                questionWindowFull.SetHeader(
-                    GameManager.Instance?.SelectedCategory?.displayName ?? "",
-                    scoreText != null ? scoreText.text : "");
+            questionWindowFull.SetHeader(
+                GameManager.Instance?.SelectedCategory?.displayName ?? "",
+                scoreText != null ? scoreText.text : "");
 
-            var btns   = WAnswerBtns;
-            var labels = WAnswerLabels;
+            var btns   = questionWindowFull.answerButtons;
+            var labels = questionWindowFull.answerLabels;
             for (int i = 0; i < btns.Length; i++)
             {
                 if (btns[i] == null) continue;
@@ -179,22 +163,22 @@ namespace UstAldanQuiz.UI
                 btns[i].onClick.AddListener(() => HandleAnswer(captured));
             }
 
-            WFeedback?.gameObject.SetActive(false);
-            WBtnContinue?.gameObject.SetActive(false);
+            questionWindowFull.resultFeedback?.gameObject.SetActive(false);
+            questionWindowFull.btnContinue?.gameObject.SetActive(false);
 
-            WOpen();
+            questionWindowFull.Open();
         }
 
         // ── Ответ ─────────────────────────────────────────────────────────
 
         private void HandleAnswer(int displayedIndex)
         {
-            if (!UseFullWindow && questionWindow == null) return;
+            if (questionWindowFull == null) return;
 
             bool isCorrect      = _shuffledIndices[displayedIndex] == 0;
             int  correctDisplay = Array.IndexOf(_shuffledIndices, 0);
 
-            var btns = WAnswerBtns;
+            var btns = questionWindowFull.answerButtons;
             foreach (var btn in btns) if (btn != null) btn.interactable = false;
 
             if (btns[correctDisplay] != null)
@@ -202,7 +186,7 @@ namespace UstAldanQuiz.UI
             if (!isCorrect && btns[displayedIndex] != null)
                 btns[displayedIndex].image.color = colorWrong;
 
-            var feedback = WFeedback;
+            var feedback = questionWindowFull.resultFeedback;
             if (feedback != null)
             {
                 feedback.gameObject.SetActive(true);
@@ -237,7 +221,7 @@ namespace UstAldanQuiz.UI
             string fact = sah && !string.IsNullOrWhiteSpace(qd?.factAfterSah)
                 ? qd.factAfterSah : qd?.factAfterRu;
 
-            if (!isCorrect && !string.IsNullOrWhiteSpace(fact) && WFactPopup != null)
+            if (!isCorrect && !string.IsNullOrWhiteSpace(fact) && questionWindowFull.factPopup != null)
                 StartCoroutine(ShowFactAfterDelay(fact, 0.8f));
             else
                 StartCoroutine(ShowContinueAfterDelay(1.5f));
@@ -246,13 +230,13 @@ namespace UstAldanQuiz.UI
         private IEnumerator ShowContinueAfterDelay(float delay)
         {
             yield return new WaitForSeconds(delay);
-            WBtnContinue?.gameObject.SetActive(true);
+            questionWindowFull?.btnContinue?.gameObject.SetActive(true);
         }
 
         private IEnumerator ShowFactAfterDelay(string fact, float delay)
         {
             yield return new WaitForSeconds(delay);
-            WFactPopup?.Show(fact, onClosed: () => WBtnContinue?.gameObject.SetActive(true));
+            questionWindowFull?.factPopup?.Show(fact, onClosed: () => questionWindowFull?.btnContinue?.gameObject.SetActive(true));
         }
 
         // ── Составь слово ─────────────────────────────────────────────────

@@ -29,8 +29,8 @@ namespace UstAldanQuiz.UI
         [SerializeField] private Button btnFinish;
 
         [Header("Панель вопроса")]
-        [SerializeField] private QuestionWindow    questionWindow;
-        [SerializeField] private WordBuilderWindow wordBuilderWindow;
+        [SerializeField] private QuestionWindow questionWindowFull;
+        [SerializeField] private WordBuilderWindow  wordBuilderWindow;
 
         [Header("Цвета")]
         [SerializeField] private Color colorDefault = Color.white;
@@ -62,8 +62,8 @@ namespace UstAldanQuiz.UI
             btnReset?.onClick.AddListener(ResetProgress);
             btnFinish?.onClick.AddListener(GoToMainMenu);
 
-            if (questionWindow != null)
-                questionWindow.OnClosed += HandleWindowClosed;
+            if (questionWindowFull != null)
+                questionWindowFull.OnClosed += HandleWindowClosed;
 
             if (wordBuilderWindow != null)
             {
@@ -113,8 +113,8 @@ namespace UstAldanQuiz.UI
             btnBack?.onClick.RemoveAllListeners();
             btnReset?.onClick.RemoveAllListeners();
             btnFinish?.onClick.RemoveAllListeners();
-            if (questionWindow != null)
-                questionWindow.OnClosed -= HandleWindowClosed;
+            if (questionWindowFull != null)
+                questionWindowFull.OnClosed -= HandleWindowClosed;
 
             if (wordBuilderWindow != null)
             {
@@ -239,18 +239,18 @@ namespace UstAldanQuiz.UI
                 return;
             }
 
-            if (questionWindow == null) return;
+            if (questionWindowFull == null) return;
 
             _shuffledIndices = new[] { 0, 1, 2, 3 };
             ShuffleArray(_shuffledIndices);
 
-            if (questionWindow.questionText != null)
-                questionWindow.questionText.text = GetLocalizedQuestion(q);
+            if (questionWindowFull.questionText != null)
+                questionWindowFull.questionText.text = GetLocalizedQuestion(q);
 
-            questionWindow.ShowImage(q.imageUrl);
+            questionWindowFull.ShowImage(q.imageUrl);
 
-            var btns   = questionWindow.answerButtons;
-            var labels = questionWindow.answerLabels;
+            var btns   = questionWindowFull.answerButtons;
+            var labels = questionWindowFull.answerLabels;
             for (int i = 0; i < btns.Length; i++)
             {
                 if (btns[i] == null) continue;
@@ -262,22 +262,22 @@ namespace UstAldanQuiz.UI
                 btns[i].onClick.AddListener(() => HandleAnswer(captured));
             }
 
-            if (questionWindow.resultFeedback != null)
-                questionWindow.resultFeedback.gameObject.SetActive(false);
-            if (questionWindow.btnContinue != null)
-                questionWindow.btnContinue.gameObject.SetActive(false);
+            if (questionWindowFull.resultFeedback != null)
+                questionWindowFull.resultFeedback.gameObject.SetActive(false);
+            if (questionWindowFull.btnContinue != null)
+                questionWindowFull.btnContinue.gameObject.SetActive(false);
 
-            questionWindow.Open();
+            questionWindowFull.Open();
         }
 
         private void HandleAnswer(int displayedIndex)
         {
-            if (questionWindow == null) return;
+            if (questionWindowFull == null) return;
 
             bool isCorrect      = _shuffledIndices[displayedIndex] == 0;
             int  correctDisplay = Array.IndexOf(_shuffledIndices, 0);
 
-            var btns = questionWindow.answerButtons;
+            var btns = questionWindowFull.answerButtons;
             foreach (var btn in btns) if (btn != null) btn.interactable = false;
 
             if (btns[correctDisplay] != null)
@@ -285,11 +285,11 @@ namespace UstAldanQuiz.UI
             if (!isCorrect && btns[displayedIndex] != null)
                 btns[displayedIndex].image.color = colorWrong;
 
-            if (questionWindow.resultFeedback != null)
+            if (questionWindowFull.resultFeedback != null)
             {
-                questionWindow.resultFeedback.gameObject.SetActive(true);
-                questionWindow.resultFeedback.text  = LocaleManager.Get(isCorrect ? "question_correct" : "question_wrong");
-                questionWindow.resultFeedback.color = isCorrect ? colorCorrect : colorWrong;
+                questionWindowFull.resultFeedback.gameObject.SetActive(true);
+                questionWindowFull.resultFeedback.text  = LocaleManager.Get(isCorrect ? "question_correct" : "question_wrong");
+                questionWindowFull.resultFeedback.color = isCorrect ? colorCorrect : colorWrong;
             }
 
             if (isCorrect) { _correctCount++; AudioManager.Instance?.PlayCorrect(); HapticManager.Correct(); }
@@ -309,7 +309,7 @@ namespace UstAldanQuiz.UI
             string fact = sah && !string.IsNullOrWhiteSpace(qd?.factAfterSah)
                 ? qd.factAfterSah : qd?.factAfterRu;
 
-            if (!isCorrect && !string.IsNullOrWhiteSpace(fact) && questionWindow.factPopup != null)
+            if (!isCorrect && !string.IsNullOrWhiteSpace(fact) && questionWindowFull.factPopup != null)
                 StartCoroutine(ShowFactAfterDelay(fact, 0.8f));
             else
                 StartCoroutine(ShowContinueAfterDelay(1.5f));
@@ -318,17 +318,17 @@ namespace UstAldanQuiz.UI
         private IEnumerator ShowContinueAfterDelay(float delay)
         {
             yield return new WaitForSeconds(delay);
-            if (questionWindow?.btnContinue != null)
-                questionWindow.btnContinue.gameObject.SetActive(true);
+            if (questionWindowFull?.btnContinue != null)
+                questionWindowFull.btnContinue.gameObject.SetActive(true);
         }
 
         private IEnumerator ShowFactAfterDelay(string fact, float delay)
         {
             yield return new WaitForSeconds(delay);
-            questionWindow?.factPopup?.Show(fact, onClosed: () =>
+            questionWindowFull?.factPopup?.Show(fact, onClosed: () =>
             {
-                if (questionWindow?.btnContinue != null)
-                    questionWindow.btnContinue.gameObject.SetActive(true);
+                if (questionWindowFull?.btnContinue != null)
+                    questionWindowFull.btnContinue.gameObject.SetActive(true);
             });
         }
 
@@ -423,7 +423,7 @@ namespace UstAldanQuiz.UI
             _layout = RoadmapManager.Generate(_questions);
             RoadmapManager.Save(_layout);
 
-            questionWindow?.Close();
+            questionWindowFull?.Close();
             if (btnFinish != null) btnFinish.gameObject.SetActive(false);
 
             SpawnMap();
