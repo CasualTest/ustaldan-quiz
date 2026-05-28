@@ -976,6 +976,7 @@ public static partial class GameSceneBuilder
                           new Color(0.60f, 0.60f, 0.60f), font, minH: 28);
         AddLocKey(lbl.gameObject, labelKey);
         lbl.alignment = TextAlignmentOptions.Center;
+        lbl.gameObject.SetActive(false);
 
         return (btn, iconImg, lbl);
     }

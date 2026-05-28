@@ -39,6 +39,7 @@ namespace UstAldanQuiz.UI
 
         [Header("Слоты ответа")]
         public RectTransform slotsContainer;
+        public Sprite slotSprite;
         public Color slotEmptyColor  = new Color(0.88f, 0.84f, 0.78f);
         public Color slotFilledColor = new Color(0.27f, 0.56f, 0.85f);
 
@@ -258,6 +259,7 @@ namespace UstAldanQuiz.UI
                 slotGO.transform.SetParent(slotsContainer, false);
 
                 var slotImg = slotGO.AddComponent<Image>();
+                if (slotSprite != null) { slotImg.sprite = slotSprite; slotImg.type = Image.Type.Sliced; }
                 slotImg.color = slotEmptyColor;
 
                 var slotBtn = slotGO.AddComponent<Button>();
@@ -396,6 +398,9 @@ namespace UstAldanQuiz.UI
             {
                 if (tex == null) { photoImages[idx].gameObject.SetActive(false); return; }
                 photoImages[idx].texture = tex;
+                var arf = photoImages[idx].GetComponent<AspectRatioFitter>();
+                if (arf != null && tex.width > 0 && tex.height > 0)
+                    arf.aspectRatio = (float)tex.width / tex.height;
             }));
         }
 

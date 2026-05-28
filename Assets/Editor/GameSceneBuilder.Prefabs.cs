@@ -334,12 +334,14 @@ public static partial class GameSceneBuilder
     static void BuildLetterTilePrefab()
     {
         var font = FindFont();
+        var sBgLetter = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/bg_tile_letter.png");
 
         var root = new GameObject("LetterTile", typeof(RectTransform));
         root.AddComponent<CanvasGroup>();
 
         var bg  = root.AddComponent<Image>();
-        bg.color = new Color(0.94f, 0.90f, 0.80f);
+        if (sBgLetter != null) { bg.sprite = sBgLetter; bg.type = Image.Type.Sliced; bg.color = Color.white; }
+        else bg.color = new Color(0.94f, 0.90f, 0.80f);
 
         var btn = root.AddComponent<Button>();
         btn.targetGraphic = bg;
@@ -386,6 +388,7 @@ public static partial class GameSceneBuilder
         var sClose = LoadSprite("Assets/Images/Sprites/buttons.png", "buttons_10");
 
         var letterTilePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(LetterTilePath);
+        var sBgEmpty = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/bg_tile_empty.png");
 
         // Root (no visual — MonoBehaviour всегда активен для корутин)
         var root = new GameObject("WordBuilderWindow", typeof(RectTransform));
@@ -413,8 +416,20 @@ public static partial class GameSceneBuilder
         sbGO.AddComponent<Image>().color = Color.black;
         sbGO.AddComponent<UstAldanQuiz.UI.StatusBarCover>();
 
-        // ── ImageZone (1 фото, сверху) ─────────────────────────────────────
-        var imageZone = MakeGO("ImageZone", container.transform);
+        // ── ContentSheet (VLG, кремовый, заполняет остаток) ───────────────
+        var contentSheet = MakeGO("ContentSheet", container.transform);
+        SetLE(contentSheet, minH: 400, flexH: 1f);
+        contentSheet.AddComponent<Image>().color = C_BG;
+        var csVLG = contentSheet.AddComponent<VerticalLayoutGroup>();
+        csVLG.childAlignment         = TextAnchor.MiddleCenter;
+        csVLG.childForceExpandWidth  = true;
+        csVLG.childForceExpandHeight = false;
+        csVLG.childControlWidth = csVLG.childControlHeight = true;
+        csVLG.padding = new RectOffset(28, 28, 24, 16);
+        csVLG.spacing = 16;
+
+        // ── ImageZone (1 фото) ────────────────────────────────────────────
+        var imageZone = MakeGO("ImageZone", contentSheet.transform);
         SetLE(imageZone, minH: 200, prefH: 460, flexH: 0f);
         imageZone.AddComponent<Image>().color = new Color(0.12f, 0.12f, 0.12f);
         imageZone.SetActive(false);
@@ -443,8 +458,8 @@ public static partial class GameSceneBuilder
         imgClickBtn.targetGraphic = imageZoneImg;
         imgClickBtn.transition    = Selectable.Transition.None;
 
-        // ── Zone_4Photo (2×2 сетка, сверху) ───────────────────────────────
-        var zone4 = MakeGO("Zone_4Photo", container.transform);
+        // ── Zone_4Photo (2×2 сетка) ───────────────────────────────────────
+        var zone4 = MakeGO("Zone_4Photo", contentSheet.transform);
         SetLE(zone4, minH: 200, prefH: 460, flexH: 0f);
         var zone4Grid = zone4.AddComponent<GridLayoutGroup>();
         zone4Grid.cellSize        = new Vector2(522, 220);
@@ -461,6 +476,7 @@ public static partial class GameSceneBuilder
             var phGO  = MakeGO($"Photo_{i}", zone4.transform);
             var phImg = phGO.AddComponent<Image>();
             phImg.color = new Color(0.14f, 0.14f, 0.14f);
+            phGO.AddComponent<RectMask2D>();
             var phBtn = phGO.AddComponent<Button>();
             phBtn.targetGraphic = phImg;
             phBtn.transition    = Selectable.Transition.None;
@@ -469,26 +485,18 @@ public static partial class GameSceneBuilder
             Stretch(rawImgGO);
             photoImages[i] = rawImgGO.AddComponent<RawImage>();
             var arf = rawImgGO.AddComponent<AspectRatioFitter>();
-            arf.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+            arf.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
         }
 
-        // ── ContentSheet (VLG, кремовый, заполняет остаток) ───────────────
-        var contentSheet = MakeGO("ContentSheet", container.transform);
-        SetLE(contentSheet, minH: 400, flexH: 1f);
-        contentSheet.AddComponent<Image>().color = C_BG;
-        var csVLG = contentSheet.AddComponent<VerticalLayoutGroup>();
-        csVLG.childAlignment         = TextAnchor.UpperCenter;
-        csVLG.childForceExpandWidth  = true;
-        csVLG.childForceExpandHeight = false;
-        csVLG.childControlWidth = csVLG.childControlHeight = true;
-        csVLG.padding = new RectOffset(28, 28, 24, 16);
-        csVLG.spacing = 16;
+        // PhotoSpacer — отступ между фото и слотами
+        var photoSpacer = MakeGO("PhotoSpacer", contentSheet.transform);
+        SetLE(photoSpacer, minH: 80, prefH: 80);
 
         // QuestionText
         var qTMP = MakeTMP("QuestionText", contentSheet.transform, "Составь слово...", 46, C_TEXT, font);
         qTMP.enableWordWrapping = true;
         qTMP.alignment          = TextAlignmentOptions.Center;
-        SetLE(qTMP.gameObject, minH: 60, flexH: 0.3f);
+        SetLE(qTMP.gameObject, minH: 60, prefH: 100);
 
         // Zone_Slots
         var zoneSlots = MakeGO("Zone_Slots", contentSheet.transform);
@@ -501,9 +509,13 @@ public static partial class GameSceneBuilder
         slotsGrid.childAlignment = TextAnchor.MiddleCenter;
         slotsGrid.constraint     = GridLayoutGroup.Constraint.Flexible;
 
+        // SlotsToLettersSpacer
+        var slotsLettersSpacer = MakeGO("SlotsToLettersSpacer", contentSheet.transform);
+        SetLE(slotsLettersSpacer, minH: 60, prefH: 60);
+
         // Zone_Letters
         var zoneLetters = MakeGO("Zone_Letters", contentSheet.transform);
-        SetLE(zoneLetters, minH: 100, prefH: 210, flexH: 0.5f);
+        SetLE(zoneLetters, minH: 100, prefH: 210);
         var lettersCSF = zoneLetters.AddComponent<ContentSizeFitter>();
         lettersCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         var lettersGrid = zoneLetters.AddComponent<GridLayoutGroup>();
@@ -592,6 +604,7 @@ public static partial class GameSceneBuilder
         Prop(soWB, "lettersContainer",  zoneLetters.GetComponent<RectTransform>());
         if (letterTilePrefab != null)
             Prop(soWB, "letterTilePrefab", letterTilePrefab.GetComponent<UstAldanQuiz.UI.LetterTileUI>());
+        if (sBgEmpty != null) Prop(soWB, "slotSprite", sBgEmpty);
         Prop(soWB, "btnContinue",       btnContGO.GetComponent<Button>());
         SetArr(soWB, "photoImages", photoImages);
         soWB.ApplyModifiedProperties();
