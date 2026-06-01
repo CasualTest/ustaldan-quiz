@@ -205,6 +205,32 @@ public static partial class GameSceneBuilder
             btnArcadeGO.AddComponent<ButtonSpringAnim>();
         }
 
+        // Кнопка «Миллионер» — переход на сцену Millionaire
+        var btnMillionaireWrapper = MakeGO("BtnMillionaireWrapper", homePage.transform);
+        SetLE(btnMillionaireWrapper, minH: 166);
+        var millWrapHLG = btnMillionaireWrapper.AddComponent<HorizontalLayoutGroup>();
+        millWrapHLG.childAlignment         = TextAnchor.MiddleCenter;
+        millWrapHLG.childForceExpandWidth  = false;
+        millWrapHLG.childForceExpandHeight = false;
+        millWrapHLG.childControlWidth = millWrapHLG.childControlHeight = true;
+
+        var btnMillionaireGO = MakePrimaryButton("BtnMillionaire", btnMillionaireWrapper.transform, "Миллионер", font, minH: 166);
+        SetLE(btnMillionaireGO, minW: 520, flexW: 0);
+        AddLocKey(btnMillionaireGO, "btn_millionaire");
+        {
+            var img = btnMillionaireGO.GetComponent<Image>();
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/millionaire.png");
+            if (sprite != null)
+            {
+                img.sprite         = sprite;
+                img.type           = Image.Type.Simple;
+                img.color          = Color.white;
+                img.preserveAspect = true;
+            }
+            btnMillionaireGO.AddComponent<ButtonDragReset>();
+            btnMillionaireGO.AddComponent<ButtonSpringAnim>();
+        }
+
         // ── Страница 1: Рекорды ───────────────────────────────────────────
         var recordsPage = MakeGO("RecordsPage", contentArea.transform);
         Stretch(recordsPage);
@@ -772,6 +798,7 @@ public static partial class GameSceneBuilder
         Prop(soUI, "categoryButtonPrefab", catBtnPrefab?.GetComponent<CategoryButtonUI>());
         Prop(soUI, "btnPlay",              btnPlayGO.GetComponent<Button>());
         Prop(soUI, "btnArcade",           btnArcadeGO.GetComponent<Button>());
+        Prop(soUI, "btnMillionaire",       btnMillionaireGO.GetComponent<Button>());
         Prop(soUI, "statsText",            statsTMP);
         Prop(soUI, "recordsContent",       recContent.transform);
 

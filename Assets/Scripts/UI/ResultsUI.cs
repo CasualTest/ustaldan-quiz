@@ -95,8 +95,16 @@ namespace UstAldanQuiz.UI
 
         private void HandlePlayAgain()
         {
-            GameManager.Instance?.PrepareNewSession();
-            GameManager.Instance?.LoadScene("QuestionMap");
+            var gm = GameManager.Instance;
+            if (gm == null) return;
+            gm.PrepareNewSession();
+            string targetScene = gm.CurrentMode switch
+            {
+                GameMode.Millionaire => "Millionaire",
+                GameMode.Roadmap     => "Roadmap",
+                _                    => "QuestionMap"
+            };
+            gm.LoadScene(targetScene);
         }
 
         private void HandleShare()

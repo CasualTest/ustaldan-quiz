@@ -58,7 +58,10 @@ public static partial class GameSceneBuilder
     [MenuItem("UstAldan Quiz/Game Setup/5 — Build Roadmap Scene")]
     public static void BuildRoadmapScene() => DoBuildRoadmap();
 
-    [MenuItem("UstAldan Quiz/Game Setup/6 — Add Scenes to Build Settings")]
+    [MenuItem("UstAldan Quiz/Game Setup/6 — Build Millionaire Scene")]
+    public static void BuildMillionaireScene() => DoBuildMillionaire();
+
+    [MenuItem("UstAldan Quiz/Game Setup/7 — Add Scenes to Build Settings")]
     public static void AddScenesToBuildSettings() => DoAddScenes();
 
     // Принудительно пересоздаёт prefab'ы и все сцены
@@ -72,6 +75,7 @@ public static partial class GameSceneBuilder
         DoBuildQuestionMap();
         DoBuildResults();
         DoBuildRoadmap();
+        DoBuildMillionaire();
         DoAddScenes();
         Debug.Log("[GameSceneBuilder] ✓ Всё пересоздано.");
     }
@@ -114,13 +118,14 @@ public static partial class GameSceneBuilder
 
     static void DoAddScenes()
     {
-        // Порядок важен: Intro = 0, MainMenu = 1, QuestionMap = 2, Results = 3, Roadmap = 4
+        // Порядок важен: Intro = 0, MainMenu = 1, QuestionMap = 2, Results = 3, Roadmap = 4, Millionaire = 5
         string[] ordered = {
             "Assets/Scenes/Intro.unity",
             "Assets/Scenes/MainMenu.unity",
             "Assets/Scenes/QuestionMap.unity",
             "Assets/Scenes/Results.unity",
             "Assets/Scenes/Roadmap.unity",
+            "Assets/Scenes/Millionaire.unity",
         };
 
         var entries = new List<UnityEditor.EditorBuildSettingsScene>();

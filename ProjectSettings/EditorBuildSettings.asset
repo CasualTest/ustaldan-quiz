@@ -20,4 +20,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Roadmap.unity
     guid: c51450db48fdcf540aa92136e5f466ef
+  - enabled: 1
+    path: Assets/Scenes/Millionaire.unity
+    guid: 917a92421fc41c54083814825b783c2a
   m_configObjects: {}

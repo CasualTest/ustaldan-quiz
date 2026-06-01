@@ -46,6 +46,7 @@ namespace UstAldanQuiz.UI
         [SerializeField] private CategoryButtonUI categoryButtonPrefab;
         [SerializeField] private Button           btnPlay;
         [SerializeField] private Button           btnArcade;
+        [SerializeField] private Button           btnMillionaire;
         [SerializeField] private TMP_Text         statsText;
 
         [Header("Рекорды — контейнер строк")]
@@ -77,6 +78,7 @@ namespace UstAldanQuiz.UI
             tabSettings?.onClick.AddListener(() => SwitchTab(4));
             btnPlay?.onClick.AddListener(HandlePlay);
             btnArcade?.onClick.AddListener(HandleArcade);
+            btnMillionaire?.onClick.AddListener(HandleMillionaire);
 
             SpawnCategoryButtons();
             RefreshRecords();
@@ -102,6 +104,7 @@ namespace UstAldanQuiz.UI
             tabProfile?.onClick.RemoveAllListeners();
             btnPlay?.onClick.RemoveAllListeners();
             btnArcade?.onClick.RemoveAllListeners();
+            btnMillionaire?.onClick.RemoveAllListeners();
             foreach (var btn in _spawnedButtons)
                 if (btn != null) btn.OnClicked -= HandleCategoryButtonClick;
             LocaleManager.OnLanguageChanged -= RefreshStats;
@@ -226,6 +229,13 @@ namespace UstAldanQuiz.UI
         {
             var gm = GameManager.Instance;
             if (gm != null) gm.LoadScene("Roadmap");
+        }
+
+        private void HandleMillionaire()
+        {
+            if (questionDatabase == null || GameManager.Instance == null) return;
+            GameManager.Instance.PrepareMillionaireSession(questionDatabase);
+            GameManager.Instance.LoadScene("Millionaire");
         }
 
         private void HandlePlay()

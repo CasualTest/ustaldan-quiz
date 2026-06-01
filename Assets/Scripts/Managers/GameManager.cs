@@ -9,15 +9,25 @@ namespace UstAldanQuiz.Managers
     /// Синглтон, живущий между сценами. Хранит состояние текущей сессии.
     /// Должен быть на GameObject в сцене MainMenu.
     /// </summary>
+    public enum GameMode
+    {
+        Category,
+        Roadmap,
+        Millionaire
+    }
+
     public class GameManager : MonoBehaviour
     {
         public static GameManager Instance { get; private set; }
+
+        public const int MillionaireQuestionCount = 15;
 
         // --- Сессия ---
         public QuestionCategory SelectedCategory { get; set; }
         public List<QuestionData> SessionQuestions { get; private set; } = new List<QuestionData>();
         public int CorrectAnswers { get; set; }
         public int TotalQuestions => SessionQuestions?.Count ?? 0;
+        public GameMode CurrentMode { get; private set; } = GameMode.Category;
 
         private QuestionDatabase _database;
 
@@ -42,6 +52,7 @@ namespace UstAldanQuiz.Managers
             SelectedCategory = category;
             _database        = database;
             CorrectAnswers   = 0;
+            CurrentMode      = GameMode.Category;
 
             database.EnsureRuntimeQuestionsLoaded();
             SessionQuestions = database.GetQuestionsByCategory(category);
@@ -50,11 +61,40 @@ namespace UstAldanQuiz.Managers
         }
 
         /// <summary>
+        /// Подготовить сессию «Миллионер»: 15 случайных вопросов, отсортированных по сложности.
+        /// </summary>
+        public void PrepareMillionaireSession(QuestionDatabase database)
+        {
+            SelectedCategory = null;
+            _database        = database;
+            CorrectAnswers   = 0;
+            CurrentMode      = GameMode.Millionaire;
+
+            database.EnsureRuntimeQuestionsLoaded();
+
+            var pool = new List<QuestionData>();
+            foreach (var q in database.allQuestions)
+                if (q != null) pool.Add(q);
+            Shuffle(pool);
+
+            int take = Mathf.Min(MillionaireQuestionCount, pool.Count);
+            var selected = pool.GetRange(0, take);
+            selected.Sort((a, b) => a.difficulty.CompareTo(b.difficulty));
+            SessionQuestions = selected;
+        }
+
+        /// <summary>
         /// Повторить сессию с той же категорией и базой (для кнопки «Играть снова»).
         /// </summary>
         public void PrepareNewSession()
         {
-            if (_database != null && SelectedCategory != null)
+            if (_database == null) return;
+            if (CurrentMode == GameMode.Millionaire)
+            {
+                PrepareMillionaireSession(_database);
+                return;
+            }
+            if (SelectedCategory != null)
             {
                 SaveManager.ClearQuestionProgress(SelectedCategory.categoryId);
                 PrepareSession(SelectedCategory, _database);
