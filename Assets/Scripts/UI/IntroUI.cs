@@ -19,6 +19,12 @@ namespace UstAldanQuiz.UI
         void Start()
         {
             Application.targetFrameRate = 60;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            Skip();
+            return;
+#endif
+
             _rt = new RenderTexture(Screen.width, Screen.height, 0);
             videoPlayer.targetTexture = _rt;
             videoDisplay.texture = _rt;
