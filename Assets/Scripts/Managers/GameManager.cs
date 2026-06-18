@@ -16,6 +16,15 @@ namespace UstAldanQuiz.Managers
         Millionaire
     }
 
+    public class AnswerLog
+    {
+        public string questionId;
+        public string categoryId;
+        public string categoryName;
+        public bool   isCorrect;
+        public float  timeSec;
+    }
+
     public class GameManager : MonoBehaviour
     {
         public static GameManager Instance { get; private set; }
@@ -28,6 +37,7 @@ namespace UstAldanQuiz.Managers
         public int CorrectAnswers { get; set; }
         public int TotalQuestions => SessionQuestions?.Count ?? 0;
         public GameMode CurrentMode { get; private set; } = GameMode.Category;
+        public List<AnswerLog> AnswerLogs { get; private set; } = new List<AnswerLog>();
 
         private QuestionDatabase _database;
 
@@ -47,12 +57,26 @@ namespace UstAldanQuiz.Managers
         /// <summary>
         /// Подготовить новую сессию: выбрать категорию и перемешать 15 вопросов.
         /// </summary>
+        public void LogAnswer(QuestionData q, bool isCorrect, float timeSec)
+        {
+            if (q == null) return;
+            AnswerLogs.Add(new AnswerLog
+            {
+                questionId   = q.name,
+                categoryId   = q.category != null ? q.category.categoryId : "",
+                categoryName = q.category != null ? q.category.displayName : "",
+                isCorrect    = isCorrect,
+                timeSec      = timeSec
+            });
+        }
+
         public void PrepareSession(QuestionCategory category, QuestionDatabase database)
         {
             SelectedCategory = category;
             _database        = database;
             CorrectAnswers   = 0;
             CurrentMode      = GameMode.Category;
+            AnswerLogs.Clear();
 
             database.EnsureRuntimeQuestionsLoaded();
             SessionQuestions = database.GetQuestionsByCategory(category);
@@ -69,6 +93,7 @@ namespace UstAldanQuiz.Managers
             _database        = database;
             CorrectAnswers   = 0;
             CurrentMode      = GameMode.Millionaire;
+            AnswerLogs.Clear();
 
             database.EnsureRuntimeQuestionsLoaded();
 

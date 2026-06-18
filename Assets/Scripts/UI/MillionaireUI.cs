@@ -19,6 +19,12 @@ namespace UstAldanQuiz.UI
         [Header("Окно вопроса")]
         [SerializeField] private QuestionWindow questionWindowFull;
 
+        [Header("Wow-эффект")]
+        [SerializeField] private GameObject  wowPopup;
+        [SerializeField] private CanvasGroup wowGroup;
+        [SerializeField] private RectTransform wowSheet;
+        [SerializeField] private TMP_Text     wowText;
+
         [Header("Цвета ответов")]
         [SerializeField] private Color colorDefault = Color.white;
         [SerializeField] private Color colorCorrect = new Color(0.30f, 0.69f, 0.31f);
@@ -28,6 +34,9 @@ namespace UstAldanQuiz.UI
         private int   _correctCount;
         private int[] _shuffledIndices;
         private bool  _finished;
+        private bool  _answeredCurrent;
+        private bool  _exiting;
+        private float _questionStartTime;
 
         private static readonly string[] Prefixes = { "A", "B", "C", "D" };
 
@@ -45,6 +54,8 @@ namespace UstAldanQuiz.UI
 
             if (titleText != null)
                 titleText.text = LocaleManager.Get("mode_millionaire");
+
+            if (wowPopup != null) wowPopup.SetActive(false);
 
             _currentIndex = 0;
             _correctCount = 0;
@@ -65,6 +76,9 @@ namespace UstAldanQuiz.UI
             var gm = GameManager.Instance;
             if (gm == null || _currentIndex >= gm.SessionQuestions.Count) { FinishGame(); return; }
             if (questionWindowFull == null) return;
+
+            _answeredCurrent   = false;
+            _questionStartTime = Time.unscaledTime;
 
             var q = gm.SessionQuestions[_currentIndex];
 
@@ -94,7 +108,14 @@ namespace UstAldanQuiz.UI
             }
 
             questionWindowFull.btnContinue?.gameObject.SetActive(false);
-            questionWindowFull.Open();
+            if (!questionWindowFull.gameObject.activeInHierarchy || !IsWindowOpen())
+                questionWindowFull.Open();
+        }
+
+        private bool IsWindowOpen()
+        {
+            var panel = questionWindowFull != null ? questionWindowFull.transform.Find("Panel") : null;
+            return panel != null && panel.gameObject.activeSelf;
         }
 
         // ── Ответ ─────────────────────────────────────────────────────────
@@ -105,6 +126,13 @@ namespace UstAldanQuiz.UI
 
             bool isCorrect      = _shuffledIndices[displayedIndex] == 0;
             int  correctDisplay = Array.IndexOf(_shuffledIndices, 0);
+
+            _answeredCurrent = true;
+
+            var gmLog = GameManager.Instance;
+            var qLog  = gmLog != null && _currentIndex < gmLog.SessionQuestions.Count ? gmLog.SessionQuestions[_currentIndex] : null;
+            float elapsed = Mathf.Max(0f, Time.unscaledTime - _questionStartTime);
+            gmLog?.LogAnswer(qLog, isCorrect, elapsed);
 
             var btns = questionWindowFull.answerButtons;
             foreach (var btn in btns) if (btn != null) btn.interactable = false;
@@ -120,58 +148,90 @@ namespace UstAldanQuiz.UI
                 if (GameManager.Instance != null) GameManager.Instance.CorrectAnswers = _correctCount;
                 AudioManager.Instance?.PlayCorrect();
                 HapticManager.Correct();
+                UpdateProgress();
+                StartCoroutine(WowThenNext());
             }
             else
             {
                 AudioManager.Instance?.PlayWrong();
                 HapticManager.Wrong();
+                _finished = true;
+                StartCoroutine(FinishAfterDelay(0.8f));
             }
+        }
 
-            UpdateProgress();
-
+        private IEnumerator WowThenNext()
+        {
+            yield return new WaitForSeconds(0.6f);
+            yield return ShowWow();
+            _currentIndex++;
             var gm = GameManager.Instance;
-            var q  = gm != null && _currentIndex < gm.SessionQuestions.Count ? gm.SessionQuestions[_currentIndex] : null;
-            bool   sah  = LocaleManager.CurrentLanguage == LocaleManager.LangSah;
-            string fact = sah && !string.IsNullOrWhiteSpace(q?.factAfterSah) ? q.factAfterSah : q?.factAfterRu;
-
-            if (!isCorrect && !string.IsNullOrWhiteSpace(fact) && questionWindowFull.factPopup != null)
-                StartCoroutine(ShowFactAfterDelay(fact, 0.8f));
-            else
-                StartCoroutine(ShowContinueAfterDelay(1.5f));
-
-            if (!isCorrect) _finished = true;
+            if (gm == null || _currentIndex >= gm.SessionQuestions.Count) { FinishGame(); yield break; }
+            ShowCurrentQuestion();
         }
 
-        private IEnumerator ShowContinueAfterDelay(float delay)
+        private IEnumerator ShowWow()
         {
-            yield return new WaitForSeconds(delay);
-            questionWindowFull?.btnContinue?.gameObject.SetActive(true);
+            if (wowPopup == null) yield break;
+
+            wowPopup.SetActive(true);
+            if (wowText != null) wowText.text = LocaleManager.Get("wow_correct");
+
+            const float fadeIn = 0.18f, hold = 0.55f, fadeOut = 0.18f;
+
+            if (wowSheet != null) wowSheet.localScale = Vector3.zero;
+            if (wowGroup != null) wowGroup.alpha = 0f;
+
+            for (float t = 0f; t < fadeIn; t += Time.unscaledDeltaTime)
+            {
+                float k = t / fadeIn;
+                if (wowGroup != null) wowGroup.alpha = k;
+                if (wowSheet != null) wowSheet.localScale = Vector3.one * Mathf.Lerp(0.4f, 1.15f, EaseOut(k));
+                yield return null;
+            }
+            if (wowGroup != null) wowGroup.alpha = 1f;
+            if (wowSheet != null) wowSheet.localScale = Vector3.one * 1.15f;
+
+            for (float t = 0f; t < 0.12f; t += Time.unscaledDeltaTime)
+            {
+                if (wowSheet != null) wowSheet.localScale = Vector3.one * Mathf.Lerp(1.15f, 1.0f, t / 0.12f);
+                yield return null;
+            }
+            if (wowSheet != null) wowSheet.localScale = Vector3.one;
+
+            yield return new WaitForSecondsRealtime(hold);
+
+            for (float t = 0f; t < fadeOut; t += Time.unscaledDeltaTime)
+            {
+                if (wowGroup != null) wowGroup.alpha = 1f - (t / fadeOut);
+                yield return null;
+            }
+            if (wowGroup != null) wowGroup.alpha = 0f;
+            wowPopup.SetActive(false);
         }
 
-        private IEnumerator ShowFactAfterDelay(string fact, float delay)
+        private IEnumerator FinishAfterDelay(float delay)
         {
             yield return new WaitForSeconds(delay);
-            questionWindowFull?.factPopup?.Show(fact,
-                onClosed: () => questionWindowFull?.btnContinue?.gameObject.SetActive(true));
+            FinishGame();
         }
 
         // ── Закрытие окна ─────────────────────────────────────────────────
 
         private void HandleWindowClosed()
         {
-            if (_finished) { FinishGame(); return; }
-
-            _currentIndex++;
-            var gm = GameManager.Instance;
-            if (gm == null || _currentIndex >= gm.SessionQuestions.Count) { FinishGame(); return; }
-
-            ShowCurrentQuestion();
+            if (_exiting || _finished) return;
+            GoToMainMenu();
         }
+
+        private static float EaseOut(float x) => 1f - Mathf.Pow(1f - Mathf.Clamp01(x), 3f);
 
         // ── Завершение ────────────────────────────────────────────────────
 
         private void FinishGame()
         {
+            if (_exiting) return;
+            _exiting = true;
             var gm = GameManager.Instance;
             int total = gm != null ? gm.SessionQuestions.Count : GameManager.MillionaireQuestionCount;
             SaveManager.AddGameResult(_correctCount, total);
@@ -181,6 +241,8 @@ namespace UstAldanQuiz.UI
 
         private void GoToMainMenu()
         {
+            if (_exiting) return;
+            _exiting = true;
             var gm = GameManager.Instance;
             if (gm != null) gm.LoadScene("MainMenu");
             else SceneTransition.Instance?.LoadScene("MainMenu");

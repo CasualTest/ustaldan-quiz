@@ -41,6 +41,7 @@ namespace UstAldanQuiz.UI
         private int _correctCount;
         private int _lockedCount;
         private int[] _shuffledIndices;
+        private float _questionStartTime;
 
         private int NewQuestionsTotal => _tiles.Count - _lockedCount;
 
@@ -128,6 +129,8 @@ namespace UstAldanQuiz.UI
 
         private void ShowQuestion(QuestionData q)
         {
+            _questionStartTime = Time.unscaledTime;
+
             if (q.questionType == QuestionType.WordBuilder)
             {
                 if (wordBuilderWindow == null) return;
@@ -205,6 +208,9 @@ namespace UstAldanQuiz.UI
             if (_activeTile != null)
                 SaveManager.MarkQuestionAnswered(catId, _activeTile.Question.name, isCorrect);
 
+            float elapsed = Mathf.Max(0f, Time.unscaledTime - _questionStartTime);
+            GameManager.Instance?.LogAnswer(_activeTile?.Question, isCorrect, elapsed);
+
             UpdateScore();
 
             var    qd   = _activeTile?.Question;
@@ -235,6 +241,9 @@ namespace UstAldanQuiz.UI
         private void HandleWordBuilderAnswer(bool isCorrect)
         {
             if (wordBuilderWindow == null) return;
+
+            float elapsedWB = Mathf.Max(0f, Time.unscaledTime - _questionStartTime);
+            GameManager.Instance?.LogAnswer(_activeTile?.Question, isCorrect, elapsedWB);
 
             if (isCorrect)
             {

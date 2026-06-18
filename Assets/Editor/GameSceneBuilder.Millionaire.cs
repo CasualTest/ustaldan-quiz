@@ -123,6 +123,29 @@ public static partial class GameSceneBuilder
         Prop(soQW, "factPopup", factPopupComp);
         soQW.ApplyModifiedProperties();
 
+        // ── WowPopup (попап «Правильно!» с анимацией) ────────────────────
+        var wowGO = MakeGO("WowPopup", canvasGO.transform);
+        Stretch(wowGO);
+        wowGO.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.35f);
+        var wowCG = wowGO.AddComponent<CanvasGroup>();
+
+        var wowSheetGO = MakeGO("WowSheet", wowGO.transform);
+        var wowSheetRT = wowSheetGO.GetComponent<RectTransform>();
+        wowSheetRT.anchorMin = wowSheetRT.anchorMax = new Vector2(0.5f, 0.5f);
+        wowSheetRT.pivot     = new Vector2(0.5f, 0.5f);
+        wowSheetRT.sizeDelta = new Vector2(700, 320);
+        var wowSheetImg = wowSheetGO.AddComponent<Image>();
+        wowSheetImg.color = C_CORRECT;
+
+        var wowTextTMP = MakeTMP("WowText", wowSheetGO.transform, "Правильно!", 96, Color.white, font, bold: true);
+        var wowTextRT  = wowTextTMP.GetComponent<RectTransform>();
+        wowTextRT.anchorMin = Vector2.zero; wowTextRT.anchorMax = Vector2.one;
+        wowTextRT.offsetMin = wowTextRT.offsetMax = Vector2.zero;
+        wowTextTMP.alignment = TextAlignmentOptions.Center;
+        AddLocKey(wowTextTMP.gameObject, "wow_correct");
+
+        wowGO.SetActive(false);
+
         // ── MillionaireUI ────────────────────────────────────────────────
         var managerGO = MakeRootGO("MillionaireManager");
         var ui        = managerGO.AddComponent<MillionaireUI>();
@@ -132,6 +155,10 @@ public static partial class GameSceneBuilder
         Prop(soUI, "progressText",       progressTMP);
         Prop(soUI, "btnBack",            btnBackGO.GetComponent<Button>());
         Prop(soUI, "questionWindowFull", qWin);
+        Prop(soUI, "wowPopup",           wowGO);
+        Prop(soUI, "wowGroup",           wowCG);
+        Prop(soUI, "wowSheet",           wowSheetRT);
+        Prop(soUI, "wowText",            wowTextTMP);
 
         var colorProp = soUI.FindProperty("colorDefault");
         if (colorProp != null) colorProp.colorValue = Color.white;
