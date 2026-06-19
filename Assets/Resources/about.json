@@ -3,8 +3,9 @@
   "description": "about_description",
   "developer":   "about_developer",
   "version": "1.0.0",
-  "year": "2025",
-  "websiteUrl": "https://100.uacbs.ru",
+  "year": "2026",
+  "websiteUrl": "https://uacbs.ru",
+  "androidApkUrl": "https://quiz.uacbs.ru/apk/quizua.apk",
   "contacts": [
     { "label": "about_contact_site",  "value": "https://uacbs.ru" },
     { "label": "about_contact_email", "value": "uacbsborsupp@gmail.com" }

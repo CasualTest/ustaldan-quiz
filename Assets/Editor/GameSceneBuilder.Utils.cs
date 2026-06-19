@@ -118,6 +118,42 @@ public static partial class GameSceneBuilder
     }
 
     // Кнопка главного стиля (зелёный фон, белый текст)
+    // Меняет текст и размер шрифта на дочернем "Text" внутри кнопки (созданной MakePrimaryButton)
+    // Добавляет лёгкий outline чтобы лучше читалось на цветном PNG-фоне
+    static void StyleBigButtonText(GameObject btnGO, TMP_FontAsset font, string text, float fontSize)
+    {
+        if (btnGO == null) return;
+        var tmp = btnGO.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (tmp == null) return;
+        tmp.text     = text;
+        tmp.fontSize = fontSize;
+        tmp.color    = Color.white;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.enableWordWrapping = false;
+        if (font != null) tmp.font = font;
+        ShaderUtilities.GetShaderPropertyIDs();
+        tmp.fontMaterial.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.18f);
+        tmp.fontMaterial.SetColor(ShaderUtilities.ID_OutlineColor, new Color(0f, 0f, 0f, 0.7f));
+    }
+
+    // Применяет скруглённый sprite + цвет к существующей кнопке (созданной MakePrimaryButton/MakeSecondaryButton)
+    static void ApplyRoundedBtnStyle(GameObject btnGO, Sprite sprite, Color color)
+    {
+        if (btnGO == null) return;
+        var img = btnGO.GetComponent<Image>();
+        if (img == null) return;
+        if (sprite != null)
+        {
+            img.sprite = sprite;
+            img.type   = Image.Type.Sliced;
+            img.preserveAspect = false;
+        }
+        img.color = color;
+        if (btnGO.GetComponent<UstAldanQuiz.Utils.ButtonSpringAnim>() == null)
+            btnGO.AddComponent<UstAldanQuiz.Utils.ButtonSpringAnim>();
+    }
+
     static GameObject MakePrimaryButton(string name, Transform parent, string text,
                                         TMP_FontAsset font, float minH = 110, float minW = 0)
     {

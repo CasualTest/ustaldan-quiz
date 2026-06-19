@@ -44,10 +44,8 @@ namespace UstAldanQuiz.UI
         [Header("Главная — категории и кнопки")]
         [SerializeField] private Transform        categoryGrid;
         [SerializeField] private CategoryButtonUI categoryButtonPrefab;
-        [SerializeField] private Button           btnPlay;
         [SerializeField] private Button           btnArcade;
         [SerializeField] private Button           btnMillionaire;
-        [SerializeField] private TMP_Text         statsText;
 
         [Header("Рекорды — контейнер строк")]
         [SerializeField] private Transform recordsContent;
@@ -56,10 +54,9 @@ namespace UstAldanQuiz.UI
         [SerializeField] private NoQuestionsPopup noQuestionsPopup;
 
         private readonly List<CategoryButtonUI> _spawnedButtons = new List<CategoryButtonUI>();
-        private CategoryButtonUI _selectedButton;
-        private QuestionCategory _selectedCategory;
         private int  _currentTab = 0;
         private bool _animating  = false;
+        private bool _launching  = false;
 
         private static readonly Color ColorActive   = new Color(0.18f, 0.38f, 0.25f);
         private static readonly Color ColorInactive = new Color(0.60f, 0.60f, 0.60f);
@@ -76,22 +73,14 @@ namespace UstAldanQuiz.UI
             tabHome?.onClick.AddListener(() => SwitchTab(2));
             tabAbout?.onClick.AddListener(() => SwitchTab(3));
             tabSettings?.onClick.AddListener(() => SwitchTab(4));
-            btnPlay?.onClick.AddListener(HandlePlay);
             btnArcade?.onClick.AddListener(HandleArcade);
             btnMillionaire?.onClick.AddListener(HandleMillionaire);
 
             SpawnCategoryButtons();
             RefreshRecords();
 
-            string lastId = SaveManager.LastCategory;
-            CategoryButtonUI toSelect = _spawnedButtons.Count > 0 ? _spawnedButtons[0] : null;
-            foreach (var btn in _spawnedButtons)
-                if (btn.Category?.categoryId == lastId) { toSelect = btn; break; }
-            if (toSelect != null) HandleCategoryButtonClick(toSelect);
-
             SwitchTabImmediate(2);
 
-            LocaleManager.OnLanguageChanged += RefreshStats;
             LocaleManager.OnLanguageChanged += RefreshRecords;
         }
 
@@ -102,12 +91,10 @@ namespace UstAldanQuiz.UI
             tabSettings?.onClick.RemoveAllListeners();
             tabAbout?.onClick.RemoveAllListeners();
             tabProfile?.onClick.RemoveAllListeners();
-            btnPlay?.onClick.RemoveAllListeners();
             btnArcade?.onClick.RemoveAllListeners();
             btnMillionaire?.onClick.RemoveAllListeners();
             foreach (var btn in _spawnedButtons)
                 if (btn != null) btn.OnClicked -= HandleCategoryButtonClick;
-            LocaleManager.OnLanguageChanged -= RefreshStats;
             LocaleManager.OnLanguageChanged -= RefreshRecords;
         }
 
@@ -218,44 +205,39 @@ namespace UstAldanQuiz.UI
 
         private void HandleCategoryButtonClick(CategoryButtonUI clickedBtn)
         {
-            _selectedButton?.SetSelected(false);
-            _selectedButton   = clickedBtn;
-            _selectedCategory = clickedBtn.Category;
-            _selectedButton.SetSelected(true);
-            RefreshStats();
+            if (_launching || clickedBtn == null || clickedBtn.Category == null) return;
+            if (questionDatabase == null || GameManager.Instance == null) return;
+
+            var category  = clickedBtn.Category;
+            var questions = questionDatabase.GetQuestionsByCategory(category);
+            if (questions.Count == 0) { noQuestionsPopup?.Show(category.displayName); return; }
+
+            _launching = true;
+            clickedBtn.SetSelected(true);
+            StartCoroutine(LaunchCategoryAfterDelay(category, 0.18f));
+        }
+
+        private IEnumerator LaunchCategoryAfterDelay(QuestionCategory category, float delay)
+        {
+            yield return new WaitForSecondsRealtime(delay);
+            GameManager.Instance.PrepareSession(category, questionDatabase);
+            GameManager.Instance.LoadScene("QuestionMap");
         }
 
         private void HandleArcade()
         {
+            if (_launching) return;
+            _launching = true;
             var gm = GameManager.Instance;
             if (gm != null) gm.LoadScene("Roadmap");
         }
 
         private void HandleMillionaire()
         {
-            if (questionDatabase == null || GameManager.Instance == null) return;
+            if (_launching || questionDatabase == null || GameManager.Instance == null) return;
+            _launching = true;
             GameManager.Instance.PrepareMillionaireSession(questionDatabase);
             GameManager.Instance.LoadScene("Millionaire");
-        }
-
-        private void HandlePlay()
-        {
-            if (_selectedCategory == null || questionDatabase == null || GameManager.Instance == null) return;
-            var questions = questionDatabase.GetQuestionsByCategory(_selectedCategory);
-            if (questions.Count == 0) { noQuestionsPopup?.Show(_selectedCategory.displayName); return; }
-            GameManager.Instance.PrepareSession(_selectedCategory, questionDatabase);
-            GameManager.Instance.LoadScene("QuestionMap");
-        }
-
-        private void RefreshStats()
-        {
-            if (statsText == null) return;
-            string catId = _selectedCategory?.categoryId ?? "";
-            int best   = SaveManager.GetBestScore(catId);
-            int played = SaveManager.TotalPlayed;
-            int total  = questionDatabase != null && _selectedCategory != null
-                ? questionDatabase.GetQuestionsByCategory(_selectedCategory).Count : 0;
-            statsText.text = LocaleManager.Get("stats_format", played, best, total);
         }
 
         // ── Рекорды ───────────────────────────────────────────────────────

@@ -13,6 +13,7 @@ namespace UstAldanQuiz.Data
         public string       version;
         public string       year;
         public string       websiteUrl;
+        public string       androidApkUrl;
         public List<Contact> contacts = new List<Contact>();
         public List<string>  partners = new List<string>();
 

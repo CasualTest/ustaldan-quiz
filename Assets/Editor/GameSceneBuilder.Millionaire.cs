@@ -123,26 +123,46 @@ public static partial class GameSceneBuilder
         Prop(soQW, "factPopup", factPopupComp);
         soQW.ApplyModifiedProperties();
 
-        // ── WowPopup (попап «Правильно!» с анимацией) ────────────────────
+        // ── WowPopup — только текст «Правильно!» без фона ────────────────
         var wowGO = MakeGO("WowPopup", canvasGO.transform);
         Stretch(wowGO);
-        wowGO.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.35f);
         var wowCG = wowGO.AddComponent<CanvasGroup>();
+        wowCG.blocksRaycasts = false;
+        wowCG.interactable   = false;
 
+        // wowSheet — пустой контейнер для скейл-анимации (без визуала)
         var wowSheetGO = MakeGO("WowSheet", wowGO.transform);
         var wowSheetRT = wowSheetGO.GetComponent<RectTransform>();
         wowSheetRT.anchorMin = wowSheetRT.anchorMax = new Vector2(0.5f, 0.5f);
         wowSheetRT.pivot     = new Vector2(0.5f, 0.5f);
-        wowSheetRT.sizeDelta = new Vector2(700, 320);
-        var wowSheetImg = wowSheetGO.AddComponent<Image>();
-        wowSheetImg.color = C_CORRECT;
+        wowSheetRT.sizeDelta = new Vector2(900, 400);
 
-        var wowTextTMP = MakeTMP("WowText", wowSheetGO.transform, "Правильно!", 96, Color.white, font, bold: true);
+        var fredoka = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Fonts/Fredoka-VariableFont_wdth,wght SDF.asset");
+        var wowFont = fredoka != null ? fredoka : font;
+
+        var wowTextTMP = MakeTMP("WowText", wowSheetGO.transform, "Правильно!", 170, Hex("FFD24A"), wowFont, bold: true);
         var wowTextRT  = wowTextTMP.GetComponent<RectTransform>();
         wowTextRT.anchorMin = Vector2.zero; wowTextRT.anchorMax = Vector2.one;
         wowTextRT.offsetMin = wowTextRT.offsetMax = Vector2.zero;
-        wowTextTMP.alignment = TextAlignmentOptions.Center;
+        wowTextTMP.alignment          = TextAlignmentOptions.Center;
+        wowTextTMP.enableWordWrapping = false;
+        wowTextTMP.fontStyle          = FontStyles.Bold;
+        wowTextTMP.characterSpacing   = 2f;
         AddLocKey(wowTextTMP.gameObject, "wow_correct");
+
+        ShaderUtilities.GetShaderPropertyIDs();
+        // Утолщение букв через FaceDilate — буквы становятся жирнее без искажения "!" и точек
+        wowTextTMP.fontMaterial.SetFloat(ShaderUtilities.ID_FaceDilate, 0.35f);
+        // Умеренная обводка — не давит на тонкие элементы (точка, "!")
+        wowTextTMP.fontMaterial.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.20f);
+        wowTextTMP.fontMaterial.SetColor(ShaderUtilities.ID_OutlineColor, Hex("1E4A2E"));
+        // Мягкая тень снизу
+        wowTextTMP.fontMaterial.EnableKeyword("UNDERLAY_ON");
+        wowTextTMP.fontMaterial.SetColor("_UnderlayColor", new Color(0f, 0f, 0f, 0.45f));
+        wowTextTMP.fontMaterial.SetFloat("_UnderlayOffsetX",  0f);
+        wowTextTMP.fontMaterial.SetFloat("_UnderlayOffsetY", -1.0f);
+        wowTextTMP.fontMaterial.SetFloat("_UnderlaySoftness", 0.4f);
+        wowTextTMP.fontMaterial.SetFloat("_UnderlayDilate",  0.3f);
 
         wowGO.SetActive(false);
 

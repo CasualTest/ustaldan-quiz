@@ -98,7 +98,8 @@ namespace UstAldanQuiz.UI
         {
             foreach (Transform child in mapContent) Destroy(child.gameObject);
             _tiles.Clear();
-            _lockedCount = 0;
+            _lockedCount  = 0;
+            _correctCount = 0;
 
             string catId = GameManager.Instance?.SelectedCategory?.categoryId ?? "";
 
@@ -114,8 +115,11 @@ namespace UstAldanQuiz.UI
                 {
                     tile.SetState(prev.Value ? TileState.Correct : TileState.Wrong, animate: false);
                     _lockedCount++;
+                    if (prev.Value) _correctCount++;
                 }
             }
+
+            if (GameManager.Instance != null) GameManager.Instance.CorrectAnswers = _correctCount;
         }
 
         // ── Вопрос ────────────────────────────────────────────────────────

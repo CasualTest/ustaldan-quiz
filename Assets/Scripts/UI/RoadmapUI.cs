@@ -130,7 +130,8 @@ namespace UstAldanQuiz.UI
         {
             foreach (Transform t in mapContent) Destroy(t.gameObject);
             _tiles.Clear();
-            _lockedCount = 0;
+            _lockedCount  = 0;
+            _correctCount = 0;
 
             int rows = Mathf.CeilToInt((float)_layout.nodes.Count / RoadmapManager.Cols);
             float contentHeight = RoadmapManager.TopMargin
@@ -170,6 +171,7 @@ namespace UstAldanQuiz.UI
                 {
                     tile.SetState(prev.Value ? TileState.Correct : TileState.Wrong, animate: false);
                     _lockedCount++;
+                    if (prev.Value) _correctCount++;
                 }
             }
 

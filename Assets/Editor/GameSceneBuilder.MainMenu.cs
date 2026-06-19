@@ -82,65 +82,18 @@ public static partial class GameSceneBuilder
         homeVLG.childForceExpandWidth  = true;
         homeVLG.childForceExpandHeight = false;
         homeVLG.childControlWidth = homeVLG.childControlHeight = true;
-        homeVLG.padding = new RectOffset(40, 40, 40, 196);
-        homeVLG.spacing = 16;
+        homeVLG.padding = new RectOffset(40, 40, 40, 120);
+        homeVLG.spacing = 12;
 
-        // LogoBlock
+        // LogoBlock — единый спрайт logo.png
+        AssetDatabase.ImportAsset("Assets/Images/Icons/logo.png", ImportAssetOptions.ForceSynchronousImport);
         var logo = MakeGO("LogoBlock", homePage.transform);
-        SetLE(logo, minH: 230, prefH: 250);
-        var logoVLG = logo.AddComponent<VerticalLayoutGroup>();
-        logoVLG.childAlignment        = TextAnchor.MiddleCenter;
-        logoVLG.childForceExpandWidth = true;
-        logoVLG.childControlWidth     = logoVLG.childControlHeight = true;
-        logoVLG.spacing               = 8;
-
-        AssetDatabase.ImportAsset("Assets/Images/Icons/bg_title.png",  ImportAssetOptions.ForceSynchronousImport);
-        AssetDatabase.ImportAsset("Assets/Images/Icons/bg_title2.png", ImportAssetOptions.ForceSynchronousImport);
-
-        // bg_title — "УСТЬ-АЛДАНСКИЙ"
-        var t1GO  = MakeGO("Title_Main", logo.transform);
-        SetLE(t1GO, minH: 130, prefH: 140);
-        var t1Img  = t1GO.AddComponent<Image>();
-        t1Img.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/bg_title.png");
-        t1Img.color  = Color.white;
-        t1Img.type   = Image.Type.Simple;
-        var t1LblGO = new GameObject("Text", typeof(RectTransform));
-        t1LblGO.transform.SetParent(t1GO.transform, false);
-        ((RectTransform)t1LblGO.transform).anchorMin = Vector2.zero;
-        ((RectTransform)t1LblGO.transform).anchorMax = Vector2.one;
-        ((RectTransform)t1LblGO.transform).offsetMin = ((RectTransform)t1LblGO.transform).offsetMax = Vector2.zero;
-        var t1TMP = t1LblGO.AddComponent<TextMeshProUGUI>();
-        t1TMP.text      = "УСТЬ-АЛДАНСКИЙ";
-        t1TMP.fontSize  = 60;
-        t1TMP.color     = Color.white;
-        t1TMP.fontStyle = FontStyles.Bold;
-        t1TMP.alignment = TextAlignmentOptions.Center;
-        if (font != null) t1TMP.font = font;
-        ShaderUtilities.GetShaderPropertyIDs();
-        t1TMP.fontMaterial.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.22f);
-        t1TMP.fontMaterial.SetColor(ShaderUtilities.ID_OutlineColor, new Color(0.04f, 0.12f, 0.40f, 1f));
-
-        // bg_title2 — "◆ РАЙОН ◆"
-        var t2GO  = MakeGO("Title_Sub", logo.transform);
-        SetLE(t2GO, minH: 72, prefH: 80);
-        var t2Img  = t2GO.AddComponent<Image>();
-        t2Img.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/bg_title2.png");
-        t2Img.color  = Color.white;
-        t2Img.type   = Image.Type.Simple;
-        var t2LblGO = new GameObject("Text", typeof(RectTransform));
-        t2LblGO.transform.SetParent(t2GO.transform, false);
-        ((RectTransform)t2LblGO.transform).anchorMin = Vector2.zero;
-        ((RectTransform)t2LblGO.transform).anchorMax = Vector2.one;
-        ((RectTransform)t2LblGO.transform).offsetMin = ((RectTransform)t2LblGO.transform).offsetMax = Vector2.zero;
-        var t2TMP = t2LblGO.AddComponent<TextMeshProUGUI>();
-        t2TMP.text      = "◆ РАЙОН ◆";
-        t2TMP.fontSize  = 40;
-        t2TMP.color     = Color.white;
-        t2TMP.fontStyle = FontStyles.Bold;
-        t2TMP.alignment = TextAlignmentOptions.Center;
-        if (font != null) t2TMP.font = font;
-        t2TMP.fontMaterial.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.22f);
-        t2TMP.fontMaterial.SetColor(ShaderUtilities.ID_OutlineColor, new Color(0.04f, 0.22f, 0.06f, 1f));
+        SetLE(logo, minH: 540, prefH: 580);
+        var logoImg = logo.AddComponent<Image>();
+        logoImg.sprite         = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/logo.png");
+        logoImg.color          = Color.white;
+        logoImg.type           = Image.Type.Simple;
+        logoImg.preserveAspect = true;
 
         // CategoryGrid
         var gridGO = MakeGO("CategoryGrid", homePage.transform);
@@ -152,81 +105,53 @@ public static partial class GameSceneBuilder
         grid.constraintCount = 2;
         grid.childAlignment  = TextAnchor.UpperCenter;
 
-        // StatsBar
-        var statsGO  = MakeGO("StatsBar", homePage.transform);
-        SetLE(statsGO, minH: 44, prefH: 44);
-        var statsTMP = MakeTMP("StatsText", statsGO.transform, "", 28, C_TEXT2, font);
-        var statsRT  = statsTMP.GetComponent<RectTransform>();
-        statsRT.anchorMin = Vector2.zero; statsRT.anchorMax = Vector2.one;
-        statsRT.offsetMin = statsRT.offsetMax = Vector2.zero;
-        statsTMP.alignment = TextAlignmentOptions.Center;
-
-        // Обёртка центрирует BtnPlay и ограничивает его ширину
-        var btnPlayWrapper = MakeGO("BtnPlayWrapper", homePage.transform);
-        SetLE(btnPlayWrapper, minH: 166);
-        var wrapHLG = btnPlayWrapper.AddComponent<HorizontalLayoutGroup>();
-        wrapHLG.childAlignment         = TextAnchor.MiddleCenter;
-        wrapHLG.childForceExpandWidth  = false;
-        wrapHLG.childForceExpandHeight = false;
-        wrapHLG.childControlWidth = wrapHLG.childControlHeight = true;
-
-        var btnPlayGO = MakePrimaryButton("BtnPlay", btnPlayWrapper.transform, "Начать игру", font, minH: 166);
-        SetLE(btnPlayGO, minW: 520, flexW: 0);
-        AddLocKey(btnPlayGO, "btn_play");
-        {
-            var img = btnPlayGO.GetComponent<Image>();
-            img.sprite        = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/btn_play.png");
-            img.type          = Image.Type.Simple;
-            img.color         = Color.white;
-            img.preserveAspect = true;
-            btnPlayGO.AddComponent<ButtonDragReset>();
-            btnPlayGO.AddComponent<ButtonSpringAnim>();
-        }
-
         // Кнопка «Аркада» — переход на Roadmap
         var btnArcadeWrapper = MakeGO("BtnArcadeWrapper", homePage.transform);
-        SetLE(btnArcadeWrapper, minH: 166);
+        SetLE(btnArcadeWrapper, minH: 75);
         var arcadeWrapHLG = btnArcadeWrapper.AddComponent<HorizontalLayoutGroup>();
         arcadeWrapHLG.childAlignment         = TextAnchor.MiddleCenter;
         arcadeWrapHLG.childForceExpandWidth  = false;
         arcadeWrapHLG.childForceExpandHeight = false;
         arcadeWrapHLG.childControlWidth = arcadeWrapHLG.childControlHeight = true;
 
-        var btnArcadeGO = MakePrimaryButton("BtnArcade", btnArcadeWrapper.transform, "Аркада", font, minH: 166);
-        SetLE(btnArcadeGO, minW: 520, flexW: 0);
+        var btnArcadeGO = MakePrimaryButton("BtnArcade", btnArcadeWrapper.transform, "", font, minH: 75);
+        SetLE(btnArcadeGO, minW: 460, flexW: 0);
         AddLocKey(btnArcadeGO, "btn_arcade");
         {
             var img = btnArcadeGO.GetComponent<Image>();
             img.sprite         = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/arcade.png");
             img.type           = Image.Type.Simple;
             img.color          = Color.white;
-            img.preserveAspect = true;
+            img.preserveAspect = false;
+            StyleBigButtonText(btnArcadeGO, font, "Все вопросы", 36);
             btnArcadeGO.AddComponent<ButtonDragReset>();
             btnArcadeGO.AddComponent<ButtonSpringAnim>();
         }
 
         // Кнопка «Миллионер» — переход на сцену Millionaire
         var btnMillionaireWrapper = MakeGO("BtnMillionaireWrapper", homePage.transform);
-        SetLE(btnMillionaireWrapper, minH: 166);
+        SetLE(btnMillionaireWrapper, minH: 75);
         var millWrapHLG = btnMillionaireWrapper.AddComponent<HorizontalLayoutGroup>();
         millWrapHLG.childAlignment         = TextAnchor.MiddleCenter;
         millWrapHLG.childForceExpandWidth  = false;
         millWrapHLG.childForceExpandHeight = false;
         millWrapHLG.childControlWidth = millWrapHLG.childControlHeight = true;
 
-        var btnMillionaireGO = MakePrimaryButton("BtnMillionaire", btnMillionaireWrapper.transform, "Миллионер", font, minH: 166);
-        SetLE(btnMillionaireGO, minW: 520, flexW: 0);
+        var btnMillionaireGO = MakePrimaryButton("BtnMillionaire", btnMillionaireWrapper.transform, "", font, minH: 75);
+        SetLE(btnMillionaireGO, minW: 460, flexW: 0);
         AddLocKey(btnMillionaireGO, "btn_millionaire");
         {
             var img = btnMillionaireGO.GetComponent<Image>();
-            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/millionaire.png");
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/millionaire.png")
+                      ?? AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/millionaire.jpg");
             if (sprite != null)
             {
                 img.sprite         = sprite;
                 img.type           = Image.Type.Simple;
                 img.color          = Color.white;
-                img.preserveAspect = true;
+                img.preserveAspect = false;
             }
+            StyleBigButtonText(btnMillionaireGO, font, "Миллионер", 36);
             btnMillionaireGO.AddComponent<ButtonDragReset>();
             btnMillionaireGO.AddComponent<ButtonSpringAnim>();
         }
@@ -554,11 +479,19 @@ public static partial class GameSceneBuilder
         aboutBodyTMP.alignment         = TextAlignmentOptions.TopLeft;
         aboutBodyTMP.enableWordWrapping = true;
 
+        var roundedSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/Icons/bg_tile_letter.png");
+
         var aboutSuggestBtnGO = MakePrimaryButton("BtnSuggest", aboutContent.transform, "Предложить вопрос", font, minH: 104);
         AddLocKey(aboutSuggestBtnGO, "btn_suggest");
+        ApplyRoundedBtnStyle(aboutSuggestBtnGO, roundedSprite, C_PRIMARY);
 
         var aboutWebsiteBtnGO = MakePrimaryButton("BtnWebsite", aboutContent.transform, "Посетить сайт", font, minH: 104);
         AddLocKey(aboutWebsiteBtnGO, "btn_visit_site");
+        ApplyRoundedBtnStyle(aboutWebsiteBtnGO, roundedSprite, C_PRIMARY);
+
+        var aboutAndroidBtnGO = MakePrimaryButton("BtnDownloadAndroid", aboutContent.transform, "Скачать для Android", font, minH: 104);
+        AddLocKey(aboutAndroidBtnGO, "btn_download_android");
+        ApplyRoundedBtnStyle(aboutAndroidBtnGO, roundedSprite, C_PRIMARY);
 
         // ─── WebViewBridge — всегда активен (нужен для UnitySendMessage) ───
         var webViewBridgeGO = MakeGO("WebViewBridge", canvasGO.transform);
@@ -574,6 +507,7 @@ public static partial class GameSceneBuilder
         Prop(soAboutPage, "suggestUI",  suggestUIComp);
         Prop(soAboutPage, "btnWebsite", aboutWebsiteBtnGO.GetComponent<Button>());
         Prop(soAboutPage, "webViewUI",  webViewUI);
+        Prop(soAboutPage, "btnDownloadAndroid", aboutAndroidBtnGO.GetComponent<Button>());
         soAboutPage.ApplyModifiedProperties();
         aboutPage.SetActive(false);
 
@@ -796,10 +730,8 @@ public static partial class GameSceneBuilder
         Prop(soUI, "labelProfile",         labelProfile);
         Prop(soUI, "categoryGrid",         gridGO.transform);
         Prop(soUI, "categoryButtonPrefab", catBtnPrefab?.GetComponent<CategoryButtonUI>());
-        Prop(soUI, "btnPlay",              btnPlayGO.GetComponent<Button>());
         Prop(soUI, "btnArcade",           btnArcadeGO.GetComponent<Button>());
         Prop(soUI, "btnMillionaire",       btnMillionaireGO.GetComponent<Button>());
-        Prop(soUI, "statsText",            statsTMP);
         Prop(soUI, "recordsContent",       recContent.transform);
 
         var noQPopupComp = popup.AddComponent<NoQuestionsPopup>();
@@ -837,10 +769,9 @@ public static partial class GameSceneBuilder
 
         var btn = root.AddComponent<Button>();
         btn.targetGraphic = rootImg;
-        var cb = btn.colors;
-        cb.highlightedColor = new Color(0.22f, 0.50f, 0.32f);
-        cb.pressedColor     = new Color(0.18f, 0.42f, 0.27f);
-        btn.colors = cb;
+        btn.transition    = Selectable.Transition.None;
+        root.AddComponent<UstAldanQuiz.Utils.ButtonSpringAnim>();
+        root.AddComponent<UstAldanQuiz.Utils.ButtonDragReset>();
 
         // Highlight (выделение выбранной категории)
         var hlGO = new GameObject("Highlight", typeof(RectTransform));

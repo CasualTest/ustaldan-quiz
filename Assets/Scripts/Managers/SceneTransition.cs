@@ -34,14 +34,14 @@ namespace UstAldanQuiz.Managers
 
         // ── Публичный API ─────────────────────────────────────────────────────
 
-        public void LoadScene(string sceneName)
+        public void LoadScene(string sceneName, bool instant = false)
         {
-            if (!_busy) StartCoroutine(Transition(sceneName));
+            if (!_busy) StartCoroutine(Transition(sceneName, instant));
         }
 
         // ── Переход ───────────────────────────────────────────────────────────
 
-        private IEnumerator Transition(string sceneName)
+        private IEnumerator Transition(string sceneName, bool instant)
         {
             _busy = true;
             _fade.blocksRaycasts = true;
@@ -50,7 +50,8 @@ namespace UstAldanQuiz.Managers
             var op = SceneManager.LoadSceneAsync(sceneName);
             op.allowSceneActivation = false;
 
-            yield return Fade(0f, 1f);
+            if (instant) _fade.alpha = 1f;
+            else         yield return Fade(0f, 1f);
 
             // Ждём окончания загрузки (при allowSceneActivation=false прогресс останавливается на 0.9)
             while (op.progress < 0.9f) yield return null;

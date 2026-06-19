@@ -129,10 +129,10 @@ namespace UstAldanQuiz.Managers
         /// <summary>
         /// Загрузить сцену по имени.
         /// </summary>
-        public void LoadScene(string sceneName)
+        public void LoadScene(string sceneName, bool instant = false)
         {
             if (SceneTransition.Instance != null)
-                SceneTransition.Instance.LoadScene(sceneName);
+                SceneTransition.Instance.LoadScene(sceneName, instant);
             else
                 SceneManager.LoadScene(sceneName);
         }

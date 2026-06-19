@@ -36,6 +36,7 @@ namespace UstAldanQuiz.UI
         public FactPopup factPopup;
 
         public event Action OnClosed;
+        public event Action OnCloseRequested;
 
         private Coroutine _anim;
         private Coroutine _spinRoutine;
@@ -47,9 +48,15 @@ namespace UstAldanQuiz.UI
 
         private void Start()
         {
-            btnClose?.onClick.AddListener(Close);
+            btnClose?.onClick.AddListener(HandleCloseClick);
             btnContinue?.onClick.AddListener(Close);
             if (panel != null) panel.SetActive(false);
+        }
+
+        private void HandleCloseClick()
+        {
+            OnCloseRequested?.Invoke();
+            Close();
         }
 
         private void OnDestroy()

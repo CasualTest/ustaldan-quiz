@@ -20,6 +20,9 @@ namespace UstAldanQuiz.UI
         [SerializeField] private Button     btnWebsite;
         [SerializeField] private WebViewUI  webViewUI;
 
+        [Header("Скачать Android APK")]
+        [SerializeField] private Button btnDownloadAndroid;
+
         private AboutData _data;
 
         private void Start()
@@ -29,6 +32,10 @@ namespace UstAldanQuiz.UI
             LocaleManager.OnLanguageChanged += Refresh;
             btnSuggest?.onClick.AddListener(() => suggestUI?.Open());
             btnWebsite?.onClick.AddListener(() => webViewUI?.Open(_data?.websiteUrl ?? ""));
+            btnDownloadAndroid?.onClick.AddListener(OnDownloadAndroid);
+
+            if (btnDownloadAndroid != null)
+                btnDownloadAndroid.gameObject.SetActive(!string.IsNullOrEmpty(_data?.androidApkUrl));
         }
 
         private void OnDestroy()
@@ -36,6 +43,14 @@ namespace UstAldanQuiz.UI
             LocaleManager.OnLanguageChanged -= Refresh;
             btnSuggest?.onClick.RemoveAllListeners();
             btnWebsite?.onClick.RemoveAllListeners();
+            btnDownloadAndroid?.onClick.RemoveAllListeners();
+        }
+
+        private void OnDownloadAndroid()
+        {
+            string url = _data?.androidApkUrl;
+            if (string.IsNullOrEmpty(url)) return;
+            Application.OpenURL(url);
         }
 
         private void Refresh()

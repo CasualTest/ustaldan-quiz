@@ -36,20 +36,25 @@ namespace UstAldanQuiz.UI
         private bool  _finished;
         private bool  _answeredCurrent;
         private bool  _exiting;
+        private bool  _windowOpened;
         private float _questionStartTime;
 
         private static readonly string[] Prefixes = { "A", "B", "C", "D" };
 
-        private void Start()
+        private IEnumerator Start()
         {
             btnBack?.onClick.AddListener(GoToMainMenu);
-            if (questionWindowFull != null) questionWindowFull.OnClosed += HandleWindowClosed;
+            if (questionWindowFull != null)
+            {
+                questionWindowFull.OnClosed         += HandleWindowClosed;
+                questionWindowFull.OnCloseRequested += HandleCloseRequested;
+            }
 
             var gm = GameManager.Instance;
             if (gm == null || gm.SessionQuestions == null || gm.SessionQuestions.Count == 0)
             {
                 Debug.LogWarning("[MillionaireUI] Нет данных сессии в GameManager.");
-                return;
+                yield break;
             }
 
             if (titleText != null)
@@ -60,13 +65,27 @@ namespace UstAldanQuiz.UI
             _currentIndex = 0;
             _correctCount = 0;
             UpdateProgress();
+
+            // Ждём один кадр чтобы QuestionWindow.Start успел деактивировать панель
+            yield return null;
+
             ShowCurrentQuestion();
         }
 
         private void OnDestroy()
         {
             btnBack?.onClick.RemoveAllListeners();
-            if (questionWindowFull != null) questionWindowFull.OnClosed -= HandleWindowClosed;
+            if (questionWindowFull != null)
+            {
+                questionWindowFull.OnClosed         -= HandleWindowClosed;
+                questionWindowFull.OnCloseRequested -= HandleCloseRequested;
+            }
+        }
+
+        private void HandleCloseRequested()
+        {
+            if (_exiting || _finished || _answeredCurrent) return;
+            GoToMainMenu();
         }
 
         // ── Вопрос ────────────────────────────────────────────────────────
@@ -108,14 +127,11 @@ namespace UstAldanQuiz.UI
             }
 
             questionWindowFull.btnContinue?.gameObject.SetActive(false);
-            if (!questionWindowFull.gameObject.activeInHierarchy || !IsWindowOpen())
+            if (!_windowOpened)
+            {
+                _windowOpened = true;
                 questionWindowFull.Open();
-        }
-
-        private bool IsWindowOpen()
-        {
-            var panel = questionWindowFull != null ? questionWindowFull.transform.Find("Panel") : null;
-            return panel != null && panel.gameObject.activeSelf;
+            }
         }
 
         // ── Ответ ─────────────────────────────────────────────────────────
@@ -156,8 +172,23 @@ namespace UstAldanQuiz.UI
                 AudioManager.Instance?.PlayWrong();
                 HapticManager.Wrong();
                 _finished = true;
-                StartCoroutine(FinishAfterDelay(0.8f));
+
+                bool   sah  = LocaleManager.CurrentLanguage == LocaleManager.LangSah;
+                string fact = sah && !string.IsNullOrWhiteSpace(qLog?.factAfterSah)
+                    ? qLog.factAfterSah
+                    : qLog?.factAfterRu;
+
+                if (!string.IsNullOrWhiteSpace(fact) && questionWindowFull.factPopup != null)
+                    StartCoroutine(ShowFactThenFinish(fact, 0.8f));
+                else
+                    StartCoroutine(FinishAfterDelay(0.8f));
             }
+        }
+
+        private IEnumerator ShowFactThenFinish(string fact, float delayBeforeFact)
+        {
+            yield return new WaitForSeconds(delayBeforeFact);
+            questionWindowFull.factPopup.Show(fact, onClosed: FinishGame);
         }
 
         private IEnumerator WowThenNext()
@@ -177,36 +208,47 @@ namespace UstAldanQuiz.UI
             wowPopup.SetActive(true);
             if (wowText != null) wowText.text = LocaleManager.Get("wow_correct");
 
-            const float fadeIn = 0.18f, hold = 0.55f, fadeOut = 0.18f;
+            const float popIn   = 0.22f;  // появление с overshoot
+            const float settle  = 0.10f;  // сжатие после overshoot
+            const float hold    = 0.55f;  // удержание
+            const float fadeOut = 0.30f;  // плавное исчезание с подъёмом
 
-            if (wowSheet != null) wowSheet.localScale = Vector3.zero;
+            Vector2 basePos = wowSheet != null ? wowSheet.anchoredPosition : Vector2.zero;
+
+            if (wowSheet != null) { wowSheet.localScale = Vector3.one * 0.3f; wowSheet.anchoredPosition = basePos; }
             if (wowGroup != null) wowGroup.alpha = 0f;
 
-            for (float t = 0f; t < fadeIn; t += Time.unscaledDeltaTime)
+            // Появление: alpha 0→1, scale 0.3→1.25 с easeOut
+            for (float t = 0f; t < popIn; t += Time.unscaledDeltaTime)
             {
-                float k = t / fadeIn;
-                if (wowGroup != null) wowGroup.alpha = k;
-                if (wowSheet != null) wowSheet.localScale = Vector3.one * Mathf.Lerp(0.4f, 1.15f, EaseOut(k));
+                float k = t / popIn;
+                if (wowGroup != null) wowGroup.alpha = EaseOut(k);
+                if (wowSheet != null) wowSheet.localScale = Vector3.one * Mathf.Lerp(0.3f, 1.25f, EaseOut(k));
                 yield return null;
             }
-            if (wowGroup != null) wowGroup.alpha = 1f;
-            if (wowSheet != null) wowSheet.localScale = Vector3.one * 1.15f;
 
-            for (float t = 0f; t < 0.12f; t += Time.unscaledDeltaTime)
+            // Settle: scale 1.25 → 1.0
+            for (float t = 0f; t < settle; t += Time.unscaledDeltaTime)
             {
-                if (wowSheet != null) wowSheet.localScale = Vector3.one * Mathf.Lerp(1.15f, 1.0f, t / 0.12f);
+                if (wowSheet != null) wowSheet.localScale = Vector3.one * Mathf.Lerp(1.25f, 1.0f, t / settle);
                 yield return null;
             }
             if (wowSheet != null) wowSheet.localScale = Vector3.one;
+            if (wowGroup != null) wowGroup.alpha = 1f;
 
             yield return new WaitForSecondsRealtime(hold);
 
+            // Исчезание: alpha 1→0, текст уезжает вверх на 60px
+            const float floatUp = 60f;
             for (float t = 0f; t < fadeOut; t += Time.unscaledDeltaTime)
             {
-                if (wowGroup != null) wowGroup.alpha = 1f - (t / fadeOut);
+                float k = t / fadeOut;
+                if (wowGroup != null) wowGroup.alpha = 1f - EaseOut(k);
+                if (wowSheet != null) wowSheet.anchoredPosition = basePos + new Vector2(0f, floatUp * EaseOut(k));
                 yield return null;
             }
             if (wowGroup != null) wowGroup.alpha = 0f;
+            if (wowSheet != null) wowSheet.anchoredPosition = basePos;
             wowPopup.SetActive(false);
         }
 
@@ -244,8 +286,8 @@ namespace UstAldanQuiz.UI
             if (_exiting) return;
             _exiting = true;
             var gm = GameManager.Instance;
-            if (gm != null) gm.LoadScene("MainMenu");
-            else SceneTransition.Instance?.LoadScene("MainMenu");
+            if (gm != null) gm.LoadScene("MainMenu", instant: true);
+            else SceneTransition.Instance?.LoadScene("MainMenu", true);
         }
 
         private void UpdateProgress()

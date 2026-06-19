@@ -86,35 +86,15 @@ public static partial class GameSceneBuilder
         if (backText != null) backText.gameObject.SetActive(false);
         AddLocKey(btnBackGO, "btn_back");
 
-        var headerSpacer = MakeGO("Spacer", header.transform);
-        SetLE(headerSpacer, flexW: 1f);
-        headerSpacer.AddComponent<Image>().color = Color.clear;
+        var titleTMP = MakeTMP("Title", header.transform, "Все вопросы", 42, Color.white, font);
+        SetLE(titleTMP.gameObject, flexW: 1);
+        titleTMP.alignment = TextAlignmentOptions.Center;
+        AddLocKey(titleTMP.gameObject, "btn_arcade");
 
-        const string buttonsAtlas = "Assets/Images/Sprites/buttons.png";
-        EnsureReadable(buttonsAtlas);
-        var sReset    = LoadSprite(buttonsAtlas, "buttons_26");
-        var btnResetGO = MakeSecondaryButton("BtnReset", header.transform, "", font, minH: backH, minW: backH);
-        var btnResetImg = btnResetGO.GetComponent<Image>();
-        if (sReset != null)
-        {
-            btnResetImg.sprite                       = sReset;
-            btnResetImg.type                         = Image.Type.Simple;
-            btnResetImg.preserveAspect               = true;
-            btnResetImg.color                        = Color.white;
-            btnResetImg.alphaHitTestMinimumThreshold = 0.1f;
-        }
-        else
-        {
-            btnResetImg.color = new Color(1, 1, 1, 0.2f);
-        }
-        var resetLE = btnResetGO.GetComponent<LayoutElement>() ?? btnResetGO.AddComponent<LayoutElement>();
-        resetLE.minWidth       = backH;
-        resetLE.minHeight      = backH;
-        resetLE.preferredWidth = backH;
-        resetLE.flexibleWidth  = 0;
-        var resetText = btnResetGO.transform.Find("Text");
-        if (resetText != null) resetText.gameObject.SetActive(false);
-        AddLocKey(btnResetGO, "btn_reset");
+        // Правый слот для симметрии (равен ширине BtnBack), чтобы заголовок был по центру
+        var rightSlot = MakeGO("RightSlot", header.transform);
+        SetLE(rightSlot, minW: backW, flexW: 0);
+        rightSlot.AddComponent<Image>().color = Color.clear;
 
         // ── ProgressBar ──────────────────────────────────────────────────────
         var progressRow = MakeGO("ProgressRow", safeArea.transform);
@@ -140,12 +120,14 @@ public static partial class GameSceneBuilder
         var pbPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ProgressBarPath);
         if (pbPrefab == null) { Debug.LogError("[GameSceneBuilder] ProgressBar.prefab не найден. Запустите '0 — Build UI Prefabs'."); return; }
 
-        // Спейсеры по бокам → бар занимает 75% ширины (flex 6:1:1)
+        // Бар фиксированной ширины — не растягивается на весь экран
+        const float pbW = 600f;
+
         var leftSpacer = MakeGO("LeftSpacer", progressRow.transform);
         SetLE(leftSpacer, flexW: 1f); leftSpacer.AddComponent<Image>().color = Color.clear;
 
         var pbGO = (GameObject)PrefabUtility.InstantiatePrefab(pbPrefab, progressRow.transform);
-        SetLE(pbGO, flexW: 6f, minH: barH, prefH: barH);
+        SetLE(pbGO, minW: pbW, flexW: 0, minH: barH, prefH: barH);
         var progressBarComp = pbGO.GetComponent<ProgressBarUI>();
 
         var rightSpacer = MakeGO("RightSpacer", progressRow.transform);
@@ -173,6 +155,43 @@ public static partial class GameSceneBuilder
         mapContentRT.sizeDelta        = new Vector2(1080, 2400); // sized at runtime by RoadmapUI
         mapContent.AddComponent<Image>().color = Color.clear;
         scroll.content = mapContentRT;
+
+        // ── Scrollbar (вертикальный, справа) ─────────────────────────────────
+        var scrollbarGO = MakeGO("Scrollbar", scrollGO.transform);
+        var sbRT = scrollbarGO.GetComponent<RectTransform>();
+        sbRT.anchorMin = new Vector2(1, 0);
+        sbRT.anchorMax = new Vector2(1, 1);
+        sbRT.pivot     = new Vector2(1, 0.5f);
+        sbRT.anchoredPosition = Vector2.zero;
+        sbRT.sizeDelta = new Vector2(18, 0);
+        var sbBg = scrollbarGO.AddComponent<Image>();
+        sbBg.color  = new Color(0f, 0f, 0f, 0.10f);
+        sbBg.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Background.psd");
+        sbBg.type   = Image.Type.Sliced;
+
+        var sbSlideArea = MakeGO("SlidingArea", scrollbarGO.transform);
+        var sbSlideRT = sbSlideArea.GetComponent<RectTransform>();
+        sbSlideRT.anchorMin = Vector2.zero; sbSlideRT.anchorMax = Vector2.one;
+        sbSlideRT.offsetMin = new Vector2(2, 2);
+        sbSlideRT.offsetMax = new Vector2(-2, -2);
+
+        var sbHandle = MakeGO("Handle", sbSlideArea.transform);
+        var sbHandleRT = sbHandle.GetComponent<RectTransform>();
+        sbHandleRT.anchorMin = Vector2.zero; sbHandleRT.anchorMax = Vector2.one;
+        sbHandleRT.offsetMin = sbHandleRT.offsetMax = Vector2.zero;
+        var sbHandleImg = sbHandle.AddComponent<Image>();
+        sbHandleImg.color  = C_PRIMARY;
+        sbHandleImg.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+        sbHandleImg.type   = Image.Type.Sliced;
+
+        var sbComp = scrollbarGO.AddComponent<Scrollbar>();
+        sbComp.targetGraphic = sbHandleImg;
+        sbComp.handleRect    = sbHandleRT;
+        sbComp.direction     = Scrollbar.Direction.BottomToTop;
+
+        scroll.verticalScrollbar = sbComp;
+        scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport;
+        scroll.verticalScrollbarSpacing    = 4;
 
         // LinesContainer — first child of mapContent so lines render beneath tiles
         var linesContainerGO = MakeGO("LinesContainer", mapContent.transform);
@@ -244,7 +263,6 @@ public static partial class GameSceneBuilder
         Prop(soMap, "linesContainer",    linesRT);
         Prop(soMap, "progressBar",       progressBarComp);
         Prop(soMap, "btnBack",           btnBackGO.GetComponent<Button>());
-        Prop(soMap, "btnReset",          btnResetGO.GetComponent<Button>());
         Prop(soMap, "btnFinish",         bfBtn);
         Prop(soMap, "questionWindowFull", qWin);
         Prop(soMap, "wordBuilderWindow", wbWin);
